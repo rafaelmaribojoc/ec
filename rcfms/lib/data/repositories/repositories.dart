@@ -1,0 +1,5 @@
+/// Export all repositories
+export 'auth_repository.dart';
+export 'resident_repository.dart';
+export 'form_repository.dart';
+export 'admin_repository.dart';
