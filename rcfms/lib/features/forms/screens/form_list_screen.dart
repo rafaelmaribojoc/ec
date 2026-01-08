@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../data/models/form_submission_model.dart';
 import '../../../data/repositories/form_repository.dart';
@@ -19,13 +20,18 @@ class FormListScreen extends StatefulWidget {
 class _FormListScreenState extends State<FormListScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  List<FormSubmissionModel> _allForms = [];
+  final FormRepository _formRepo = FormRepository();
+
+  List<FormSubmissionModel> _forms = [];
   bool _isLoading = true;
+  String? _error;
+
+  final List<String> _tabs = ['All', 'Draft', 'Submitted', 'Approved'];
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
+    _tabController = TabController(length: _tabs.length, vsync: this);
     _loadForms();
   }
 
@@ -38,106 +44,95 @@ class _FormListScreenState extends State<FormListScreen>
   Future<void> _loadForms() async {
     setState(() {
       _isLoading = true;
+      _error = null;
     });
 
     try {
-      final repository = context.read<FormRepository>();
-      final forms = await repository.getMyForms();
+      final forms = await _formRepo.getForms();
       setState(() {
-        _allForms = forms;
+        _forms = forms;
         _isLoading = false;
       });
     } catch (e) {
       setState(() {
+        _error = e.toString();
         _isLoading = false;
       });
     }
   }
 
-  List<FormSubmissionModel> _getFilteredForms(String? status) {
-    if (status == null) return _allForms;
-    return _allForms.where((f) => f.status == status).toList();
+  List<FormSubmissionModel> _getFilteredForms(int tabIndex) {
+    switch (tabIndex) {
+      case 1:
+        return _forms.where((f) => f.status == 'draft').toList();
+      case 2:
+        return _forms.where((f) => f.status == 'submitted').toList();
+      case 3:
+        return _forms.where((f) => f.status == 'approved').toList();
+      default:
+        return _forms;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final authState = context.watch<AuthBloc>().state;
-    final userUnit = authState is AuthAuthenticated ? authState.user.unit : null;
-
     return Scaffold(
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('My Forms'),
+        title: const Text('Forms'),
         bottom: TabBar(
           controller: _tabController,
-          isScrollable: true,
-          tabs: const [
-            Tab(text: 'All'),
-            Tab(text: 'Drafts'),
-            Tab(text: 'Pending'),
-            Tab(text: 'Returned'),
-          ],
+          tabs: _tabs.map((t) => Tab(text: t)).toList(),
+          labelColor: Colors.white,
+          unselectedLabelColor: Colors.white70,
+          indicatorColor: Colors.white,
+          indicatorWeight: 3,
         ),
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : TabBarView(
-              controller: _tabController,
-              children: [
-                _buildFormList(null),
-                _buildFormList(AppConstants.statusDraft),
-                _buildFormList(AppConstants.statusPendingReview),
-                _buildFormList(AppConstants.statusReturned),
-              ],
-            ),
-      floatingActionButton: userUnit != null
-          ? FloatingActionButton.extended(
-              onPressed: () => _showNewFormDialog(context, userUnit),
-              icon: const Icon(Icons.add),
-              label: const Text('New Form'),
-            )
-          : null,
+      body: TabBarView(
+        controller: _tabController,
+        children: List.generate(_tabs.length, (index) {
+          return _buildFormList(index);
+        }),
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _showNewFormSheet,
+        icon: const Icon(Icons.add),
+        label: const Text('New Form'),
+      ),
     );
   }
 
-  Widget _buildFormList(String? status) {
-    final forms = _getFilteredForms(status);
+  Widget _buildFormList(int tabIndex) {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_error != null) {
+      return _buildErrorState();
+    }
+
+    final forms = _getFilteredForms(tabIndex);
 
     if (forms.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.assignment_outlined,
-              size: 64,
-              color: AppColors.textSecondaryLight.withValues(alpha: 0.5),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              status == null ? 'No forms yet' : 'No ${_getStatusLabel(status)} forms',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: AppColors.textSecondaryLight,
-                  ),
-            ),
-          ],
-        ),
-      );
+      return _buildEmptyState(tabIndex);
     }
 
     return RefreshIndicator(
       onRefresh: _loadForms,
-      child: ListView.builder(
+      child: ListView.separated(
         padding: const EdgeInsets.all(16),
         itemCount: forms.length,
+        separatorBuilder: (_, __) => const SizedBox(height: 12),
         itemBuilder: (context, index) {
           final form = forms[index];
           return _FormCard(
             form: form,
             onTap: () {
-              if (form.canEdit) {
-                context.push('/forms/fill/${form.templateType}?formId=${form.id}&unit=${form.unit}');
+              if (form.status == 'draft') {
+                context.push('/forms/fill/${form.templateId}?formId=${form.id}');
               } else {
-                context.push('/forms/view/${form.id}');
+                context.push('/forms/${form.id}');
               }
             },
           );
@@ -146,75 +141,147 @@ class _FormListScreenState extends State<FormListScreen>
     );
   }
 
-  String _getStatusLabel(String status) {
-    switch (status) {
-      case AppConstants.statusDraft:
-        return 'draft';
-      case AppConstants.statusPendingReview:
-        return 'pending';
-      case AppConstants.statusReturned:
-        return 'returned';
-      default:
-        return status;
-    }
+  Widget _buildEmptyState(int tabIndex) {
+    final message = tabIndex == 1
+        ? 'No draft forms'
+        : tabIndex == 2
+            ? 'No submitted forms'
+            : tabIndex == 3
+                ? 'No approved forms'
+                : 'No forms yet';
+
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            width: 80,
+            height: 80,
+            decoration: BoxDecoration(
+              color: AppColors.surfaceHover,
+              borderRadius: BorderRadius.circular(AppTheme.radiusLg),
+            ),
+            child: const Icon(
+              Icons.description_outlined,
+              size: 40,
+              color: AppColors.textTertiary,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            message,
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Create a new form to get started',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: AppColors.textSecondary,
+                ),
+          ),
+        ],
+      ),
+    );
   }
 
-  void _showNewFormDialog(BuildContext context, String unit) {
-    final formTypes = AppConstants.formTypesByUnit[unit] ?? [];
+  Widget _buildErrorState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                color: AppColors.errorSurface,
+                borderRadius: BorderRadius.circular(AppTheme.radiusLg),
+              ),
+              child: const Icon(
+                Icons.error_outline,
+                size: 40,
+                color: AppColors.error,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Failed to load forms',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 24),
+            OutlinedButton.icon(
+              onPressed: _loadForms,
+              icon: const Icon(Icons.refresh),
+              label: const Text('Try again'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showNewFormSheet() {
+    final authState = context.read<AuthBloc>().state;
+    String? userUnit;
+    if (authState is AuthAuthenticated) {
+      userUnit = authState.user.unit;
+    }
+
+    final formTypes = AppConstants.formTypesByUnit[userUnit] ??
+        AppConstants.formTypesByUnit['social']!;
 
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) {
-        return Container(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
+      isScrollControlled: true,
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.6,
+        maxChildSize: 0.9,
+        minChildSize: 0.4,
+        expand: false,
+        builder: (context, scrollController) {
+          return Column(
             children: [
-              Text(
-                'Create New Form',
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Select a resident first by scanning or browsing',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppColors.textSecondaryLight,
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Create New Form',
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
                     ),
+                    IconButton(
+                      onPressed: () => Navigator.pop(context),
+                      icon: const Icon(Icons.close),
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(height: 20),
-              Row(
-                children: [
-                  Expanded(
-                    child: _FormTypeCard(
-                      icon: Icons.nfc,
-                      label: 'Scan Ward',
+              const Divider(height: 1),
+              Expanded(
+                child: ListView.separated(
+                  controller: scrollController,
+                  padding: const EdgeInsets.all(16),
+                  itemCount: formTypes.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 8),
+                  itemBuilder: (context, index) {
+                    final templateId = formTypes[index];
+                    return _FormTypeCard(
+                      templateId: templateId,
                       onTap: () {
                         Navigator.pop(context);
-                        context.go('/scan');
+                        context.push('/forms/fill/$templateId');
                       },
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _FormTypeCard(
-                      icon: Icons.people,
-                      label: 'Browse',
-                      onTap: () {
-                        Navigator.pop(context);
-                        context.go('/residents');
-                      },
-                    ),
-                  ),
-                ],
+                    );
+                  },
+                ),
               ),
             ],
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 }
@@ -230,95 +297,72 @@ class _FormCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+    return Material(
+      color: AppColors.surface,
+      borderRadius: BorderRadius.circular(AppTheme.radiusMd),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
+        borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+        child: Container(
           padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+            border: Border.all(color: AppColors.border),
+          ),
+          child: Row(
             children: [
-              Row(
-                children: [
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: form.unitColor.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(10),
+              // Icon
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: _getStatusColor(form.status).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(AppTheme.radiusSm),
+                ),
+                child: Icon(
+                  Icons.description_outlined,
+                  color: _getStatusColor(form.status),
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: 16),
+              // Details
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      form.templateType,
+                      style: Theme.of(context).textTheme.titleSmall,
                     ),
-                    child: Icon(
-                      Icons.description,
-                      color: form.unitColor,
-                      size: 20,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    const SizedBox(height: 4),
+                    Row(
                       children: [
                         Text(
-                          form.templateDisplayName,
-                          style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                                fontWeight: FontWeight.w600,
-                              ),
+                          'Resident: ${form.residentId}',
+                          style: Theme.of(context).textTheme.bodySmall,
                         ),
-                        const SizedBox(height: 2),
+                        const SizedBox(width: 8),
                         Text(
-                          form.residentName ?? 'Unknown Resident',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: AppColors.textSecondaryLight,
-                              ),
+                          '•',
+                          style: TextStyle(color: AppColors.textTertiary),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          DateFormat('MMM d, y').format(form.createdAt),
+                          style: Theme.of(context).textTheme.bodySmall,
                         ),
                       ],
                     ),
-                  ),
-                  _StatusBadge(status: form.status),
-                ],
-              ),
-              const SizedBox(height: 12),
-              const Divider(height: 1),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Icon(
-                    Icons.access_time,
-                    size: 14,
-                    color: AppColors.textSecondaryLight,
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    _formatDate(form.createdAt),
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: AppColors.textSecondaryLight,
-                        ),
-                  ),
-                  if (form.isReturned && form.reviewComment != null) ...[
-                    const SizedBox(width: 16),
-                    Icon(
-                      Icons.comment,
-                      size: 14,
-                      color: AppColors.error,
-                    ),
-                    const SizedBox(width: 4),
-                    Expanded(
-                      child: Text(
-                        form.reviewComment!,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: AppColors.error,
-                            ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
                   ],
-                ],
+                ),
+              ),
+              // Status
+              _StatusBadge(status: form.status),
+              const SizedBox(width: 8),
+              const Icon(
+                Icons.chevron_right,
+                color: AppColors.textTertiary,
               ),
             ],
           ),
@@ -327,8 +371,21 @@ class _FormCard extends StatelessWidget {
     );
   }
 
-  String _formatDate(DateTime date) {
-    return DateFormat('MMM d, yyyy • h:mm a').format(date);
+  Color _getStatusColor(String status) {
+    switch (status.toLowerCase()) {
+      case 'draft':
+        return AppColors.statusDraft;
+      case 'submitted':
+        return AppColors.statusSubmitted;
+      case 'pending_review':
+        return AppColors.statusPendingReview;
+      case 'approved':
+        return AppColors.statusApproved;
+      case 'returned':
+        return AppColors.statusReturned;
+      default:
+        return AppColors.textSecondary;
+    }
   }
 }
 
@@ -339,85 +396,161 @@ class _StatusBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Color color;
-    String label;
-
-    switch (status) {
-      case AppConstants.statusDraft:
-        color = AppColors.statusDraft;
-        label = 'Draft';
-        break;
-      case AppConstants.statusPendingReview:
-        color = AppColors.statusPendingReview;
-        label = 'Pending';
-        break;
-      case AppConstants.statusApproved:
-        color = AppColors.statusApproved;
-        label = 'Approved';
-        break;
-      case AppConstants.statusReturned:
-        color = AppColors.statusReturned;
-        label = 'Returned';
-        break;
-      default:
-        color = AppColors.statusDraft;
-        label = status;
-    }
+    final (color, bgColor, label) = _getStatusStyle(status);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
+        color: bgColor,
+        borderRadius: BorderRadius.circular(AppTheme.radiusFull),
       ),
       child: Text(
         label,
-        style: TextStyle(
-          color: color,
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
-        ),
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: color,
+              fontWeight: FontWeight.w600,
+            ),
       ),
     );
+  }
+
+  (Color, Color, String) _getStatusStyle(String status) {
+    switch (status.toLowerCase()) {
+      case 'draft':
+        return (
+          AppColors.statusDraft,
+          AppColors.surfaceHover,
+          'Draft',
+        );
+      case 'submitted':
+        return (
+          AppColors.statusSubmitted,
+          AppColors.infoSurface,
+          'Submitted',
+        );
+      case 'pending_review':
+        return (
+          AppColors.statusPendingReview,
+          AppColors.warningSurface,
+          'Pending',
+        );
+      case 'approved':
+        return (
+          AppColors.statusApproved,
+          AppColors.successSurface,
+          'Approved',
+        );
+      case 'returned':
+        return (
+          AppColors.statusReturned,
+          AppColors.errorSurface,
+          'Returned',
+        );
+      default:
+        return (
+          AppColors.textSecondary,
+          AppColors.surfaceHover,
+          status,
+        );
+    }
   }
 }
 
 class _FormTypeCard extends StatelessWidget {
-  final IconData icon;
-  final String label;
+  final String templateId;
   final VoidCallback onTap;
 
   const _FormTypeCard({
-    required this.icon,
-    required this.label,
+    required this.templateId,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
+    final (icon, color, displayName) = _getFormTypeInfo(templateId);
+
     return Material(
-      color: AppColors.primaryLight.withValues(alpha: 0.1),
-      borderRadius: BorderRadius.circular(12),
+      color: AppColors.surface,
+      borderRadius: BorderRadius.circular(AppTheme.radiusMd),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
+        borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+            border: Border.all(color: AppColors.border),
+          ),
+          child: Row(
             children: [
-              Icon(icon, color: AppColors.primary, size: 32),
-              const SizedBox(height: 8),
-              Text(
-                label,
-                style: const TextStyle(
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.primary,
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(AppTheme.radiusSm),
                 ),
+                child: Icon(icon, color: color, size: 22),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      displayName,
+                      style: Theme.of(context).textTheme.titleSmall,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Tap to create',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.arrow_forward_ios,
+                size: 16,
+                color: AppColors.textTertiary,
               ),
             ],
           ),
         ),
       ),
     );
+  }
+
+  (IconData, Color, String) _getFormTypeInfo(String templateId) {
+    switch (templateId) {
+      case 'ss_progress_notes':
+        return (Icons.notes, AppColors.unitSocial, 'Progress Notes');
+      case 'ss_case_folder':
+        return (Icons.folder, AppColors.unitSocial, 'Case Folder');
+      case 'ss_inter_service_referral':
+        return (Icons.swap_horiz, AppColors.unitSocial, 'Inter-Service Referral');
+      case 'hl_progress_notes':
+        return (Icons.notes, AppColors.unitHomelife, 'Progress Notes');
+      case 'hl_inventory_admission':
+        return (Icons.inventory, AppColors.unitHomelife, 'Inventory (Admission)');
+      case 'hl_inventory_discharge':
+        return (Icons.inventory_2, AppColors.unitHomelife, 'Inventory (Discharge)');
+      case 'hl_out_on_pass':
+        return (Icons.exit_to_app, AppColors.unitHomelife, 'Out on Pass');
+      case 'hl_incident_report':
+        return (Icons.report_problem, AppColors.unitHomelife, 'Incident Report');
+      case 'ps_progress_notes':
+        return (Icons.notes, AppColors.unitPsych, 'Progress Notes');
+      case 'ps_initial_assessment':
+        return (Icons.assessment, AppColors.unitPsych, 'Initial Assessment');
+      case 'ps_individual_session':
+        return (Icons.person, AppColors.unitPsych, 'Individual Session');
+      case 'ps_group_session':
+        return (Icons.groups, AppColors.unitPsych, 'Group Session');
+      case 'ps_psychometrics':
+        return (Icons.psychology, AppColors.unitPsych, 'Psychometrics Report');
+      default:
+        return (Icons.description, AppColors.textSecondary, templateId);
+    }
   }
 }

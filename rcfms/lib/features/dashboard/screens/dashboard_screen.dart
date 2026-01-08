@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 
 import '../../../core/theme/app_colors.dart';
-import '../../../core/constants/app_constants.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../auth/bloc/auth_bloc.dart';
 
 class DashboardScreen extends StatelessWidget {
@@ -13,268 +14,358 @@ class DashboardScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<AuthBloc, AuthState>(
       builder: (context, state) {
-        if (state is! AuthAuthenticated) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
-        final user = state.user;
+        final user = state is AuthAuthenticated ? state.user : null;
 
         return Scaffold(
-          backgroundColor: AppColors.backgroundLight,
-          body: CustomScrollView(
-            slivers: [
-              // App Bar
-              SliverAppBar(
-                expandedHeight: 180,
-                pinned: true,
-                backgroundColor: AppColors.primary,
-                flexibleSpace: FlexibleSpaceBar(
-                  background: Container(
-                    decoration: const BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          AppColors.primary,
-                          AppColors.primaryDark,
-                        ],
-                      ),
-                    ),
-                    child: SafeArea(
-                      child: Padding(
-                        padding: const EdgeInsets.all(20),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            Text(
-                              _getGreeting(),
-                              style: const TextStyle(
-                                color: Colors.white70,
-                                fontSize: 14,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              user.fullName,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.2),
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: Text(
-                                _getRoleDisplayName(user.role),
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
+          backgroundColor: AppColors.background,
+          body: SafeArea(
+            child: CustomScrollView(
+              slivers: [
+                // Header
+                SliverToBoxAdapter(
+                  child: _buildHeader(context, user?.fullName ?? 'User'),
+                ),
+
+                // Quick Stats
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
+                    child: _buildQuickStats(context),
                   ),
                 ),
-                actions: [
-                  IconButton(
-                    icon: const Icon(Icons.notifications_outlined),
-                    color: Colors.white,
-                    onPressed: () {
-                      // TODO: Show notifications
-                    },
+
+                // Quick Actions
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
+                    child: _buildQuickActions(context, user?.role),
                   ),
-                ],
-              ),
-
-              // Content
-              SliverPadding(
-                padding: const EdgeInsets.all(16),
-                sliver: SliverList(
-                  delegate: SliverChildListDelegate([
-                    // Quick Actions
-                    _buildSectionTitle(context, 'Quick Actions'),
-                    const SizedBox(height: 12),
-                    _buildQuickActions(context, user.role),
-                    const SizedBox(height: 24),
-
-                    // Stats Cards
-                    _buildSectionTitle(context, 'Overview'),
-                    const SizedBox(height: 12),
-                    _buildStatsCards(context),
-                    const SizedBox(height: 24),
-
-                    // Recent Activity
-                    _buildSectionTitle(context, 'Recent Activity'),
-                    const SizedBox(height: 12),
-                    _buildRecentActivity(context),
-                  ]),
                 ),
-              ),
-            ],
+
+                // Recent Activity
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
+                    child: _buildRecentActivity(context),
+                  ),
+                ),
+
+                const SliverToBoxAdapter(
+                  child: SizedBox(height: 100),
+                ),
+              ],
+            ),
           ),
         );
       },
     );
   }
 
-  String _getGreeting() {
-    final hour = DateTime.now().hour;
-    if (hour < 12) return 'Good Morning';
-    if (hour < 17) return 'Good Afternoon';
-    return 'Good Evening';
-  }
+  Widget _buildHeader(BuildContext context, String userName) {
+    final now = DateTime.now();
+    final greeting = _getGreeting(now.hour);
+    final dateStr = DateFormat('EEEE, MMMM d').format(now);
 
-  String _getRoleDisplayName(String role) {
-    switch (role) {
-      case AppConstants.roleSuperAdmin:
-        return 'Super Administrator';
-      case AppConstants.roleCenterHead:
-        return 'Center Head';
-      case AppConstants.roleSocialHead:
-        return 'Social Services Head';
-      case AppConstants.roleMedicalHead:
-        return 'Medical Unit Head';
-      case AppConstants.rolePsychHead:
-        return 'Psychology Head';
-      case AppConstants.roleRehabHead:
-        return 'Rehabilitation Head';
-      case AppConstants.roleHomelifeHead:
-        return 'Homelife Head';
-      default:
-        return role
-            .replaceAll('_', ' ')
-            .split(' ')
-            .map((w) => w[0].toUpperCase() + w.substring(1))
-            .join(' ');
-    }
-  }
-
-  Widget _buildSectionTitle(BuildContext context, String title) {
-    return Text(
-      title,
-      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.bold,
+    return Container(
+      padding: const EdgeInsets.all(20),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  greeting,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  userName,
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  dateStr,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppColors.textTertiary,
+                      ),
+                ),
+              ],
+            ),
           ),
-    );
-  }
-
-  Widget _buildQuickActions(BuildContext context, String role) {
-    final actions = <_QuickAction>[];
-
-    // Common actions
-    actions.add(_QuickAction(
-      icon: Icons.nfc,
-      label: 'Scan Ward',
-      color: AppColors.primary,
-      onTap: () => context.go('/scan'),
-    ));
-
-    actions.add(_QuickAction(
-      icon: Icons.people,
-      label: 'Residents',
-      color: AppColors.secondary,
-      onTap: () => context.go('/residents'),
-    ));
-
-    // Role-specific actions
-    if (role == AppConstants.roleSocialHead) {
-      actions.add(_QuickAction(
-        icon: Icons.person_add,
-        label: 'Add Resident',
-        color: AppColors.unitSocial,
-        onTap: () => context.go('/residents/add'),
-      ));
-    }
-
-    if (role.endsWith('_head') || role == AppConstants.roleCenterHead) {
-      actions.add(_QuickAction(
-        icon: Icons.approval,
-        label: 'Approvals',
-        color: AppColors.warning,
-        onTap: () => context.go('/approvals'),
-      ));
-    }
-
-    if (role.endsWith('_staff')) {
-      actions.add(_QuickAction(
-        icon: Icons.add_box,
-        label: 'New Form',
-        color: AppColors.accent,
-        onTap: () => context.go('/forms'),
-      ));
-    }
-
-    if (role == AppConstants.roleSuperAdmin) {
-      actions.add(_QuickAction(
-        icon: Icons.admin_panel_settings,
-        label: 'Admin Panel',
-        color: AppColors.primaryDark,
-        onTap: () => context.go('/admin'),
-      ));
-    }
-
-    return SizedBox(
-      height: 100,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        itemCount: actions.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 12),
-        itemBuilder: (context, index) {
-          final action = actions[index];
-          return _buildQuickActionCard(context, action);
-        },
+          GestureDetector(
+            onTap: () => context.go('/settings'),
+            child: Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: AppColors.primarySurface,
+                borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+                border: Border.all(color: AppColors.primaryBorder),
+              ),
+              child: const Icon(
+                Icons.person_outline,
+                color: AppColors.primary,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildQuickActionCard(BuildContext context, _QuickAction action) {
-    return Material(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(16),
-      child: InkWell(
-        onTap: action.onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Container(
-          width: 100,
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: action.color.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  action.icon,
-                  color: action.color,
-                  size: 24,
-                ),
+  String _getGreeting(int hour) {
+    if (hour < 12) return 'Good morning,';
+    if (hour < 17) return 'Good afternoon,';
+    return 'Good evening,';
+  }
+
+  Widget _buildQuickStats(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Overview',
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _StatCard(
+                icon: Icons.people_outline,
+                iconColor: AppColors.primary,
+                label: 'Total Residents',
+                value: '42',
               ),
-              const SizedBox(height: 8),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _StatCard(
+                icon: Icons.assignment_outlined,
+                iconColor: AppColors.warning,
+                label: 'Pending Forms',
+                value: '8',
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _StatCard(
+                icon: Icons.check_circle_outline,
+                iconColor: AppColors.success,
+                label: 'Completed Today',
+                value: '5',
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _StatCard(
+                icon: Icons.meeting_room_outlined,
+                iconColor: AppColors.unitPsych,
+                label: 'Active Wards',
+                value: '4',
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildQuickActions(BuildContext context, String? role) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Quick Actions',
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          children: [
+            _ActionChip(
+              icon: Icons.nfc,
+              label: 'Scan Ward',
+              onTap: () => context.go('/scan'),
+            ),
+            _ActionChip(
+              icon: Icons.people,
+              label: 'Residents',
+              onTap: () => context.go('/residents'),
+            ),
+            _ActionChip(
+              icon: Icons.description,
+              label: 'Forms',
+              onTap: () => context.go('/forms'),
+            ),
+            if (role == 'super_admin' || role == 'center_head')
+              _ActionChip(
+                icon: Icons.admin_panel_settings,
+                label: 'Admin',
+                onTap: () => context.go('/admin'),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRecentActivity(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Recent Activity',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            TextButton(
+              onPressed: () {},
+              child: const Text('See all'),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Container(
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+            border: Border.all(color: AppColors.border),
+          ),
+          child: Column(
+            children: [
+              _ActivityItem(
+                icon: Icons.assignment_turned_in,
+                iconColor: AppColors.success,
+                title: 'Progress Notes submitted',
+                subtitle: 'Juan Dela Cruz • Social Service',
+                time: '2 min ago',
+              ),
+              const Divider(height: 1),
+              _ActivityItem(
+                icon: Icons.person_add,
+                iconColor: AppColors.primary,
+                title: 'New resident admitted',
+                subtitle: 'Maria Santos • Ward A',
+                time: '1 hour ago',
+              ),
+              const Divider(height: 1),
+              _ActivityItem(
+                icon: Icons.assignment_return,
+                iconColor: AppColors.warning,
+                title: 'Form returned for revision',
+                subtitle: 'Incident Report • Home Life',
+                time: '3 hours ago',
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _StatCard extends StatelessWidget {
+  final IconData icon;
+  final Color iconColor;
+  final String label;
+  final String value;
+
+  const _StatCard({
+    required this.icon,
+    required this.iconColor,
+    required this.label,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: iconColor.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(AppTheme.radiusSm),
+            ),
+            child: Icon(icon, color: iconColor, size: 20),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            value,
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: AppColors.textSecondary,
+                ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ActionChip extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  const _ActionChip({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: AppColors.surface,
+      borderRadius: BorderRadius.circular(AppTheme.radiusFull),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppTheme.radiusFull),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(AppTheme.radiusFull),
+            border: Border.all(color: AppColors.border),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 18, color: AppColors.textSecondary),
+              const SizedBox(width: 8),
               Text(
-                action.label,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                label,
+                style: Theme.of(context).textTheme.labelLarge?.copyWith(
                       fontWeight: FontWeight.w500,
                     ),
-                textAlign: TextAlign.center,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
               ),
             ],
           ),
@@ -282,142 +373,37 @@ class DashboardScreen extends StatelessWidget {
       ),
     );
   }
+}
 
-  Widget _buildStatsCards(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: _buildStatCard(
-            context,
-            icon: Icons.people,
-            label: 'Residents',
-            value: '64',
-            color: AppColors.primary,
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _buildStatCard(
-            context,
-            icon: Icons.assignment,
-            label: 'Pending',
-            value: '8',
-            color: AppColors.warning,
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _buildStatCard(
-            context,
-            icon: Icons.check_circle,
-            label: 'Completed',
-            value: '156',
-            color: AppColors.success,
-          ),
-        ),
-      ],
-    );
-  }
+class _ActivityItem extends StatelessWidget {
+  final IconData icon;
+  final Color iconColor;
+  final String title;
+  final String subtitle;
+  final String time;
 
-  Widget _buildStatCard(
-    BuildContext context, {
-    required IconData icon,
-    required String label,
-    required String value,
-    required Color color,
-  }) {
-    return Container(
+  const _ActivityItem({
+    required this.icon,
+    required this.iconColor,
+    required this.title,
+    required this.subtitle,
+    required this.time,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: color.withValues(alpha: 0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, color: color, size: 24),
-          const SizedBox(height: 12),
-          Text(
-            value,
-            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: color,
-                ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppColors.textSecondaryLight,
-                ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildRecentActivity(BuildContext context) {
-    // Placeholder for recent activity
-    final activities = [
-      _ActivityItem(
-        icon: Icons.check_circle,
-        title: 'Daily Vitals Approved',
-        subtitle: 'John Doe • Ward A',
-        time: '2 min ago',
-        color: AppColors.success,
-      ),
-      _ActivityItem(
-        icon: Icons.assignment,
-        title: 'New Incident Report',
-        subtitle: 'Jane Smith • Ward B',
-        time: '15 min ago',
-        color: AppColors.warning,
-      ),
-      _ActivityItem(
-        icon: Icons.person_add,
-        title: 'New Resident Added',
-        subtitle: 'Robert Johnson • Ward C',
-        time: '1 hour ago',
-        color: AppColors.primary,
-      ),
-    ];
-
-    return Column(
-      children: activities
-          .map((activity) => _buildActivityItem(context, activity))
-          .toList(),
-    );
-  }
-
-  Widget _buildActivityItem(BuildContext context, _ActivityItem activity) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-      ),
       child: Row(
         children: [
           Container(
-            width: 44,
-            height: 44,
+            width: 40,
+            height: 40,
             decoration: BoxDecoration(
-              color: activity.color.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
+              color: iconColor.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(AppTheme.radiusSm),
             ),
-            child: Icon(
-              activity.icon,
-              color: activity.color,
-              size: 22,
-            ),
+            child: Icon(icon, color: iconColor, size: 20),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -425,59 +411,23 @@ class DashboardScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  activity.title,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
+                  title,
+                  style: Theme.of(context).textTheme.titleSmall,
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  activity.subtitle,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppColors.textSecondaryLight,
-                      ),
+                  subtitle,
+                  style: Theme.of(context).textTheme.bodySmall,
                 ),
               ],
             ),
           ),
           Text(
-            activity.time,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppColors.textSecondaryLight,
-                ),
+            time,
+            style: Theme.of(context).textTheme.labelSmall,
           ),
         ],
       ),
     );
   }
-}
-
-class _QuickAction {
-  final IconData icon;
-  final String label;
-  final Color color;
-  final VoidCallback onTap;
-
-  _QuickAction({
-    required this.icon,
-    required this.label,
-    required this.color,
-    required this.onTap,
-  });
-}
-
-class _ActivityItem {
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final String time;
-  final Color color;
-
-  _ActivityItem({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.time,
-    required this.color,
-  });
 }

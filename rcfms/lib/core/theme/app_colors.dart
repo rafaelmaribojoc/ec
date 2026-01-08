@@ -1,175 +1,146 @@
 import 'package:flutter/material.dart';
 
-/// Application color palette
-/// Based on DSWD branding with accessible colors for elderly care
+/// RCFMS Design System - Color Palette
+/// 
+/// Inspired by Linear, Stripe, and Apple's Human Interface Guidelines.
+/// Clean, accessible, and typography-driven.
 class AppColors {
   AppColors._();
 
-  // Primary Colors - DSWD Blue Theme
-  static const Color primary = Color(0xFF1565C0);          // Deep Blue
-  static const Color primaryLight = Color(0xFF5E92F3);     // Light Blue
-  static const Color primaryDark = Color(0xFF003C8F);      // Dark Blue
-  static const Color primaryVariant = Color(0xFF0D47A1);   // Blue Variant
+  // ============================================================================
+  // FOUNDATION - Neutral Grays (Slate Scale)
+  // ============================================================================
+  
+  /// Background - Light airy slate
+  static const Color background = Color(0xFFF8F9FA);
+  static const Color backgroundLight = Color(0xFFF8F9FA);
+  
+  /// Surface - Pure white for cards
+  static const Color surface = Color(0xFFFFFFFF);
+  
+  /// Subtle backgrounds for hover/selected states
+  static const Color surfaceHover = Color(0xFFF1F3F5);
+  static const Color surfacePressed = Color(0xFFE9ECEF);
+  
+  /// Borders - Subtle, not boxy
+  static const Color border = Color(0xFFE5E7EB);
+  static const Color borderLight = Color(0xFFF1F3F5);
+  static const Color borderFocus = Color(0xFFD1D5DB);
+  static const Color divider = Color(0xFFE5E7EB);
+  static const Color dividerLight = Color(0xFFE5E7EB);
 
-  // Secondary Colors - Warm Accents
-  static const Color secondary = Color(0xFFFF8F00);        // Amber
-  static const Color secondaryLight = Color(0xFFFFC046);   // Light Amber
-  static const Color secondaryDark = Color(0xFFC56000);    // Dark Amber
+  // ============================================================================
+  // TEXT COLORS - Dark Charcoal Scale (No Pure Black)
+  // ============================================================================
+  
+  /// Primary text - Dark charcoal
+  static const Color textPrimary = Color(0xFF1A1A1A);
+  static const Color textPrimaryLight = Color(0xFF1A1A1A);
+  
+  /// Secondary text - Muted gray
+  static const Color textSecondary = Color(0xFF6B7280);
+  static const Color textSecondaryLight = Color(0xFF6B7280);
+  
+  /// Tertiary/placeholder text
+  static const Color textTertiary = Color(0xFF9CA3AF);
+  
+  /// Disabled text
+  static const Color textDisabled = Color(0xFFD1D5DB);
+  
+  /// Inverse text (on dark backgrounds)
+  static const Color textInverse = Color(0xFFFFFFFF);
 
-  // Background Colors
-  static const Color background = Color(0xFFF5F7FA);       // Light Gray Blue
-  static const Color surface = Color(0xFFFFFFFF);          // White
-  static const Color surfaceVariant = Color(0xFFF0F4F8);   // Light Blue Gray
-  static const Color cardBackground = Color(0xFFFFFFFF);   // White
+  // ============================================================================
+  // PRIMARY BRAND COLOR - Teal (Calming, Trustworthy)
+  // ============================================================================
+  
+  /// Primary teal - Main action color
+  static const Color primary = Color(0xFF0891B2);
+  static const Color primaryLight = Color(0xFF22D3EE);
+  static const Color primaryDark = Color(0xFF0E7490);
+  
+  /// Primary with opacity for backgrounds
+  static Color primarySurface = const Color(0xFF0891B2).withValues(alpha: 0.08);
+  static Color primaryBorder = const Color(0xFF0891B2).withValues(alpha: 0.2);
 
-  // Text Colors
-  static const Color textPrimary = Color(0xFF212121);      // Dark Gray
-  static const Color textSecondary = Color(0xFF757575);    // Medium Gray
-  static const Color textHint = Color(0xFF9E9E9E);         // Light Gray
-  static const Color textOnPrimary = Color(0xFFFFFFFF);    // White
-  static const Color textOnSecondary = Color(0xFF212121);  // Dark Gray
+  // ============================================================================
+  // ACCENT COLOR - Warm Coral (Friendly, Caring)
+  // ============================================================================
+  
+  static const Color accent = Color(0xFFF97316);
+  static const Color accentLight = Color(0xFFFB923C);
+  static const Color accentDark = Color(0xFFEA580C);
 
-  // Status Colors
-  static const Color success = Color(0xFF4CAF50);          // Green
-  static const Color successLight = Color(0xFFE8F5E9);     // Light Green Background
-  static const Color warning = Color(0xFFFFC107);          // Yellow
-  static const Color warningLight = Color(0xFFFFF8E1);     // Light Yellow Background
-  static const Color error = Color(0xFFE53935);            // Red
-  static const Color errorLight = Color(0xFFFFEBEE);       // Light Red Background
-  static const Color info = Color(0xFF2196F3);             // Blue
-  static const Color infoLight = Color(0xFFE3F2FD);        // Light Blue Background
+  // ============================================================================
+  // SEMANTIC COLORS
+  // ============================================================================
+  
+  /// Success - Soft green
+  static const Color success = Color(0xFF059669);
+  static const Color successLight = Color(0xFF10B981);
+  static Color successSurface = const Color(0xFF059669).withValues(alpha: 0.08);
+  
+  /// Warning - Warm amber
+  static const Color warning = Color(0xFFF59E0B);
+  static const Color warningLight = Color(0xFFFBBF24);
+  static Color warningSurface = const Color(0xFFF59E0B).withValues(alpha: 0.08);
+  
+  /// Error - Soft red
+  static const Color error = Color(0xFFDC2626);
+  static const Color errorLight = Color(0xFFEF4444);
+  static Color errorSurface = const Color(0xFFDC2626).withValues(alpha: 0.08);
+  
+  /// Info - Soft blue
+  static const Color info = Color(0xFF3B82F6);
+  static const Color infoLight = Color(0xFF60A5FA);
+  static Color infoSurface = const Color(0xFF3B82F6).withValues(alpha: 0.08);
 
-  // Service Unit Colors
-  static const Color socialService = Color(0xFF1976D2);    // Blue
-  static const Color homeLifeService = Color(0xFF388E3C);  // Green
-  static const Color psychService = Color(0xFF7B1FA2);     // Purple
-  static const Color medicalService = Color(0xFFD32F2F);   // Red
-  static const Color rehabService = Color(0xFFFF9800);     // Orange
+  // ============================================================================
+  // SERVICE UNIT COLORS (Muted, Professional)
+  // ============================================================================
+  
+  /// Social Service - Warm purple
+  static const Color unitSocial = Color(0xFF7C3AED);
+  static Color unitSocialSurface = const Color(0xFF7C3AED).withValues(alpha: 0.08);
+  
+  /// Medical Service - Soft teal
+  static const Color unitMedical = Color(0xFF0891B2);
+  static Color unitMedicalSurface = const Color(0xFF0891B2).withValues(alpha: 0.08);
+  
+  /// Psychological Service - Calm indigo
+  static const Color unitPsych = Color(0xFF4F46E5);
+  static Color unitPsychSurface = const Color(0xFF4F46E5).withValues(alpha: 0.08);
+  
+  /// Rehabilitation Service - Fresh green
+  static const Color unitRehab = Color(0xFF059669);
+  static Color unitRehabSurface = const Color(0xFF059669).withValues(alpha: 0.08);
+  
+  /// Home Life Service - Warm orange
+  static const Color unitHomelife = Color(0xFFF97316);
+  static Color unitHomelifeSurface = const Color(0xFFF97316).withValues(alpha: 0.08);
 
-  // Aliases for unit-based lookups
-  static const Color unitSocial = socialService;
-  static const Color unitHomelife = homeLifeService;
-  static const Color unitPsych = psychService;
-  static const Color unitMedical = medicalService;
-  static const Color unitRehab = rehabService;
+  // ============================================================================
+  // STATUS COLORS (Form Workflow)
+  // ============================================================================
+  
+  static const Color statusDraft = Color(0xFF6B7280);
+  static const Color statusSubmitted = Color(0xFF3B82F6);
+  static const Color statusPendingReview = Color(0xFFF59E0B);
+  static const Color statusApproved = Color(0xFF059669);
+  static const Color statusReturned = Color(0xFFDC2626);
 
-  // Light mode text colors (for light backgrounds)
-  static const Color textPrimaryLight = Color(0xFF212121);
-  static const Color textSecondaryLight = Color(0xFF757575);
-
-  // Additional aliases for compatibility
-  static const Color backgroundLight = background;
-  static const Color dividerLight = divider;
-  static const Color accent = secondary;
-
-  // Form Status Colors
-  static const Color statusDraft = Color(0xFF9E9E9E);      // Gray
-  static const Color statusSubmitted = Color(0xFF2196F3);  // Blue
-  static const Color statusPending = Color(0xFFFFC107);    // Yellow
-  static const Color statusPendingReview = statusPending;  // Alias
-  static const Color statusApproved = Color(0xFF4CAF50);   // Green
-  static const Color statusReturned = Color(0xFFFF9800);   // Orange
-
-  // Border Colors
-  static const Color border = Color(0xFFE0E0E0);           // Light Gray
-  static const Color borderFocused = Color(0xFF1565C0);    // Primary Blue
-  static const Color divider = Color(0xFFEEEEEE);          // Very Light Gray
-
-  // Disabled States
-  static const Color disabled = Color(0xFFBDBDBD);         // Medium Gray
-  static const Color disabledBackground = Color(0xFFE0E0E0); // Light Gray
-
-  // Shadows
-  static const Color shadow = Color(0x1A000000);           // 10% Black
-  static const Color shadowLight = Color(0x0D000000);      // 5% Black
-
-  // Chart/Graph Colors
-  static const List<Color> chartColors = [
-    Color(0xFF1565C0),  // Blue
-    Color(0xFF4CAF50),  // Green
-    Color(0xFFFF8F00),  // Amber
-    Color(0xFF7B1FA2),  // Purple
-    Color(0xFFE53935),  // Red
-    Color(0xFF00ACC1),  // Cyan
-    Color(0xFFFF5722),  // Deep Orange
-    Color(0xFF8BC34A),  // Light Green
-  ];
-
-  // Gradients
-  static const LinearGradient primaryGradient = LinearGradient(
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-    colors: [primary, primaryDark],
-  );
-
-  static const LinearGradient secondaryGradient = LinearGradient(
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-    colors: [secondary, secondaryDark],
-  );
-
-  static const LinearGradient headerGradient = LinearGradient(
-    begin: Alignment.topCenter,
-    end: Alignment.bottomCenter,
-    colors: [primary, primaryVariant],
-  );
-
-  // Material Color Swatch for primary
-  static const MaterialColor primarySwatch = MaterialColor(
-    0xFF1565C0,
-    <int, Color>{
-      50: Color(0xFFE3F2FD),
-      100: Color(0xFFBBDEFB),
-      200: Color(0xFF90CAF9),
-      300: Color(0xFF64B5F6),
-      400: Color(0xFF42A5F5),
-      500: Color(0xFF1565C0),
-      600: Color(0xFF1E88E5),
-      700: Color(0xFF1976D2),
-      800: Color(0xFF1565C0),
-      900: Color(0xFF0D47A1),
-    },
-  );
-
-  /// Get service unit color
-  static Color getServiceUnitColor(String serviceUnit) {
-    switch (serviceUnit.toLowerCase()) {
-      case 'socialservice':
-      case 'social service':
-        return socialService;
-      case 'homelifeservice':
-      case 'home life service':
-        return homeLifeService;
-      case 'psychologicalservice':
-      case 'psychological service':
-        return psychService;
-      case 'medicalservice':
-      case 'medical service':
-        return medicalService;
-      default:
-        return primary;
-    }
-  }
-
-  /// Get status color
-  static Color getStatusColor(String status) {
-    switch (status.toLowerCase()) {
-      case 'draft':
-        return statusDraft;
-      case 'signed_submitted':
-      case 'signed & submitted':
-        return statusSubmitted;
-      case 'pending_review':
-      case 'pending review':
-        return statusPending;
-      case 'final_record':
-      case 'final record':
-      case 'approved':
-        return statusApproved;
-      case 'returned':
-        return statusReturned;
-      default:
-        return statusDraft;
-    }
-  }
+  // ============================================================================
+  // SPECIAL COLORS
+  // ============================================================================
+  
+  /// Overlay for modals/drawers
+  static Color overlay = Colors.black.withValues(alpha: 0.4);
+  
+  /// Shimmer loading colors
+  static const Color shimmerBase = Color(0xFFE5E7EB);
+  static const Color shimmerHighlight = Color(0xFFF3F4F6);
+  
+  /// Shadow color
+  static Color shadow = Colors.black.withValues(alpha: 0.08);
+  static Color shadowLight = Colors.black.withValues(alpha: 0.04);
 }

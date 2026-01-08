@@ -1,11 +1,13 @@
 import 'dart:typed_data';
 import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/theme/app_colors.dart';
-import '../../../data/repositories/auth_repository.dart';
+import '../../../core/theme/app_theme.dart';
 import '../bloc/auth_bloc.dart';
 
 class SetupSignatureScreen extends StatefulWidget {
@@ -18,78 +20,75 @@ class SetupSignatureScreen extends StatefulWidget {
 class _SetupSignatureScreenState extends State<SetupSignatureScreen> {
   final List<List<Offset>> _strokes = [];
   List<Offset> _currentStroke = [];
-  bool _isLoading = false;
-
-  bool get _hasSignature => _strokes.isNotEmpty || _currentStroke.isNotEmpty;
-
-  void _clearSignature() {
-    setState(() {
-      _strokes.clear();
-      _currentStroke.clear();
-    });
-  }
+  bool _isSaving = false;
+  bool _hasSignature = false;
 
   void _onPanStart(DragStartDetails details) {
     setState(() {
       _currentStroke = [details.localPosition];
+      _hasSignature = true;
     });
   }
 
   void _onPanUpdate(DragUpdateDetails details) {
     setState(() {
-      _currentStroke.add(details.localPosition);
+      _currentStroke = [..._currentStroke, details.localPosition];
     });
   }
 
   void _onPanEnd(DragEndDetails details) {
     setState(() {
-      if (_currentStroke.isNotEmpty) {
-        _strokes.add(List.from(_currentStroke));
-        _currentStroke = [];
-      }
+      _strokes.add(_currentStroke);
+      _currentStroke = [];
     });
   }
 
-  Future<Uint8List> _exportSignature(Size size) async {
+  void _clearSignature() {
+    setState(() {
+      _strokes.clear();
+      _currentStroke = [];
+      _hasSignature = false;
+    });
+  }
+
+  Future<Uint8List?> _exportSignature(Size size) async {
+    if (_strokes.isEmpty) return null;
+
     final recorder = ui.PictureRecorder();
     final canvas = Canvas(recorder);
-    
+
     // White background
     canvas.drawRect(
       Rect.fromLTWH(0, 0, size.width, size.height),
       Paint()..color = Colors.white,
     );
 
-    // Draw all strokes
+    // Draw strokes
     final paint = Paint()
-      ..color = Colors.black
-      ..strokeWidth = 3.0
+      ..color = AppColors.textPrimary
+      ..strokeWidth = 2.5
       ..strokeCap = StrokeCap.round
       ..strokeJoin = StrokeJoin.round
       ..style = PaintingStyle.stroke;
 
     for (final stroke in _strokes) {
-      if (stroke.length > 1) {
-        final path = Path();
-        path.moveTo(stroke[0].dx, stroke[0].dy);
-        for (int i = 1; i < stroke.length; i++) {
-          path.lineTo(stroke[i].dx, stroke[i].dy);
-        }
-        canvas.drawPath(path, paint);
-      } else if (stroke.length == 1) {
-        canvas.drawCircle(stroke[0], 1.5, paint..style = PaintingStyle.fill);
-        paint.style = PaintingStyle.stroke;
+      if (stroke.length < 2) continue;
+      final path = Path()..moveTo(stroke.first.dx, stroke.first.dy);
+      for (int i = 1; i < stroke.length; i++) {
+        path.lineTo(stroke[i].dx, stroke[i].dy);
       }
+      canvas.drawPath(path, paint);
     }
 
     final picture = recorder.endRecording();
     final image = await picture.toImage(size.width.toInt(), size.height.toInt());
     final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
-    return byteData!.buffer.asUint8List();
+
+    return byteData?.buffer.asUint8List();
   }
 
   Future<void> _saveSignature() async {
-    if (!_hasSignature) {
+    if (!_hasSignature || _strokes.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Please draw your signature first'),
@@ -99,35 +98,42 @@ class _SetupSignatureScreenState extends State<SetupSignatureScreen> {
       return;
     }
 
-    setState(() {
-      _isLoading = true;
-    });
+    setState(() => _isSaving = true);
 
     try {
-      final authState = context.read<AuthBloc>().state;
-      if (authState is! AuthAuthenticated) {
-        throw Exception('Not authenticated');
-      }
-
-      // Get the size of the signature canvas
-      final RenderBox? box = context.findRenderObject() as RenderBox?;
-      final size = Size(box?.size.width ?? 400, 300);
-
-      // Export signature as PNG bytes
+      // Get the signature pad size
+      final size = const Size(400, 200);
       final bytes = await _exportSignature(size);
 
-      // Upload signature
-      final authRepo = context.read<AuthRepository>();
-      await authRepo.uploadSignature(
-        userId: authState.user.id,
-        signatureBytes: bytes,
-      );
+      if (bytes == null) {
+        throw Exception('Failed to export signature');
+      }
 
-      // Refresh user data
-      final updatedUser = await authRepo.getUserProfile(authState.user.id);
-      context.read<AuthBloc>().add(AuthUserUpdated(updatedUser));
+      final user = Supabase.instance.client.auth.currentUser;
+      if (user == null) throw Exception('Not authenticated');
+
+      // Upload to Supabase Storage
+      final fileName = 'signature_${user.id}.png';
+      await Supabase.instance.client.storage.from('signatures').uploadBinary(
+            fileName,
+            bytes,
+            fileOptions: const FileOptions(
+              contentType: 'image/png',
+              upsert: true,
+            ),
+          );
+
+      // Get public URL
+      final signatureUrl =
+          Supabase.instance.client.storage.from('signatures').getPublicUrl(fileName);
+
+      // Update user profile
+      await Supabase.instance.client
+          .from('profiles')
+          .update({'signature_url': signatureUrl}).eq('id', user.id);
 
       if (mounted) {
+        context.read<AuthBloc>().add(const AuthCheckRequested());
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Signature saved successfully'),
@@ -140,16 +146,14 @@ class _SetupSignatureScreenState extends State<SetupSignatureScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to save signature: $e'),
+            content: Text('Failed to save: ${e.toString()}'),
             backgroundColor: AppColors.error,
           ),
         );
       }
     } finally {
       if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
+        setState(() => _isSaving = false);
       }
     }
   }
@@ -157,11 +161,12 @@ class _SetupSignatureScreenState extends State<SetupSignatureScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.backgroundLight,
+      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text('Setup Signature'),
-        centerTitle: true,
-        automaticallyImplyLeading: false,
+        backgroundColor: Colors.transparent,
+        foregroundColor: AppColors.textPrimary,
+        elevation: 0,
       ),
       body: SafeArea(
         child: Padding(
@@ -169,169 +174,152 @@ class _SetupSignatureScreenState extends State<SetupSignatureScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _buildHeader(),
+              // Header
+              Text(
+                'Create your digital signature',
+                style: Theme.of(context).textTheme.headlineSmall,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Draw your signature below. This will be used to sign forms electronically.',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
+              ),
               const SizedBox(height: 32),
-              Expanded(child: _buildSignatureCanvas()),
+
+              // Signature pad
+              Expanded(
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+                    border: Border.all(
+                      color: _hasSignature ? AppColors.primary : AppColors.border,
+                      width: _hasSignature ? 2 : 1,
+                    ),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(AppTheme.radiusMd - 1),
+                    child: Stack(
+                      children: [
+                        // Drawing area
+                        Positioned.fill(
+                          child: GestureDetector(
+                            onPanStart: _onPanStart,
+                            onPanUpdate: _onPanUpdate,
+                            onPanEnd: _onPanEnd,
+                            child: CustomPaint(
+                              painter: _SignaturePainter(
+                                strokes: _strokes,
+                                currentStroke: _currentStroke,
+                              ),
+                            ),
+                          ),
+                        ),
+
+                        // Placeholder text
+                        if (!_hasSignature)
+                          Center(
+                            child: IgnorePointer(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.gesture,
+                                    size: 48,
+                                    color: AppColors.textTertiary,
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Text(
+                                    'Draw your signature here',
+                                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                          color: AppColors.textTertiary,
+                                        ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+
+                        // Clear button
+                        if (_hasSignature)
+                          Positioned(
+                            top: 12,
+                            right: 12,
+                            child: Material(
+                              color: AppColors.surface,
+                              borderRadius: BorderRadius.circular(AppTheme.radiusSm),
+                              child: InkWell(
+                                onTap: _clearSignature,
+                                borderRadius: BorderRadius.circular(AppTheme.radiusSm),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 8,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(AppTheme.radiusSm),
+                                    border: Border.all(color: AppColors.border),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.refresh,
+                                        size: 16,
+                                        color: AppColors.textSecondary,
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        'Clear',
+                                        style: Theme.of(context).textTheme.labelMedium,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
               const SizedBox(height: 24),
-              _buildActions(),
+
+              // Buttons
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => context.go('/dashboard'),
+                      child: const Text('Skip for now'),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    flex: 2,
+                    child: ElevatedButton(
+                      onPressed: _isSaving ? null : _saveSignature,
+                      child: _isSaving
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Text('Save Signature'),
+                    ),
+                  ),
+                ],
+              ),
             ],
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildHeader() {
-    return Column(
-      children: [
-        Container(
-          width: 72,
-          height: 72,
-          decoration: BoxDecoration(
-            color: AppColors.primaryLight.withValues(alpha: 0.2),
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: const Icon(
-            Icons.draw,
-            size: 36,
-            color: AppColors.primary,
-          ),
-        ),
-        const SizedBox(height: 16),
-        Text(
-          'Create Your Signature',
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'Your digital signature will be used to sign\nall forms and documents',
-          textAlign: TextAlign.center,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: AppColors.textSecondaryLight,
-              ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSignatureCanvas() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: _hasSignature ? AppColors.primary : AppColors.dividerLight,
-          width: _hasSignature ? 2 : 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 20,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(15),
-        child: Stack(
-          children: [
-            // Signature drawing area
-            GestureDetector(
-              onPanStart: _onPanStart,
-              onPanUpdate: _onPanUpdate,
-              onPanEnd: _onPanEnd,
-              child: CustomPaint(
-                painter: _SignaturePainter(
-                  strokes: _strokes,
-                  currentStroke: _currentStroke,
-                ),
-                size: Size.infinite,
-              ),
-            ),
-            // Placeholder text
-            if (!_hasSignature)
-              IgnorePointer(
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.gesture,
-                        size: 48,
-                        color: AppColors.textSecondaryLight.withValues(alpha: 0.3),
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        'Draw your signature here',
-                        style: TextStyle(
-                          color: AppColors.textSecondaryLight.withValues(alpha: 0.5),
-                          fontSize: 16,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            // Clear button
-            if (_hasSignature)
-              Positioned(
-                top: 12,
-                right: 12,
-                child: Material(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(8),
-                  child: InkWell(
-                    onTap: _clearSignature,
-                    borderRadius: BorderRadius.circular(8),
-                    child: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        border: Border.all(color: AppColors.dividerLight),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Icon(
-                        Icons.refresh,
-                        size: 20,
-                        color: AppColors.textSecondaryLight,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildActions() {
-    return Column(
-      children: [
-        SizedBox(
-          width: double.infinity,
-          height: 56,
-          child: ElevatedButton(
-            onPressed: _isLoading ? null : _saveSignature,
-            child: _isLoading
-                ? const SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2.5,
-                      color: Colors.white,
-                    ),
-                  )
-                : const Text('Save Signature'),
-          ),
-        ),
-        const SizedBox(height: 12),
-        TextButton(
-          onPressed: _clearSignature,
-          child: const Text('Clear & Try Again'),
-        ),
-      ],
     );
   }
 }
@@ -347,46 +335,35 @@ class _SignaturePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    // White background
-    canvas.drawRect(
-      Rect.fromLTWH(0, 0, size.width, size.height),
-      Paint()..color = Colors.white,
-    );
-
     final paint = Paint()
-      ..color = Colors.black
-      ..strokeWidth = 3.0
+      ..color = AppColors.textPrimary
+      ..strokeWidth = 2.5
       ..strokeCap = StrokeCap.round
       ..strokeJoin = StrokeJoin.round
       ..style = PaintingStyle.stroke;
 
     // Draw completed strokes
     for (final stroke in strokes) {
-      _drawStroke(canvas, stroke, paint);
-    }
-
-    // Draw current stroke
-    if (currentStroke.isNotEmpty) {
-      _drawStroke(canvas, currentStroke, paint);
-    }
-  }
-
-  void _drawStroke(Canvas canvas, List<Offset> stroke, Paint paint) {
-    if (stroke.length > 1) {
-      final path = Path();
-      path.moveTo(stroke[0].dx, stroke[0].dy);
+      if (stroke.length < 2) continue;
+      final path = Path()..moveTo(stroke.first.dx, stroke.first.dy);
       for (int i = 1; i < stroke.length; i++) {
         path.lineTo(stroke[i].dx, stroke[i].dy);
       }
       canvas.drawPath(path, paint);
-    } else if (stroke.length == 1) {
-      canvas.drawCircle(stroke[0], 1.5, paint..style = PaintingStyle.fill);
-      paint.style = PaintingStyle.stroke;
+    }
+
+    // Draw current stroke
+    if (currentStroke.length >= 2) {
+      final path = Path()..moveTo(currentStroke.first.dx, currentStroke.first.dy);
+      for (int i = 1; i < currentStroke.length; i++) {
+        path.lineTo(currentStroke[i].dx, currentStroke[i].dy);
+      }
+      canvas.drawPath(path, paint);
     }
   }
 
   @override
   bool shouldRepaint(covariant _SignaturePainter oldDelegate) {
-    return true; // Always repaint for smooth drawing
+    return true;
   }
 }
