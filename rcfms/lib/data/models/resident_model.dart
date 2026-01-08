@@ -78,6 +78,15 @@ class ResidentModel extends Equatable {
     return parts.join(' • ');
   }
 
+  /// Alias for wardId (backward compatibility)
+  String? get currentWardId => wardId;
+  
+  /// Generate resident code from ID
+  String get residentCode => 'RES-${id.substring(0, 8).toUpperCase()}';
+  
+  /// Get status based on isActive
+  String get status => isActive ? 'active' : 'discharged';
+
   factory ResidentModel.fromJson(Map<String, dynamic> json) {
     return ResidentModel(
       id: json['id'] as String,

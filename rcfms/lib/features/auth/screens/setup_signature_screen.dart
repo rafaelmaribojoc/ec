@@ -133,7 +133,7 @@ class _SetupSignatureScreenState extends State<SetupSignatureScreen> {
           .update({'signature_url': signatureUrl}).eq('id', user.id);
 
       if (mounted) {
-        context.read<AuthBloc>().add(const AuthCheckRequested());
+        context.read<AuthBloc>().add(AuthCheckRequested());
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Signature saved successfully'),

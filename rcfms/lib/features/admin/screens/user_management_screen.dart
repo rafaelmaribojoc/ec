@@ -174,7 +174,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
     final formKey = GlobalKey<FormState>();
     final emailController = TextEditingController();
     final nameController = TextEditingController();
-    final employeeIdController = TextEditingController();
+      final workIdController = TextEditingController();
     String selectedRole = 'operator';
     String selectedUnit = 'social';
 
@@ -268,17 +268,17 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                       ),
                       const SizedBox(height: 20),
 
-                      // Employee ID
-                      Text('Employee ID', style: Theme.of(context).textTheme.labelLarge),
+                      // Work ID
+                      Text('Work ID', style: Theme.of(context).textTheme.labelLarge),
                       const SizedBox(height: 8),
                       TextFormField(
-                        controller: employeeIdController,
+                        controller: workIdController,
                         decoration: const InputDecoration(
                           hintText: 'EMP-001',
                           prefixIcon: Icon(Icons.badge_outlined, size: 20),
                         ),
                         validator: (v) {
-                          if (v == null || v.isEmpty) return 'Employee ID is required';
+                          if (v == null || v.isEmpty) return 'Work ID is required';
                           return null;
                         },
                       ),
@@ -343,7 +343,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                                 _createUser(
                                   email: emailController.text.trim(),
                                   fullName: nameController.text.trim(),
-                                  employeeId: employeeIdController.text.trim(),
+                                  workId: workIdController.text.trim(),
                                   role: selectedRole,
                                   unit: selectedUnit,
                                 );
@@ -367,7 +367,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
   Future<void> _createUser({
     required String email,
     required String fullName,
-    required String employeeId,
+    required String workId,
     required String role,
     required String unit,
   }) async {
@@ -384,7 +384,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
       final result = await _adminRepo.provisionUser(
         email: email,
         fullName: fullName,
-        employeeId: employeeId,
+        workId: workId,
         role: role,
         unit: unit,
       );
@@ -395,7 +395,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
         // Show credentials dialog
         _showCredentialsDialog(
           email: email,
-          password: result['password'] as String,
+          password: result.tempPassword,
         );
 
         _loadUsers();
@@ -586,8 +586,8 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                   const SizedBox(height: 16),
                   _DetailRow(
                     icon: Icons.badge_outlined,
-                    label: 'Employee ID',
-                    value: user.employeeId,
+                    label: 'Work ID',
+                    value: user.workId,
                   ),
                   const SizedBox(height: 16),
                   _DetailRow(

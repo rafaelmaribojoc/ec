@@ -30,7 +30,7 @@ class _LoginScreenState extends State<LoginScreen> {
   void _handleLogin() {
     if (_formKey.currentState!.validate()) {
       context.read<AuthBloc>().add(
-            AuthSignInRequested(
+            AuthLoginRequested(
               email: _emailController.text.trim(),
               password: _passwordController.text,
             ),

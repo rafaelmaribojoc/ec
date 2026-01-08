@@ -7,6 +7,11 @@ import '../../core/constants/app_constants.dart';
 class FormRepository {
   final SupabaseClient _supabase = Supabase.instance.client;
 
+  /// Get all forms (alias for getMyForms with no filters)
+  Future<List<FormSubmissionModel>> getForms() async {
+    return getMyForms();
+  }
+
   /// Get forms for current user
   Future<List<FormSubmissionModel>> getMyForms({
     String? status,

@@ -239,6 +239,41 @@ class ResponsiveContainer extends StatelessWidget {
   }
 }
 
+/// Responsive card with consistent styling
+class ResponsiveCard extends StatelessWidget {
+  final Widget child;
+  final EdgeInsets? padding;
+  final EdgeInsets? margin;
+  final Color? color;
+  final double? elevation;
+
+  const ResponsiveCard({
+    super.key,
+    required this.child,
+    this.padding,
+    this.margin,
+    this.color,
+    this.elevation,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final screen = ScreenInfo.of(context);
+    
+    return Card(
+      elevation: elevation ?? 0,
+      color: color ?? Theme.of(context).cardColor,
+      margin: margin ?? EdgeInsets.zero,
+      child: Padding(
+        padding: padding ?? EdgeInsets.all(
+          screen.value(mobile: 16.0, tablet: 20.0, desktop: 24.0),
+        ),
+        child: child,
+      ),
+    );
+  }
+}
+
 /// Responsive grid that adapts columns based on screen size
 class ResponsiveGrid extends StatelessWidget {
   final List<Widget> children;

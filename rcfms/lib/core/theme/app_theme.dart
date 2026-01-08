@@ -180,6 +180,12 @@ class AppTheme {
   // LIGHT THEME
   // ============================================================================
   
+  /// Light theme - Alias for backward compatibility
+  static ThemeData get light => lightTheme;
+  
+  /// Dark theme placeholder
+  static ThemeData get dark => lightTheme; // TODO: Implement dark theme
+  
   static ThemeData get lightTheme {
     return ThemeData(
       useMaterial3: true,
@@ -439,7 +445,7 @@ class AppTheme {
       ),
       
       // TabBar
-      tabBarTheme: const TabBarTheme(
+      tabBarTheme: const TabBarThemeData(
         labelColor: AppColors.primary,
         unselectedLabelColor: AppColors.textSecondary,
         labelStyle: TextStyle(
@@ -581,4 +587,6 @@ class AppTheme {
     );
   }
 }
+
+
 

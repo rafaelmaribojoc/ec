@@ -130,6 +130,40 @@ class AppColors {
   static const Color statusReturned = Color(0xFFDC2626);
 
   // ============================================================================
+  // ADDITIONAL ALIASES
+  // ============================================================================
+  
+  /// Secondary color - alias for accent
+  static const Color secondary = accent;
+  
+  /// Text on primary backgrounds
+  static const Color textOnPrimary = Color(0xFFFFFFFF);
+  
+  /// Text hint color
+  static const Color textHint = textTertiary;
+  
+  /// Get service unit color by name
+  static Color getServiceUnitColor(String unit) {
+    switch (unit.toLowerCase()) {
+      case 'social':
+        return unitSocial;
+      case 'medical':
+        return unitMedical;
+      case 'psych':
+      case 'psychological':
+        return unitPsych;
+      case 'rehab':
+      case 'rehabilitation':
+        return unitRehab;
+      case 'homelife':
+      case 'home_life':
+        return unitHomelife;
+      default:
+        return primary;
+    }
+  }
+
+  // ============================================================================
   // SPECIAL COLORS
   // ============================================================================
   
