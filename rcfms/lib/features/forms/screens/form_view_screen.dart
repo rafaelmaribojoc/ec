@@ -53,7 +53,13 @@ class _FormViewScreenState extends State<FormViewScreen> {
 
     if (_form == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Form')),
+        appBar: AppBar(
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => Navigator.pop(context),
+          ),
+          title: const Text('Form'),
+        ),
         body: const Center(child: Text('Form not found')),
       );
     }
@@ -62,6 +68,10 @@ class _FormViewScreenState extends State<FormViewScreen> {
 
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pop(context),
+        ),
         title: Text(form.templateDisplayName),
         actions: [
           IconButton(

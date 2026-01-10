@@ -249,6 +249,10 @@ class _WardManagementScreenState extends State<WardManagementScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pop(context),
+        ),
         title: const Text('Ward Management'),
       ),
       body: _isLoading

@@ -60,7 +60,13 @@ class _ResidentDetailScreenState extends State<ResidentDetailScreen> {
 
     if (_error != null || _resident == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Resident')),
+        appBar: AppBar(
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => Navigator.pop(context),
+          ),
+          title: const Text('Resident'),
+        ),
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -88,6 +94,10 @@ class _ResidentDetailScreenState extends State<ResidentDetailScreen> {
         slivers: [
           // Header
           SliverAppBar(
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back, color: Colors.white),
+              onPressed: () => Navigator.pop(context),
+            ),
             expandedHeight: 280,
             pinned: true,
             backgroundColor: AppColors.primary,

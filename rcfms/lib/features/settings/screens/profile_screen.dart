@@ -78,7 +78,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
         final user = state.user;
 
         return Scaffold(
-          appBar: AppBar(title: const Text('Edit Profile')),
+          appBar: AppBar(
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back),
+              onPressed: () => Navigator.pop(context),
+            ),
+            title: const Text('Edit Profile'),
+          ),
           body: SingleChildScrollView(
             padding: const EdgeInsets.all(16),
             child: Column(

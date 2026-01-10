@@ -196,23 +196,23 @@ class DashboardScreen extends StatelessWidget {
             _ActionChip(
               icon: Icons.nfc,
               label: 'Scan Ward',
-              onTap: () => context.go('/scan'),
+              onTap: () => context.push('/scan'),
             ),
             _ActionChip(
               icon: Icons.people,
               label: 'Residents',
-              onTap: () => context.go('/residents'),
+              onTap: () => context.push('/residents'),
             ),
             _ActionChip(
               icon: Icons.description,
               label: 'Forms',
-              onTap: () => context.go('/forms'),
+              onTap: () => context.push('/forms'),
             ),
             if (role == 'super_admin' || role == 'center_head')
               _ActionChip(
                 icon: Icons.admin_panel_settings,
                 label: 'Admin',
-                onTap: () => context.go('/admin'),
+                onTap: () => context.push('/admin'),
               ),
           ],
         ),

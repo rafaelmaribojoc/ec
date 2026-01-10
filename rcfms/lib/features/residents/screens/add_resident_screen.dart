@@ -207,6 +207,10 @@ class _AddResidentScreenState extends State<AddResidentScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pop(context),
+        ),
         title: const Text('Add New Resident'),
       ),
       body: Form(
