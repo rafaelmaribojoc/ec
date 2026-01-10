@@ -66,6 +66,12 @@ class _ResidentsListScreenState extends State<ResidentsListScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
+        leading: Navigator.canPop(context)
+            ? IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: () => Navigator.pop(context),
+              )
+            : null,
         title: const Text('Residents'),
         actions: [
           IconButton(

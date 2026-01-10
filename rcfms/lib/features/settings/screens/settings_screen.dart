@@ -355,7 +355,10 @@ class SettingsScreen extends StatelessWidget {
           ElevatedButton(
             onPressed: () {
               Navigator.pop(dialogContext);
+              // Add logout event
               context.read<AuthBloc>().add(AuthLogoutRequested());
+              // Force navigate to login immediately for responsive UX
+              context.go('/login');
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.error,

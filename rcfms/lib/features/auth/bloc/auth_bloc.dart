@@ -1,8 +1,15 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import '../../../data/models/user_model.dart';
 import '../../../data/repositories/auth_repository.dart';
+
+void _log(String message) {
+  if (kDebugMode) {
+    print('[AuthBloc] $message');
+  }
+}
 
 // Events
 abstract class AuthEvent extends Equatable {
@@ -98,17 +105,21 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     AuthCheckRequested event,
     Emitter<AuthState> emit,
   ) async {
+    _log('Checking auth state...');
     emit(AuthLoading());
     
     try {
       final user = await authRepository.getCurrentUser();
       
       if (user != null) {
+        _log('User authenticated: ${user.email}');
         emit(AuthAuthenticated(user));
       } else {
+        _log('No authenticated user found');
         emit(AuthUnauthenticated());
       }
     } catch (e) {
+      _log('Auth check error: $e');
       emit(AuthUnauthenticated());
     }
   }
@@ -117,6 +128,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     AuthLoginRequested event,
     Emitter<AuthState> emit,
   ) async {
+    _log('Login requested for: ${event.email}');
     emit(AuthLoading());
     
     try {
@@ -125,8 +137,10 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         password: event.password,
       );
       
+      _log('Login successful for: ${user.email}');
       emit(AuthAuthenticated(user));
     } catch (e) {
+      _log('Login failed: $e');
       emit(AuthError(e.toString().replaceAll('Exception: ', '')));
     }
   }
@@ -135,14 +149,17 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     AuthLogoutRequested event,
     Emitter<AuthState> emit,
   ) async {
-    emit(AuthLoading());
-    
+    _log('Logout requested');
+    // Don't emit loading state to avoid hanging - directly sign out and emit unauthenticated
     try {
       await authRepository.signOut();
-      emit(AuthUnauthenticated());
+      _log('Logout successful');
     } catch (e) {
-      emit(AuthError(e.toString().replaceAll('Exception: ', '')));
+      _log('Logout error (still proceeding): $e');
+      // Even if signOut throws, we still want to clear local state
     }
+    // Always emit unauthenticated after logout attempt
+    emit(AuthUnauthenticated());
   }
 
   void _onAuthUserUpdated(

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -23,6 +24,12 @@ import '../../features/settings/screens/settings_screen.dart';
 import '../../features/settings/screens/profile_screen.dart';
 import '../../core/widgets/shell_scaffold.dart';
 
+void _log(String message) {
+  if (kDebugMode) {
+    print('[Router] $message');
+  }
+}
+
 /// Application routing configuration
 class RouterService {
   RouterService._();
@@ -40,8 +47,17 @@ class RouterService {
       final isLoggingIn = state.matchedLocation == '/login';
       final isSettingUpSignature = state.matchedLocation == '/setup-signature';
 
-      // If not logged in, redirect to login
+      _log('Redirect check - location: ${state.matchedLocation}, isLoggedIn: $isLoggedIn, authState: ${authState.runtimeType}');
+
+      // Handle loading state - allow current location
+      if (authState is AuthLoading) {
+        _log('Auth loading, allowing current location');
+        return null;
+      }
+
+      // If not logged in (including after logout), redirect to login
       if (!isLoggedIn && !isLoggingIn) {
+        _log('Not logged in, redirecting to /login');
         return '/login';
       }
 
@@ -49,13 +65,16 @@ class RouterService {
       if (isLoggedIn && isLoggingIn) {
         // Check if user needs to set up signature
         if (authState.user.signatureUrl == null) {
+          _log('User needs signature, redirecting to /setup-signature');
           return '/setup-signature';
         }
+        _log('Logged in at login page, redirecting to /dashboard');
         return '/dashboard';
       }
 
       // If logged in and setting up signature, allow it
       if (isLoggedIn && isSettingUpSignature) {
+        _log('Allowing signature setup');
         return null;
       }
 

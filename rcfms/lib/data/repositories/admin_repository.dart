@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/user_model.dart';
@@ -8,6 +9,12 @@ import '../../core/constants/supabase_config.dart';
 /// Repository for admin operations
 class AdminRepository {
   final SupabaseClient _supabase = Supabase.instance.client;
+
+  void _log(String message) {
+    if (kDebugMode) {
+      print('[AdminRepository] $message');
+    }
+  }
 
   /// Get all users (admin only)
   Future<List<UserModel>> getAllUsers() async {
@@ -34,6 +41,8 @@ class AdminRepository {
     String? unit,
   }) async {
     try {
+      _log('Provisioning new user: $email');
+      
       // Check if email already exists
       final existing = await _supabase
           .from('profiles')
@@ -42,11 +51,13 @@ class AdminRepository {
           .maybeSingle();
 
       if (existing != null) {
+        _log('User already exists with email: $email');
         throw Exception('A user with this email already exists');
       }
 
       // Generate a simple temporary password (easy to type on mobile)
       final tempPassword = 'Welcome123!';
+      _log('Creating auth user via Admin API...');
 
       // Call Supabase Admin API to create user (using service role key)
       final response = await http.post(
@@ -64,11 +75,13 @@ class AdminRepository {
             'full_name': fullName,
             'work_id': workId,
             'role': role,
+            'unit': unit,
           },
         }),
       );
 
       final authData = jsonDecode(response.body) as Map<String, dynamic>;
+      _log('Auth API response status: ${response.statusCode}');
       
       // Check for errors
       if (response.statusCode != 200 && response.statusCode != 201) {
@@ -77,13 +90,16 @@ class AdminRepository {
                          authData['message'] ??
                          authData['error'] ??
                          'Failed to create user (${response.statusCode})';
+        _log('Auth API error: $errorMsg');
         throw Exception(errorMsg);
       }
 
       final userId = authData['id'] as String;
+      _log('Auth user created with ID: $userId');
 
       // Update the profile with role and unit using service role key (bypasses RLS)
       await Future.delayed(const Duration(milliseconds: 500)); // Wait for trigger
+      _log('Upserting profile for user: $userId');
       
       final profileUpdateResponse = await http.post(
         Uri.parse('${SupabaseConfig.url}/rest/v1/profiles'),
@@ -104,9 +120,9 @@ class AdminRepository {
         }),
       );
 
+      _log('Profile upsert response: ${profileUpdateResponse.statusCode}');
       if (profileUpdateResponse.statusCode != 200 && profileUpdateResponse.statusCode != 201) {
-        // User was created but profile update failed - still return success
-        print('Profile update warning: ${profileUpdateResponse.body}');
+        _log('Profile update warning: ${profileUpdateResponse.body}');
       }
 
       // Fetch the created user profile using service role
@@ -131,11 +147,13 @@ class AdminRepository {
               'is_active': true,
             };
 
+      _log('User provisioned successfully: $email');
       return (
         user: UserModel.fromJson(profileData),
         tempPassword: tempPassword,
       );
     } catch (e) {
+      _log('Failed to provision user: $e');
       throw Exception('Failed to create user: $e');
     }
   }

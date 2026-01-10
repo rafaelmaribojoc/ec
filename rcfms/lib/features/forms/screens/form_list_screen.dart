@@ -79,6 +79,12 @@ class _FormListScreenState extends State<FormListScreen>
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
+        leading: Navigator.canPop(context)
+            ? IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: () => Navigator.pop(context),
+              )
+            : null,
         title: const Text('Forms'),
         bottom: TabBar(
           controller: _tabController,
@@ -286,6 +292,56 @@ class _FormListScreenState extends State<FormListScreen>
   }
 }
 
+/// Utility to format template type names for display
+String _formatTemplateName(String templateType) {
+  // Map of template types to user-friendly names
+  const templateNames = {
+    'pre_admission_checklist': 'Pre-Admission Checklist',
+    'requirements_checklist': 'Requirements Checklist',
+    'general_intake_sheet': 'General Intake Sheet',
+    'admission_case_conference': 'Admission Case Conference',
+    'clients_contract': "Client's Contract",
+    'admission_slip': 'Admission Slip',
+    'progress_notes': 'Progress Notes',
+    'running_notes': 'Running Notes',
+    'intervention_plan': 'Intervention Plan',
+    'social_case_study': 'Social Case Study',
+    'case_conference': 'Case Conference',
+    'termination_report': 'Termination Report',
+    'closing_summary': 'Closing Summary',
+    'quarterly_narrative': 'Quarterly Narrative Report',
+    'inventory_admission': 'Inventory Upon Admission',
+    'inventory_discharge': 'Inventory Upon Discharge',
+    'inventory_monthly': 'Monthly Inventory Report',
+    'incident_report': 'Incident Report',
+    'out_on_pass': 'Out on Pass',
+    'group_sessions': 'Group Sessions Report',
+    'individual_sessions': 'Individual Sessions Report',
+    'inter_service_referral': 'Inter-Service Referral',
+    'initial_assessment': 'Initial Assessment',
+    'psychometrician_report': "Psychometrician's Report",
+    'daily_vitals': 'Daily Vitals',
+    'medical_abstract': 'Medical Abstract',
+    'moca_p_scoring': 'MOCA-P Scoring',
+    'behavior_log': 'Behavior Log',
+    'therapy_session_notes': 'Therapy Session Notes',
+    'daily_activity_log': 'Daily Activity Log',
+  };
+
+  // Return mapped name or format the raw template type
+  if (templateNames.containsKey(templateType)) {
+    return templateNames[templateType]!;
+  }
+
+  // Fallback: Convert snake_case to Title Case
+  return templateType
+      .split('_')
+      .map((word) => word.isNotEmpty
+          ? '${word[0].toUpperCase()}${word.substring(1)}'
+          : '')
+      .join(' ');
+}
+
 class _FormCard extends StatelessWidget {
   final FormSubmissionModel form;
   final VoidCallback onTap;
@@ -332,7 +388,7 @@ class _FormCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      form.templateType,
+                      _formatTemplateName(form.templateType),
                       style: Theme.of(context).textTheme.titleSmall,
                     ),
                     const SizedBox(height: 4),

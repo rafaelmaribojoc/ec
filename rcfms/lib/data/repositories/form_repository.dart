@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/form_submission_model.dart';
 import '../models/timeline_entry_model.dart';
@@ -6,6 +7,12 @@ import '../../core/constants/app_constants.dart';
 /// Repository for form operations
 class FormRepository {
   final SupabaseClient _supabase = Supabase.instance.client;
+
+  void _log(String message) {
+    if (kDebugMode) {
+      print('[FormRepository] $message');
+    }
+  }
 
   /// Get all forms (alias for getMyForms with no filters)
   Future<List<FormSubmissionModel>> getForms() async {
@@ -143,24 +150,37 @@ class FormRepository {
   }) async {
     try {
       final userId = _supabase.auth.currentUser?.id;
-      if (userId == null) throw Exception('User not authenticated');
+      _log('Creating draft - residentId: $residentId, templateId: $templateId, unit: $unit, userId: $userId');
+      
+      if (userId == null) {
+        _log('ERROR: User not authenticated');
+        throw Exception('User not authenticated');
+      }
+
+      final insertData = {
+        'resident_id': residentId,
+        'template_id': templateId,
+        'template_type': templateType,
+        'unit': unit,
+        'form_data': formData,
+        'status': AppConstants.statusDraft,
+        'submitted_by': userId,
+      };
+      _log('Insert data: $insertData');
 
       final response = await _supabase
           .from('form_submissions')
-          .insert({
-            'resident_id': residentId,
-            'template_id': templateId,
-            'template_type': templateType,
-            'unit': unit,
-            'form_data': formData,
-            'status': AppConstants.statusDraft,
-            'submitted_by': userId,
-          })
+          .insert(insertData)
           .select()
           .single();
 
+      _log('Draft created successfully: ${response['id']}');
       return FormSubmissionModel.fromJson(response);
+    } on PostgrestException catch (e) {
+      _log('PostgrestException creating draft - code: ${e.code}, message: ${e.message}, details: ${e.details}');
+      throw Exception('Database error: ${e.message}');
     } catch (e) {
+      _log('Error creating draft: $e');
       throw Exception('Failed to create draft: $e');
     }
   }
@@ -194,22 +214,35 @@ class FormRepository {
   }) async {
     try {
       final userId = _supabase.auth.currentUser?.id;
-      if (userId == null) throw Exception('User not authenticated');
+      _log('Submitting form - id: $id, userId: $userId');
+      
+      if (userId == null) {
+        _log('ERROR: User not authenticated');
+        throw Exception('User not authenticated');
+      }
+
+      final updateData = {
+        'form_data': formData,
+        'status': AppConstants.statusPendingReview,
+        'submitted_at': DateTime.now().toIso8601String(),
+        'updated_at': DateTime.now().toIso8601String(),
+      };
+      _log('Update data: status=${updateData['status']}');
 
       final response = await _supabase
           .from('form_submissions')
-          .update({
-            'form_data': formData,
-            'status': AppConstants.statusPendingReview,
-            'submitted_at': DateTime.now().toIso8601String(),
-            'updated_at': DateTime.now().toIso8601String(),
-          })
+          .update(updateData)
           .eq('id', id)
           .select()
           .single();
 
+      _log('Form submitted successfully: ${response['id']}');
       return FormSubmissionModel.fromJson(response);
+    } on PostgrestException catch (e) {
+      _log('PostgrestException submitting form - code: ${e.code}, message: ${e.message}, details: ${e.details}');
+      throw Exception('Database error: ${e.message}');
     } catch (e) {
+      _log('Error submitting form: $e');
       throw Exception('Failed to submit form: $e');
     }
   }

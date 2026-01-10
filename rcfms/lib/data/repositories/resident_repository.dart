@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/resident_model.dart';
 import '../models/ward_model.dart';
@@ -9,6 +10,12 @@ import '../../core/constants/app_constants.dart';
 class ResidentRepository {
   final SupabaseClient _supabase = Supabase.instance.client;
 
+  void _log(String message) {
+    if (kDebugMode) {
+      print('[ResidentRepository] $message');
+    }
+  }
+
   /// Get all residents
   Future<List<ResidentModel>> getResidents({
     String? wardId,
@@ -17,6 +24,8 @@ class ResidentRepository {
     int pageSize = AppConstants.defaultPageSize,
   }) async {
     try {
+      _log('Fetching residents - wardId: $wardId, searchQuery: $searchQuery, page: $page');
+      
       var query = _supabase
           .from('residents')
           .select('*, ward:wards(name)')
@@ -36,8 +45,13 @@ class ResidentRepository {
           .order('last_name', ascending: true)
           .range(page * pageSize, (page + 1) * pageSize - 1);
       
+      _log('Fetched ${response.length} residents');
       return response.map((json) => ResidentModel.fromJson(json)).toList();
+    } on PostgrestException catch (e) {
+      _log('PostgrestException - code: ${e.code}, message: ${e.message}');
+      throw Exception('Database error: ${e.message}');
     } catch (e) {
+      _log('Error fetching residents: $e');
       throw Exception('Failed to fetch residents: $e');
     }
   }

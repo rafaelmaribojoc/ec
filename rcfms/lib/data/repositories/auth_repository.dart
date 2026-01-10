@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/user_model.dart';
 import '../../core/constants/supabase_config.dart';
@@ -6,6 +7,12 @@ import '../../core/constants/supabase_config.dart';
 /// Repository for authentication operations
 class AuthRepository {
   final SupabaseClient _supabase = Supabase.instance.client;
+
+  void _log(String message) {
+    if (kDebugMode) {
+      print('[AuthRepository] $message');
+    }
+  }
 
   /// Get current session
   Session? get currentSession => _supabase.auth.currentSession;
@@ -22,47 +29,87 @@ class AuthRepository {
     required String password,
   }) async {
     try {
-      print('DEBUG SIGNIN: Attempting login for: $email');
+      _log('Attempting login for: $email');
       
       final response = await _supabase.auth.signInWithPassword(
         email: email,
         password: password,
       );
 
-      print('DEBUG SIGNIN: Auth response received');
-      print('DEBUG SIGNIN: User: ${response.user?.id}');
-      print('DEBUG SIGNIN: Session: ${response.session != null}');
+      _log('Auth response received - User ID: ${response.user?.id}, Session: ${response.session != null}');
 
       if (response.user == null) {
         throw Exception('Login failed. Please check your credentials.');
       }
 
-      // Fetch user profile
-      print('DEBUG SIGNIN: Fetching profile for user: ${response.user!.id}');
-      final profile = await getUserProfile(response.user!.id);
-      print('DEBUG SIGNIN: Profile fetched successfully: ${profile.email}');
+      // Fetch user profile - may need to be created if trigger didn't work
+      _log('Fetching profile for user: ${response.user!.id}');
+      UserModel profile;
+      try {
+        profile = await getUserProfile(response.user!.id);
+        _log('Profile fetched successfully: ${profile.email}');
+      } catch (e) {
+        _log('Profile not found, attempting to create one: $e');
+        // Profile doesn't exist - create it from auth user metadata
+        profile = await _createProfileFromAuthUser(response.user!);
+        _log('Profile created successfully');
+      }
       return profile;
     } on AuthException catch (e) {
-      print('DEBUG SIGNIN: AuthException: ${e.message}');
+      _log('AuthException: ${e.message}');
       throw Exception(e.message);
     } on PostgrestException catch (e) {
-      print('DEBUG SIGNIN: PostgrestException: code=${e.code}, message=${e.message}');
+      _log('PostgrestException: code=${e.code}, message=${e.message}');
       throw Exception('Database error: ${e.message}');
     } catch (e) {
-      print('DEBUG SIGNIN: General error: $e');
+      _log('General error during sign in: $e');
       throw Exception('An error occurred during sign in: $e');
+    }
+  }
+
+  /// Create profile from auth user if trigger didn't work
+  Future<UserModel> _createProfileFromAuthUser(User authUser) async {
+    _log('Creating profile from auth user metadata');
+    final metadata = authUser.userMetadata ?? {};
+    
+    final profileData = {
+      'id': authUser.id,
+      'email': authUser.email ?? '',
+      'full_name': metadata['full_name'] ?? 'New User',
+      'work_id': metadata['work_id'] ?? 'TEMP-${authUser.id.substring(0, 8)}',
+      'role': metadata['role'] ?? 'social_staff',
+      'unit': metadata['unit'],
+      'is_active': true,
+    };
+
+    try {
+      await _supabase.from('profiles').upsert(profileData);
+      _log('Profile upserted successfully');
+      return UserModel.fromJson(profileData);
+    } catch (e) {
+      _log('Failed to create profile: $e');
+      // Return a temporary model if upsert fails
+      return UserModel.fromJson(profileData);
     }
   }
 
   /// Sign out current user
   Future<void> signOut() async {
-    await _supabase.auth.signOut();
+    _log('Signing out user...');
+    try {
+      await _supabase.auth.signOut();
+      _log('Sign out successful');
+    } catch (e) {
+      _log('Sign out error: $e');
+      // Force clear session even on error
+      rethrow;
+    }
   }
 
   /// Get user profile from profiles table
   Future<UserModel> getUserProfile(String userId) async {
     try {
-      print('DEBUG: Fetching profile for userId: $userId');
+      _log('Fetching profile for userId: $userId');
       
       // First try by ID
       final response = await _supabase
@@ -72,14 +119,14 @@ class AuthRepository {
           .maybeSingle();
 
       if (response != null) {
-        print('DEBUG: Profile found by ID: $response');
+        _log('Profile found by ID');
         return UserModel.fromJson(response);
       }
       
       // If not found by ID, try by email from auth user
       final authUser = _supabase.auth.currentUser;
       if (authUser?.email != null) {
-        print('DEBUG: Profile not found by ID, trying by email: ${authUser!.email}');
+        _log('Profile not found by ID, trying by email: ${authUser!.email}');
         final emailResponse = await _supabase
             .from('profiles')
             .select()
@@ -87,19 +134,19 @@ class AuthRepository {
             .maybeSingle();
             
         if (emailResponse != null) {
-          print('DEBUG: Profile found by email: $emailResponse');
+          _log('Profile found by email');
           return UserModel.fromJson(emailResponse);
         }
       }
       
-      // No profile found - create a basic one
-      print('DEBUG: No profile found, creating basic profile');
+      // No profile found
+      _log('No profile found for user');
       throw Exception('Profile not found. Please contact administrator.');
     } on PostgrestException catch (e) {
-      print('DEBUG: PostgrestException - code: ${e.code}, message: ${e.message}, details: ${e.details}, hint: ${e.hint}');
+      _log('PostgrestException - code: ${e.code}, message: ${e.message}, details: ${e.details}, hint: ${e.hint}');
       throw Exception('Database error: ${e.message}');
     } catch (e) {
-      print('DEBUG: General error: $e');
+      _log('General error in getUserProfile: $e');
       rethrow;
     }
   }
