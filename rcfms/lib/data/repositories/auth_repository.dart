@@ -137,9 +137,13 @@ class AuthRepository {
           _log('Profile found by email');
           return UserModel.fromJson(emailResponse);
         }
+        
+        // No profile found but user is authenticated - create profile using existing method
+        _log('No profile found, creating one for authenticated user');
+        return _createProfileFromAuthUser(authUser);
       }
       
-      // No profile found
+      // No profile found and no auth user email
       _log('No profile found for user');
       throw Exception('Profile not found. Please contact administrator.');
     } on PostgrestException catch (e) {

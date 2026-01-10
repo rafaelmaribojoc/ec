@@ -217,25 +217,25 @@ class AppTheme {
       // Typography
       textTheme: _textTheme,
       
-      // AppBar
+      // AppBar - Clean, minimal design
       appBarTheme: const AppBarTheme(
         elevation: 0,
-        scrolledUnderElevation: 0,
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
-        centerTitle: true,
+        scrolledUnderElevation: 1,
+        backgroundColor: AppColors.background,
+        foregroundColor: AppColors.textPrimary,
+        centerTitle: false,
         titleTextStyle: TextStyle(
           fontFamily: _fontFamily,
-          fontSize: 18,
-          fontWeight: FontWeight.w600,
-          letterSpacing: 0,
-          color: Colors.white,
+          fontSize: 20,
+          fontWeight: FontWeight.w700,
+          letterSpacing: -0.5,
+          color: AppColors.textPrimary,
         ),
-        iconTheme: IconThemeData(color: Colors.white, size: 24),
+        iconTheme: IconThemeData(color: AppColors.textPrimary, size: 24),
         systemOverlayStyle: SystemUiOverlayStyle(
           statusBarColor: Colors.transparent,
-          statusBarIconBrightness: Brightness.light,
-          statusBarBrightness: Brightness.dark,
+          statusBarIconBrightness: Brightness.dark,
+          statusBarBrightness: Brightness.light,
         ),
       ),
       

@@ -6,9 +6,11 @@ import 'package:intl/intl.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/constants/app_constants.dart';
+import '../../../core/widgets/main_bottom_nav.dart';
 import '../../../data/models/form_submission_model.dart';
 import '../../../data/repositories/form_repository.dart';
 import '../../auth/bloc/auth_bloc.dart';
+import '../templates/form_templates.dart';
 
 class FormListScreen extends StatefulWidget {
   const FormListScreen({super.key});
@@ -79,23 +81,22 @@ class _FormListScreenState extends State<FormListScreen>
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            if (Navigator.canPop(context)) {
-              Navigator.pop(context);
-            } else {
-              context.go('/dashboard');
-            }
-          },
-        ),
+        automaticallyImplyLeading: false,
         title: const Text('Forms'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.add_circle_outline),
+            tooltip: 'New Form',
+            onPressed: _showNewFormSheet,
+          ),
+          const SizedBox(width: 8),
+        ],
         bottom: TabBar(
           controller: _tabController,
           tabs: _tabs.map((t) => Tab(text: t)).toList(),
-          labelColor: Colors.white,
-          unselectedLabelColor: Colors.white70,
-          indicatorColor: Colors.white,
+          labelColor: AppColors.primary,
+          unselectedLabelColor: AppColors.textSecondary,
+          indicatorColor: AppColors.primary,
           indicatorWeight: 3,
         ),
       ),
@@ -105,11 +106,9 @@ class _FormListScreenState extends State<FormListScreen>
           return _buildFormList(index);
         }),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _showNewFormSheet,
-        icon: const Icon(Icons.add),
-        label: const Text('New Form'),
-      ),
+      bottomNavigationBar: const MainBottomNav(currentIndex: 2),
+      floatingActionButton: const MainScanFab(),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
   }
 
@@ -244,51 +243,70 @@ class _FormListScreenState extends State<FormListScreen>
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       builder: (context) => DraggableScrollableSheet(
         initialChildSize: 0.6,
         maxChildSize: 0.9,
         minChildSize: 0.4,
         expand: false,
         builder: (context, scrollController) {
-          return Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        'Create New Form',
-                        style: Theme.of(context).textTheme.titleLarge,
+          return Container(
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+            ),
+            child: Column(
+              children: [
+                // Header
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Create New Form',
+                              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              '${formTypes.length} templates available',
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: AppColors.textSecondary,
+                                  ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                    IconButton(
-                      onPressed: () => Navigator.pop(context),
-                      icon: const Icon(Icons.close),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-              const Divider(height: 1),
-              Expanded(
-                child: ListView.separated(
-                  controller: scrollController,
-                  padding: const EdgeInsets.all(16),
-                  itemCount: formTypes.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 8),
-                  itemBuilder: (context, index) {
-                    final templateId = formTypes[index];
-                    return _FormTypeCard(
-                      templateId: templateId,
-                      onTap: () {
-                        Navigator.pop(context);
-                        context.push('/forms/fill/$templateId');
-                      },
-                    );
-                  },
+                const Divider(height: 1),
+                // Template list
+                Expanded(
+                  child: ListView.separated(
+                    controller: scrollController,
+                    padding: const EdgeInsets.all(16),
+                    itemCount: formTypes.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 8),
+                    itemBuilder: (context, index) {
+                      final templateId = formTypes[index];
+                      return _FormTypeCard(
+                        templateId: templateId,
+                        onTap: () {
+                          Navigator.pop(context);
+                          context.push('/forms/fill/$templateId');
+                        },
+                      );
+                    },
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           );
         },
       ),
@@ -582,35 +600,57 @@ class _FormTypeCard extends StatelessWidget {
   }
 
   (IconData, Color, String) _getFormTypeInfo(String templateId) {
-    switch (templateId) {
-      case 'ss_progress_notes':
-        return (Icons.notes, AppColors.unitSocial, 'Progress Notes');
-      case 'ss_case_folder':
-        return (Icons.folder, AppColors.unitSocial, 'Case Folder');
-      case 'ss_inter_service_referral':
-        return (Icons.swap_horiz, AppColors.unitSocial, 'Inter-Service Referral');
-      case 'hl_progress_notes':
-        return (Icons.notes, AppColors.unitHomelife, 'Progress Notes');
-      case 'hl_inventory_admission':
-        return (Icons.inventory, AppColors.unitHomelife, 'Inventory (Admission)');
-      case 'hl_inventory_discharge':
-        return (Icons.inventory_2, AppColors.unitHomelife, 'Inventory (Discharge)');
-      case 'hl_out_on_pass':
-        return (Icons.exit_to_app, AppColors.unitHomelife, 'Out on Pass');
-      case 'hl_incident_report':
-        return (Icons.report_problem, AppColors.unitHomelife, 'Incident Report');
-      case 'ps_progress_notes':
-        return (Icons.notes, AppColors.unitPsych, 'Progress Notes');
-      case 'ps_initial_assessment':
-        return (Icons.assessment, AppColors.unitPsych, 'Initial Assessment');
-      case 'ps_individual_session':
-        return (Icons.person, AppColors.unitPsych, 'Individual Session');
-      case 'ps_group_session':
-        return (Icons.groups, AppColors.unitPsych, 'Group Session');
-      case 'ps_psychometrics':
-        return (Icons.psychology, AppColors.unitPsych, 'Psychometrics Report');
-      default:
-        return (Icons.description, AppColors.textSecondary, templateId);
+    // First try to get from FormTemplatesRegistry for accurate info
+    final template = FormTemplatesRegistry.getById(templateId);
+    if (template != null) {
+      return (
+        template.icon,
+        AppColors.getServiceUnitColor(template.serviceUnit.name),
+        template.name,
+      );
     }
+
+    // Fallback with smart defaults based on template ID prefix
+    Color color;
+    IconData icon;
+    
+    if (templateId.startsWith('ss_')) {
+      color = AppColors.unitSocial;
+      icon = Icons.people;
+    } else if (templateId.startsWith('hl_')) {
+      color = AppColors.unitHomelife;
+      icon = Icons.home;
+    } else if (templateId.startsWith('ps_')) {
+      color = AppColors.unitPsych;
+      icon = Icons.psychology;
+    } else if (templateId.startsWith('med_')) {
+      color = AppColors.unitMedical;
+      icon = Icons.medical_services;
+    } else if (templateId.startsWith('rehab_')) {
+      color = AppColors.unitRehab;
+      icon = Icons.accessibility_new;
+    } else {
+      color = AppColors.primary;
+      icon = Icons.description;
+    }
+
+    // Format the name nicely - remove prefix and convert to title case
+    final displayName = _formatTemplateIdToName(templateId);
+    return (icon, color, displayName);
+  }
+
+  /// Formats template ID to a clean display name
+  String _formatTemplateIdToName(String templateId) {
+    // Remove known prefixes
+    String name = templateId
+        .replaceFirst(RegExp(r'^(ss_|hl_|ps_|med_|rehab_)'), '');
+    
+    // Convert underscores to spaces and capitalize each word
+    return name
+        .split('_')
+        .map((word) => word.isNotEmpty 
+            ? '${word[0].toUpperCase()}${word.substring(1).toLowerCase()}'
+            : '')
+        .join(' ');
   }
 }

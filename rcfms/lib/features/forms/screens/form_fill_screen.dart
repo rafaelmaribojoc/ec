@@ -19,6 +19,8 @@ class FormFillScreen extends StatefulWidget {
   final Map<String, dynamic>? initialData;
   final String? existingSubmissionId;
   final bool isEditing;
+  /// Resident data for smart defaults (auto-population)
+  final Map<String, dynamic>? residentData;
 
   const FormFillScreen({
     super.key,
@@ -29,6 +31,7 @@ class FormFillScreen extends StatefulWidget {
     this.initialData,
     this.existingSubmissionId,
     this.isEditing = false,
+    this.residentData,
   });
 
   @override
@@ -47,7 +50,10 @@ class _FormFillScreenState extends State<FormFillScreen> {
     super.initState();
     _formData = widget.initialData != null
         ? Map<String, dynamic>.from(widget.initialData!)
-        : FormTemplatesRegistry.getDefaultData(widget.template);
+        : FormTemplatesRegistry.getDefaultData(
+            widget.template,
+            residentData: widget.residentData,
+          );
     _submissionId = widget.existingSubmissionId;
   }
 

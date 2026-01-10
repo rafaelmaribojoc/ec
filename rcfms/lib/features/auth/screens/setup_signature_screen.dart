@@ -1,6 +1,8 @@
+import 'dart:convert';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -101,48 +103,119 @@ class _SetupSignatureScreenState extends State<SetupSignatureScreen> {
     setState(() => _isSaving = true);
 
     try {
-      // Get the signature pad size
-      final size = const Size(400, 200);
-      final bytes = await _exportSignature(size);
+      // Get the actual signature pad size from context
+      final renderBox = context.findRenderObject() as RenderBox?;
+      final size = renderBox?.size ?? const Size(400, 200);
+      final signatureSize = Size(
+        size.width.clamp(200, 600),
+        size.height.clamp(100, 300),
+      );
+
+      debugPrint('[Signature] Exporting signature with size: $signatureSize');
+      final bytes = await _exportSignature(signatureSize);
 
       if (bytes == null) {
-        throw Exception('Failed to export signature');
+        throw Exception('Failed to export signature image');
       }
 
+      debugPrint('[Signature] Exported ${bytes.length} bytes');
+
       final user = Supabase.instance.client.auth.currentUser;
-      if (user == null) throw Exception('Not authenticated');
+      if (user == null) {
+        throw Exception('Not authenticated. Please log in again.');
+      }
+
+      debugPrint('[Signature] Uploading for user: ${user.id}');
 
       // Upload to Supabase Storage
       final fileName = 'signature_${user.id}.png';
-      await Supabase.instance.client.storage.from('signatures').uploadBinary(
-            fileName,
-            bytes,
-            fileOptions: const FileOptions(
-              contentType: 'image/png',
-              upsert: true,
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final uniqueFileName = 'signature_${user.id}_$timestamp.png';
+
+      try {
+        // Try to upload with upsert
+        await Supabase.instance.client.storage.from('signatures').uploadBinary(
+              uniqueFileName,
+              bytes,
+              fileOptions: const FileOptions(
+                contentType: 'image/png',
+                upsert: true,
+              ),
+            );
+        debugPrint('[Signature] Upload successful');
+      } catch (storageError) {
+        debugPrint('[Signature] Storage error: $storageError');
+        
+        // If storage bucket doesn't exist or RLS issue, skip storage and encode as base64
+        final base64Signature = 'data:image/png;base64,${base64Encode(bytes)}';
+        debugPrint('[Signature] Using base64 fallback');
+        
+        // Update profile with base64 signature directly
+        await Supabase.instance.client
+            .from('profiles')
+            .update({'signature_url': base64Signature}).eq('id', user.id);
+            
+        if (mounted) {
+          // Update the auth state with the new signature URL directly
+          final currentState = context.read<AuthBloc>().state;
+          if (currentState is AuthAuthenticated) {
+            final updatedUser = currentState.user.copyWith(signatureUrl: base64Signature);
+            context.read<AuthBloc>().add(AuthUserUpdated(updatedUser));
+          }
+          
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Signature saved successfully'),
+              backgroundColor: AppColors.success,
             ),
           );
+          // Navigate back 
+          if (Navigator.canPop(context)) {
+            Navigator.pop(context);
+          } else {
+            context.go('/dashboard');
+          }
+        }
+        return;
+      }
 
       // Get public URL
-      final signatureUrl =
-          Supabase.instance.client.storage.from('signatures').getPublicUrl(fileName);
+      final signatureUrl = Supabase.instance.client.storage
+          .from('signatures')
+          .getPublicUrl(uniqueFileName);
+
+      debugPrint('[Signature] URL: $signatureUrl');
 
       // Update user profile
       await Supabase.instance.client
           .from('profiles')
           .update({'signature_url': signatureUrl}).eq('id', user.id);
 
+      debugPrint('[Signature] Profile updated successfully');
+
       if (mounted) {
-        context.read<AuthBloc>().add(AuthCheckRequested());
+        // Update the auth state with the new signature URL directly
+        final currentState = context.read<AuthBloc>().state;
+        if (currentState is AuthAuthenticated) {
+          final updatedUser = currentState.user.copyWith(signatureUrl: signatureUrl);
+          context.read<AuthBloc>().add(AuthUserUpdated(updatedUser));
+        }
+        
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Signature saved successfully'),
             backgroundColor: AppColors.success,
           ),
         );
-        context.go('/dashboard');
+        // Navigate back
+        if (Navigator.canPop(context)) {
+          Navigator.pop(context);
+        } else {
+          context.go('/dashboard');
+        }
       }
     } catch (e) {
+      debugPrint('[Signature] Error: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -163,6 +236,16 @@ class _SetupSignatureScreenState extends State<SetupSignatureScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            if (Navigator.canPop(context)) {
+              Navigator.pop(context);
+            } else {
+              context.go('/dashboard');
+            }
+          },
+        ),
         title: const Text('Setup Signature'),
         backgroundColor: Colors.transparent,
         foregroundColor: AppColors.textPrimary,

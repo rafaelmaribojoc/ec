@@ -49,11 +49,8 @@ class _LoginScreenState extends State<LoginScreen> {
         }
 
         if (state is AuthAuthenticated) {
-          if (state.user.signatureUrl == null) {
-            context.go('/setup-signature');
-          } else {
-            context.go('/dashboard');
-          }
+          // Always go to dashboard - signature setup is optional in Settings
+          context.go('/dashboard');
         } else if (state is AuthError) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(

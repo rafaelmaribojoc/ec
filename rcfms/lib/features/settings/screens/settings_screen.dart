@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/widgets/main_bottom_nav.dart';
 import '../../auth/bloc/auth_bloc.dart';
 
 class SettingsScreen extends StatelessWidget {
@@ -10,28 +11,30 @@ class SettingsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<AuthBloc, AuthState>(
-      builder: (context, state) {
-        if (state is! AuthAuthenticated) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
+    // Listen for auth state changes to handle logout immediately
+    return BlocListener<AuthBloc, AuthState>(
+      listenWhen: (previous, current) => current is AuthUnauthenticated,
+      listener: (context, state) {
+        // Immediately redirect to login when unauthenticated
+        if (state is AuthUnauthenticated) {
+          context.go('/login');
         }
+      },
+      child: BlocBuilder<AuthBloc, AuthState>(
+        builder: (context, state) {
+          if (state is! AuthAuthenticated) {
+            // During logout transition, show loading briefly
+            // BlocListener will handle redirect
+            return const Scaffold(
+              body: Center(child: CircularProgressIndicator()),
+            );
+          }
 
-        final user = state.user;
+          final user = state.user;
 
         return Scaffold(
           appBar: AppBar(
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back),
-              onPressed: () {
-                if (Navigator.canPop(context)) {
-                  Navigator.pop(context);
-                } else {
-                  context.go('/dashboard');
-                }
-              },
-            ),
+            automaticallyImplyLeading: false,
             title: const Text('Settings'),
           ),
           body: SingleChildScrollView(
@@ -127,9 +130,28 @@ class SettingsScreen extends StatelessWidget {
                     const Divider(height: 1),
                     _SettingsTile(
                       icon: Icons.draw,
-                      title: 'Update Signature',
-                      subtitle: 'Change your digital signature',
-                      onTap: () => context.go('/setup-signature'),
+                      title: user.signatureUrl != null ? 'Update Signature' : 'Setup Signature',
+                      subtitle: user.signatureUrl != null 
+                          ? 'Change your digital signature' 
+                          : 'Add your digital signature for forms',
+                      trailing: user.signatureUrl == null 
+                          ? Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: AppColors.warning.withValues(alpha: 0.2),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: const Text(
+                                'Required',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  color: AppColors.warning,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            )
+                          : const Icon(Icons.check_circle, color: AppColors.success, size: 20),
+                      onTap: () => context.push('/setup-signature'),
                     ),
                     const Divider(height: 1),
                     _SettingsTile(
@@ -224,12 +246,16 @@ class SettingsScreen extends StatelessWidget {
                     ),
                   ),
                 ),
-                const SizedBox(height: 32),
+                const SizedBox(height: 100),
               ],
             ),
           ),
+          bottomNavigationBar: const MainBottomNav(currentIndex: 3),
+          floatingActionButton: const MainScanFab(),
+          floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
         );
-      },
+        },
+      ),
     );
   }
 
@@ -365,10 +391,8 @@ class SettingsScreen extends StatelessWidget {
           ElevatedButton(
             onPressed: () {
               Navigator.pop(dialogContext);
-              // Add logout event
+              // Dispatch logout event - BlocListener will handle navigation
               context.read<AuthBloc>().add(AuthLogoutRequested());
-              // Force navigate to login immediately for responsive UX
-              context.go('/login');
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.error,
@@ -402,12 +426,14 @@ class _SettingsTile extends StatelessWidget {
   final String title;
   final String subtitle;
   final VoidCallback onTap;
+  final Widget? trailing;
 
   const _SettingsTile({
     required this.icon,
     required this.title,
     required this.subtitle,
     required this.onTap,
+    this.trailing,
   });
 
   @override
@@ -419,9 +445,18 @@ class _SettingsTile extends StatelessWidget {
         subtitle,
         style: const TextStyle(fontSize: 12),
       ),
-      trailing: const Icon(
-        Icons.chevron_right,
-        color: AppColors.textSecondaryLight,
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (trailing != null) ...[
+            trailing!,
+            const SizedBox(width: 8),
+          ],
+          const Icon(
+            Icons.chevron_right,
+            color: AppColors.textSecondaryLight,
+          ),
+        ],
       ),
       onTap: onTap,
     );

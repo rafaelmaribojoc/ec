@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/main_bottom_nav.dart';
 import '../../auth/bloc/auth_bloc.dart';
 
 class DashboardScreen extends StatelessWidget {
@@ -34,14 +35,6 @@ class DashboardScreen extends StatelessWidget {
                   ),
                 ),
 
-                // Quick Actions
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
-                    child: _buildQuickActions(context, user?.role),
-                  ),
-                ),
-
                 // Recent Activity
                 SliverToBoxAdapter(
                   child: Padding(
@@ -56,6 +49,9 @@ class DashboardScreen extends StatelessWidget {
               ],
             ),
           ),
+          bottomNavigationBar: const MainBottomNav(currentIndex: 0),
+          floatingActionButton: const MainScanFab(),
+          floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
         );
       },
     );
@@ -98,7 +94,7 @@ class DashboardScreen extends StatelessWidget {
             ),
           ),
           GestureDetector(
-            onTap: () => context.go('/settings'),
+            onTap: () => context.push('/settings'),
             child: Container(
               width: 48,
               height: 48,
@@ -174,46 +170,6 @@ class DashboardScreen extends StatelessWidget {
                 value: '4',
               ),
             ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildQuickActions(BuildContext context, String? role) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Quick Actions',
-          style: Theme.of(context).textTheme.titleMedium,
-        ),
-        const SizedBox(height: 12),
-        Wrap(
-          spacing: 12,
-          runSpacing: 12,
-          children: [
-            _ActionChip(
-              icon: Icons.nfc,
-              label: 'Scan Ward',
-              onTap: () => context.push('/scan'),
-            ),
-            _ActionChip(
-              icon: Icons.people,
-              label: 'Residents',
-              onTap: () => context.push('/residents'),
-            ),
-            _ActionChip(
-              icon: Icons.description,
-              label: 'Forms',
-              onTap: () => context.push('/forms'),
-            ),
-            if (role == 'super_admin' || role == 'center_head')
-              _ActionChip(
-                icon: Icons.admin_panel_settings,
-                label: 'Admin',
-                onTap: () => context.push('/admin'),
-              ),
           ],
         ),
       ],
@@ -326,50 +282,6 @@ class _StatCard extends StatelessWidget {
                 ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _ActionChip extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-
-  const _ActionChip({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: AppColors.surface,
-      borderRadius: BorderRadius.circular(AppTheme.radiusFull),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(AppTheme.radiusFull),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(AppTheme.radiusFull),
-            border: Border.all(color: AppColors.border),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, size: 18, color: AppColors.textSecondary),
-              const SizedBox(width: 8),
-              Text(
-                label,
-                style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                      fontWeight: FontWeight.w500,
-                    ),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }

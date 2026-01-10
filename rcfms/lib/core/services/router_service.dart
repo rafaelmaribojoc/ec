@@ -23,6 +23,7 @@ import '../../features/admin/screens/ward_management_screen.dart';
 import '../../features/settings/screens/settings_screen.dart';
 import '../../features/settings/screens/profile_screen.dart';
 import '../../core/widgets/shell_scaffold.dart';
+import '../../data/repositories/resident_repository.dart';
 
 void _log(String message) {
   if (kDebugMode) {
@@ -62,12 +63,8 @@ class RouterService {
       }
 
       // If logged in but on login page, redirect to dashboard
+      // Note: Signature setup is now optional and done in Settings
       if (isLoggedIn && isLoggingIn) {
-        // Check if user needs to set up signature
-        if (authState.user.signatureUrl == null) {
-          _log('User needs signature, redirecting to /setup-signature');
-          return '/setup-signature';
-        }
         _log('Logged in at login page, redirecting to /dashboard');
         return '/dashboard';
       }
@@ -198,6 +195,15 @@ class RouterService {
                     );
                   }
                   
+                  // If residentId is provided, fetch resident data for smart defaults
+                  if (residentId.isNotEmpty) {
+                    return _FormFillScreenWithResidentData(
+                      template: template,
+                      residentId: residentId,
+                      residentName: residentName,
+                    );
+                  }
+                  
                   return FormFillScreen(
                     template: template,
                     residentId: residentId,
@@ -293,4 +299,113 @@ class RouterService {
       ),
     ),
   );
+}
+
+/// Helper widget to fetch resident data and pass it to FormFillScreen
+class _FormFillScreenWithResidentData extends StatefulWidget {
+  final FormTemplate template;
+  final String residentId;
+  final String residentName;
+
+  const _FormFillScreenWithResidentData({
+    required this.template,
+    required this.residentId,
+    required this.residentName,
+  });
+
+  @override
+  State<_FormFillScreenWithResidentData> createState() =>
+      _FormFillScreenWithResidentDataState();
+}
+
+class _FormFillScreenWithResidentDataState
+    extends State<_FormFillScreenWithResidentData> {
+  Map<String, dynamic>? _residentData;
+  bool _isLoading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchResidentData();
+  }
+
+  Future<void> _fetchResidentData() async {
+    try {
+      final residentRepo = context.read<ResidentRepository>();
+      final resident = await residentRepo.getResidentById(widget.residentId);
+      
+      if (resident != null && mounted) {
+        setState(() {
+          _residentData = {
+            'full_name': resident.fullName,
+            'fullName': resident.fullName,
+            'resident_code': resident.residentCode,
+            'residentCode': resident.residentCode,
+            'age': resident.age,
+            'gender': resident.gender,
+            'date_of_birth': resident.dateOfBirth.toIso8601String(),
+            'dateOfBirth': resident.dateOfBirth.toIso8601String(),
+            'admission_date': resident.admissionDate.toIso8601String(),
+            'admissionDate': resident.admissionDate.toIso8601String(),
+            'ward_name': resident.currentWardId,
+            'wardName': resident.currentWardId,
+            'room_number': resident.roomNumber,
+            'roomNumber': resident.roomNumber,
+            'bed_number': resident.bedNumber,
+            'bedNumber': resident.bedNumber,
+            'primary_diagnosis': resident.primaryDiagnosis,
+            'primaryDiagnosis': resident.primaryDiagnosis,
+            'emergency_contact_name': resident.emergencyContactName,
+            'emergencyContactName': resident.emergencyContactName,
+            'emergency_contact_phone': resident.emergencyContactPhone,
+            'emergencyContactPhone': resident.emergencyContactPhone,
+            'emergency_contact_relation': resident.emergencyContactRelation,
+            'emergencyContactRelation': resident.emergencyContactRelation,
+          };
+          _isLoading = false;
+        });
+      } else {
+        // If resident not found, proceed without smart defaults
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
+      }
+    } catch (e) {
+      _log('Error fetching resident data: $e');
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_isLoading) {
+      return Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const CircularProgressIndicator(),
+              const SizedBox(height: 16),
+              Text('Loading resident data...'),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return FormFillScreen(
+      template: widget.template,
+      residentId: widget.residentId,
+      residentName: widget.residentName,
+      residentData: _residentData,
+    );
+  }
 }

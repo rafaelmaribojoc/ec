@@ -380,18 +380,51 @@ class FormTemplatesRegistry {
     return errors;
   }
 
-  /// Get initial/default data for a form
-  static Map<String, dynamic> getDefaultData(FormTemplate template) {
+  /// Get initial/default data for a form with optional resident data for smart defaults
+  static Map<String, dynamic> getDefaultData(
+    FormTemplate template, {
+    Map<String, dynamic>? residentData,
+  }) {
     final now = DateTime.now();
     
-    // Common default data
+    // Common default data with current date/time
     final defaults = <String, dynamic>{
       'created_at': now.toIso8601String(),
       'template_id': template.id,
       'service_unit': template.serviceUnit.name,
+      // Pre-fill current date and time fields (editable)
+      'date': now.toIso8601String().split('T')[0],
+      'time': '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}',
+      'date_prepared': now.toIso8601String().split('T')[0],
+      'date_accomplished': now.toIso8601String().split('T')[0],
     };
 
-    // Template-specific defaults can be added here
+    // Smart defaults from resident data
+    if (residentData != null) {
+      defaults['client_name'] = residentData['full_name'] ?? residentData['fullName'] ?? '';
+      defaults['resident_name'] = residentData['full_name'] ?? residentData['fullName'] ?? '';
+      defaults['name'] = residentData['full_name'] ?? residentData['fullName'] ?? '';
+      defaults['resident_code'] = residentData['resident_code'] ?? residentData['residentCode'] ?? '';
+      defaults['case_no'] = residentData['resident_code'] ?? residentData['residentCode'] ?? '';
+      defaults['age'] = residentData['age']?.toString() ?? '';
+      defaults['gender'] = residentData['gender'] ?? '';
+      defaults['sex'] = residentData['gender'] ?? '';
+      defaults['date_of_birth'] = residentData['date_of_birth'] ?? residentData['dateOfBirth'] ?? '';
+      defaults['dob'] = residentData['date_of_birth'] ?? residentData['dateOfBirth'] ?? '';
+      defaults['admission_date'] = residentData['admission_date'] ?? residentData['admissionDate'] ?? '';
+      defaults['date_admitted'] = residentData['admission_date'] ?? residentData['admissionDate'] ?? '';
+      defaults['ward'] = residentData['ward_name'] ?? residentData['wardName'] ?? '';
+      defaults['current_ward'] = residentData['ward_name'] ?? residentData['wardName'] ?? '';
+      defaults['room_no'] = residentData['room_number'] ?? residentData['roomNumber'] ?? '';
+      defaults['bed_no'] = residentData['bed_number'] ?? residentData['bedNumber'] ?? '';
+      defaults['diagnosis'] = residentData['primary_diagnosis'] ?? residentData['primaryDiagnosis'] ?? '';
+      defaults['primary_diagnosis'] = residentData['primary_diagnosis'] ?? residentData['primaryDiagnosis'] ?? '';
+      defaults['contact_person'] = residentData['emergency_contact_name'] ?? residentData['emergencyContactName'] ?? '';
+      defaults['contact_number'] = residentData['emergency_contact_phone'] ?? residentData['emergencyContactPhone'] ?? '';
+      defaults['relationship'] = residentData['emergency_contact_relation'] ?? residentData['emergencyContactRelation'] ?? '';
+    }
+
+    // Template-specific defaults
     switch (template.templateType) {
       case 'inventory_admission':
       case 'inventory_discharge':

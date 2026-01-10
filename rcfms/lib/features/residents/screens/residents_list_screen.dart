@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/main_bottom_nav.dart';
 import '../../../data/models/resident_model.dart';
 import '../../../data/repositories/resident_repository.dart';
 
@@ -66,16 +67,7 @@ class _ResidentsListScreenState extends State<ResidentsListScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            if (Navigator.canPop(context)) {
-              Navigator.pop(context);
-            } else {
-              context.go('/dashboard');
-            }
-          },
-        ),
+        automaticallyImplyLeading: false,
         title: const Text('Residents'),
         actions: [
           IconButton(
@@ -190,11 +182,9 @@ class _ResidentsListScreenState extends State<ResidentsListScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.push('/residents/add'),
-        icon: const Icon(Icons.person_add_outlined),
-        label: const Text('Add Resident'),
-      ),
+      bottomNavigationBar: const MainBottomNav(currentIndex: 1),
+      floatingActionButton: const MainScanFab(),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
   }
 
@@ -411,9 +401,19 @@ class _ResidentCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      resident.fullName,
-                      style: Theme.of(context).textTheme.titleSmall,
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            resident.fullName,
+                            style: Theme.of(context).textTheme.titleSmall,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        _StatusBadge(status: resident.status),
+                      ],
                     ),
                     const SizedBox(height: 4),
                     Row(
@@ -424,34 +424,40 @@ class _ResidentCard extends StatelessWidget {
                           color: AppColors.textTertiary,
                         ),
                         const SizedBox(width: 4),
-                        Text(
-                          resident.residentCode,
-                          style:
-                              Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    color: AppColors.textSecondary,
-                                  ),
+                        Flexible(
+                          child: Text(
+                            resident.residentCode,
+                            style:
+                                Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: AppColors.textSecondary,
+                                    ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
-                        const SizedBox(width: 12),
+                        const SizedBox(width: 8),
                         Icon(
                           Icons.meeting_room_outlined,
                           size: 14,
                           color: AppColors.textTertiary,
                         ),
                         const SizedBox(width: 4),
-                        Text(
-                          resident.currentWardId ?? 'No ward',
-                          style:
-                              Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    color: AppColors.textSecondary,
-                                  ),
+                        Flexible(
+                          child: Text(
+                            resident.currentWardId ?? 'No ward',
+                            style:
+                                Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: AppColors.textSecondary,
+                                    ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
                       ],
                     ),
                   ],
                 ),
               ),
-              // Status badge
-              _StatusBadge(status: resident.status),
               const SizedBox(width: 8),
               const Icon(
                 Icons.chevron_right,
