@@ -25,6 +25,18 @@ import '../../features/settings/screens/profile_screen.dart';
 import '../../core/widgets/shell_scaffold.dart';
 import '../../data/repositories/resident_repository.dart';
 
+// MoCA-P Assessment imports
+import '../../features/moca/screens/moca_home_screen.dart';
+import '../../features/moca/screens/visuospatial_screen.dart';
+import '../../features/moca/screens/naming_screen.dart';
+import '../../features/moca/screens/memory_screen.dart';
+import '../../features/moca/screens/attention_screen.dart';
+import '../../features/moca/screens/language_screen.dart';
+import '../../features/moca/screens/abstraction_screen.dart';
+import '../../features/moca/screens/delayed_recall_screen.dart';
+import '../../features/moca/screens/orientation_screen.dart';
+import '../../features/moca/screens/assessment_complete_screen.dart';
+
 void _log(String message) {
   if (kDebugMode) {
     print('[Router] $message');
@@ -48,7 +60,8 @@ class RouterService {
       final isLoggingIn = state.matchedLocation == '/login';
       final isSettingUpSignature = state.matchedLocation == '/setup-signature';
 
-      _log('Redirect check - location: ${state.matchedLocation}, isLoggedIn: $isLoggedIn, authState: ${authState.runtimeType}');
+      _log(
+          'Redirect check - location: ${state.matchedLocation}, isLoggedIn: $isLoggedIn, authState: ${authState.runtimeType}');
 
       // Handle loading state - allow current location
       if (authState is AuthLoading) {
@@ -161,19 +174,24 @@ class RouterService {
                 parentNavigatorKey: _rootNavigatorKey,
                 builder: (context, state) {
                   final templateId = state.pathParameters['templateId']!;
-                  final residentId = state.uri.queryParameters['residentId'] ?? '';
-                  final residentName = state.uri.queryParameters['residentName'] ?? 'Unknown Resident';
+                  final residentId =
+                      state.uri.queryParameters['residentId'] ?? '';
+                  final residentName =
+                      state.uri.queryParameters['residentName'] ??
+                          'Unknown Resident';
                   final unit = state.uri.queryParameters['unit'];
-                  
+
                   // Try to find template by ID first, then by templateType
-                  FormTemplate? template = FormTemplatesRegistry.getById(templateId);
+                  FormTemplate? template =
+                      FormTemplatesRegistry.getById(templateId);
                   if (template == null && unit != null) {
-                    template = FormTemplatesRegistry.getByTypeAndUnit(templateId, unit);
+                    template = FormTemplatesRegistry.getByTypeAndUnit(
+                        templateId, unit);
                   }
                   if (template == null) {
                     template = FormTemplatesRegistry.getByType(templateId);
                   }
-                  
+
                   if (template == null) {
                     return Scaffold(
                       appBar: AppBar(title: const Text('Error')),
@@ -181,7 +199,8 @@ class RouterService {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Icon(Icons.error_outline, size: 64, color: Colors.red),
+                            const Icon(Icons.error_outline,
+                                size: 64, color: Colors.red),
                             const SizedBox(height: 16),
                             Text('Template "$templateId" not found'),
                             const SizedBox(height: 8),
@@ -194,7 +213,7 @@ class RouterService {
                       ),
                     );
                   }
-                  
+
                   // If residentId is provided, fetch resident data for smart defaults
                   if (residentId.isNotEmpty) {
                     return _FormFillScreenWithResidentData(
@@ -203,7 +222,7 @@ class RouterService {
                       residentName: residentName,
                     );
                   }
-                  
+
                   return FormFillScreen(
                     template: template,
                     residentId: residentId,
@@ -267,6 +286,71 @@ class RouterService {
                 name: 'ward-management',
                 parentNavigatorKey: _rootNavigatorKey,
                 builder: (context, state) => const WardManagementScreen(),
+              ),
+            ],
+          ),
+
+          // MoCA-P Assessment routes (Psych Head only)
+          GoRoute(
+            path: '/moca',
+            name: 'moca',
+            pageBuilder: (context, state) => const NoTransitionPage(
+              child: MocaHomeScreen(),
+            ),
+            routes: [
+              GoRoute(
+                path: 'visuospatial',
+                name: 'moca-visuospatial',
+                parentNavigatorKey: _rootNavigatorKey,
+                builder: (context, state) => const VisuospatialScreen(),
+              ),
+              GoRoute(
+                path: 'naming',
+                name: 'moca-naming',
+                parentNavigatorKey: _rootNavigatorKey,
+                builder: (context, state) => const NamingScreen(),
+              ),
+              GoRoute(
+                path: 'memory',
+                name: 'moca-memory',
+                parentNavigatorKey: _rootNavigatorKey,
+                builder: (context, state) => const MemoryScreen(),
+              ),
+              GoRoute(
+                path: 'attention',
+                name: 'moca-attention',
+                parentNavigatorKey: _rootNavigatorKey,
+                builder: (context, state) => const AttentionScreen(),
+              ),
+              GoRoute(
+                path: 'language',
+                name: 'moca-language',
+                parentNavigatorKey: _rootNavigatorKey,
+                builder: (context, state) => const LanguageScreen(),
+              ),
+              GoRoute(
+                path: 'abstraction',
+                name: 'moca-abstraction',
+                parentNavigatorKey: _rootNavigatorKey,
+                builder: (context, state) => const AbstractionScreen(),
+              ),
+              GoRoute(
+                path: 'delayed-recall',
+                name: 'moca-delayed-recall',
+                parentNavigatorKey: _rootNavigatorKey,
+                builder: (context, state) => const DelayedRecallScreen(),
+              ),
+              GoRoute(
+                path: 'orientation',
+                name: 'moca-orientation',
+                parentNavigatorKey: _rootNavigatorKey,
+                builder: (context, state) => const OrientationScreen(),
+              ),
+              GoRoute(
+                path: 'complete',
+                name: 'moca-complete',
+                parentNavigatorKey: _rootNavigatorKey,
+                builder: (context, state) => const AssessmentCompleteScreen(),
               ),
             ],
           ),
@@ -334,7 +418,7 @@ class _FormFillScreenWithResidentDataState
     try {
       final residentRepo = context.read<ResidentRepository>();
       final resident = await residentRepo.getResidentById(widget.residentId);
-      
+
       if (resident != null && mounted) {
         setState(() {
           _residentData = {

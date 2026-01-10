@@ -1,0 +1,315 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
+
+import '../bloc/moca_assessment_bloc.dart';
+import '../constants/moca_constants.dart';
+import '../constants/moca_colors.dart';
+import '../widgets/section_header.dart';
+
+class AbstractionScreen extends StatefulWidget {
+  const AbstractionScreen({super.key});
+
+  @override
+  State<AbstractionScreen> createState() => _AbstractionScreenState();
+}
+
+class _AbstractionScreenState extends State<AbstractionScreen> {
+  final List<bool> _scores = [false, false];
+
+  int get totalScore => _scores.where((s) => s).length;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Column(
+        children: [
+          SectionHeader(
+            title: 'Abstraction',
+            subtitle: 'Find the similarity between items',
+            currentSection: 6,
+            totalSections: 8,
+            color: MocaColors.abstractionColor,
+          ),
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Card(
+                    color: MocaColors.infoLight,
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.info_outline,
+                              color: MocaColors.info),
+                          const SizedBox(width: 12),
+                          const Expanded(
+                            child: Text(
+                              'Ask: "How are these two items alike?" Subject must give categorical answer.',
+                              style: TextStyle(color: MocaColors.info),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Example
+                  Card(
+                    color: MocaColors.background,
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: MocaColors.textSecondary,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: const Text(
+                              'EXAMPLE',
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          _buildItemPair('banana', 'orange'),
+                          const SizedBox(height: 12),
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Row(
+                              children: [
+                                Icon(Icons.check, color: MocaColors.success),
+                                SizedBox(width: 8),
+                                Text('Correct answer: "fruit"',
+                                    style:
+                                        TextStyle(fontWeight: FontWeight.w500)),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  ...MocaConstants.abstractionPairs
+                      .asMap()
+                      .entries
+                      .map((entry) {
+                    final index = entry.key;
+                    final pair = entry.value;
+                    return _buildAbstractionCard(
+                      index: index,
+                      item1: pair['item1'] as String,
+                      item2: pair['item2'] as String,
+                      acceptedAnswers:
+                          List<String>.from(pair['acceptedAnswers']),
+                    );
+                  }),
+                ],
+              ),
+            ),
+          ),
+          _buildBottomBar(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildItemPair(String item1, String item2) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        _buildItemChip(item1),
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 8),
+          child: Text('&',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+        ),
+        _buildItemChip(item2),
+      ],
+    );
+  }
+
+  Widget _buildItemChip(String item) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      decoration: BoxDecoration(
+        color: MocaColors.abstractionColor,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        item.toUpperCase(),
+        style: const TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.bold,
+          fontSize: 16,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAbstractionCard({
+    required int index,
+    required String item1,
+    required String item2,
+    required List<String> acceptedAnswers,
+  }) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 16),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Pair ${index + 1} (1 point)',
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 16),
+            _buildItemPair(item1, item2),
+            const SizedBox(height: 16),
+            Text(
+              'Accepted answers: ${acceptedAnswers.join(", ")}',
+              style: const TextStyle(
+                fontStyle: FontStyle.italic,
+                color: MocaColors.textSecondary,
+                fontSize: 13,
+              ),
+            ),
+            const SizedBox(height: 16),
+            _buildScoreToggle(
+              'Answered correctly (categorical)',
+              _scores[index],
+              (value) => setState(() => _scores[index] = value),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildScoreToggle(String label, bool value, Function(bool) onChanged) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Material(
+        color: value ? MocaColors.successLight : Colors.transparent,
+        borderRadius: BorderRadius.circular(8),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: () => onChanged(!value),
+          borderRadius: BorderRadius.circular(8),
+          splashColor: (value ? MocaColors.success : MocaColors.primary)
+              .withOpacity(0.1),
+          highlightColor: (value ? MocaColors.success : MocaColors.primary)
+              .withOpacity(0.05),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: value ? MocaColors.success : MocaColors.border,
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  value ? Icons.check_circle : Icons.circle_outlined,
+                  color: value ? MocaColors.success : MocaColors.textSecondary,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    label,
+                    style: TextStyle(
+                      color:
+                          value ? MocaColors.success : MocaColors.textPrimary,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBottomBar() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, -4),
+          ),
+        ],
+      ),
+      child: SafeArea(
+        top: false,
+        child: Row(
+          children: [
+            Expanded(
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: MocaColors.abstractionColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Text(
+                  'Score: $totalScore/2',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: MocaColors.abstractionColor,
+                  ),
+                ),
+              ),
+            ),
+            OutlinedButton(
+              onPressed: () => context.pop(),
+              child: const Text('Back'),
+            ),
+            const SizedBox(width: 8),
+            ElevatedButton(
+              onPressed: () {
+                context.read<MocaAssessmentBloc>().add(
+                      MocaSaveSectionResult(
+                        section: 'abstraction',
+                        score: totalScore,
+                        maxScore: 2,
+                      ),
+                    );
+                context.read<MocaAssessmentBloc>().add(MocaNextSection());
+                context.push('/moca/delayed-recall');
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: MocaColors.abstractionColor,
+              ),
+              child: const Text('Continue'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

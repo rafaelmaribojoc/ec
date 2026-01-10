@@ -7,6 +7,7 @@ import 'core/constants/supabase_config.dart';
 import 'core/theme/app_theme.dart';
 import 'core/services/router_service.dart';
 import 'features/auth/bloc/auth_bloc.dart';
+import 'features/moca/bloc/moca_assessment_bloc.dart';
 import 'data/repositories/auth_repository.dart';
 import 'data/repositories/resident_repository.dart';
 import 'data/repositories/form_repository.dart';
@@ -48,6 +49,9 @@ class RCFMSApp extends StatelessWidget {
             create: (context) => AuthBloc(
               authRepository: context.read<AuthRepository>(),
             )..add(AuthCheckRequested()),
+          ),
+          BlocProvider(
+            create: (context) => MocaAssessmentBloc(),
           ),
         ],
         child: BlocBuilder<AuthBloc, AuthState>(
