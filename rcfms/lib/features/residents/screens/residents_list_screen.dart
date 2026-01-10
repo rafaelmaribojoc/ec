@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/main_bottom_nav.dart';
 import '../../../data/models/resident_model.dart';
 import '../../../data/repositories/resident_repository.dart';
+import '../../auth/bloc/auth_bloc.dart';
 
 class ResidentsListScreen extends StatefulWidget {
   const ResidentsListScreen({super.key});
@@ -64,127 +67,140 @@ class _ResidentsListScreenState extends State<ResidentsListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        title: const Text('Residents'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.filter_list),
-            onPressed: _showFilterSheet,
+    return BlocBuilder<AuthBloc, AuthState>(
+      builder: (context, authState) {
+        final user = authState is AuthAuthenticated ? authState.user : null;
+        final canManage = AppConstants.canManageResidents(user?.role, user?.unit);
+        
+        return Scaffold(
+          backgroundColor: AppColors.background,
+          appBar: AppBar(
+            automaticallyImplyLeading: false,
+            title: const Text('Residents'),
+            actions: [
+              if (canManage)
+                IconButton(
+                  icon: const Icon(Icons.person_add_outlined),
+                  tooltip: 'Add Resident',
+                  onPressed: () => context.push('/residents/add'),
+                ),
+              IconButton(
+                icon: const Icon(Icons.filter_list),
+                onPressed: _showFilterSheet,
+              ),
+            ],
           ),
-        ],
-      ),
-      body: Column(
-        children: [
-          // Search and filters
-          Container(
-            color: AppColors.surface,
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              children: [
-                // Search bar
-                TextField(
-                  controller: _searchController,
-                  onChanged: (_) => setState(() {}),
-                  decoration: InputDecoration(
-                    hintText: 'Search residents...',
-                    prefixIcon: const Icon(Icons.search, size: 20),
-                    suffixIcon: _searchController.text.isNotEmpty
-                        ? IconButton(
-                            icon: const Icon(Icons.clear, size: 20),
-                            onPressed: () {
-                              _searchController.clear();
-                              setState(() {});
-                            },
-                          )
-                        : null,
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                // Ward filter chips
-                SizedBox(
-                  height: 36,
-                  child: ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: _wards.length,
-                    separatorBuilder: (_, __) => const SizedBox(width: 8),
-                    itemBuilder: (context, index) {
-                      final ward = _wards[index];
-                      final isSelected = ward == _selectedWard;
-
-                      return FilterChip(
-                        label: Text(ward),
-                        selected: isSelected,
-                        onSelected: (_) {
-                          setState(() => _selectedWard = ward);
-                        },
-                        backgroundColor: AppColors.surface,
-                        selectedColor: AppColors.primarySurface,
-                        checkmarkColor: AppColors.primary,
-                        side: BorderSide(
-                          color: isSelected
-                              ? AppColors.primary
-                              : AppColors.border,
+          body: Column(
+            children: [
+              // Search and filters
+              Container(
+                color: AppColors.surface,
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    // Search bar
+                    TextField(
+                      controller: _searchController,
+                      onChanged: (_) => setState(() {}),
+                      decoration: InputDecoration(
+                        hintText: 'Search residents...',
+                        prefixIcon: const Icon(Icons.search, size: 20),
+                        suffixIcon: _searchController.text.isNotEmpty
+                            ? IconButton(
+                                icon: const Icon(Icons.clear, size: 20),
+                                onPressed: () {
+                                  _searchController.clear();
+                                  setState(() {});
+                                },
+                              )
+                            : null,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
                         ),
-                        labelStyle: TextStyle(
-                          color: isSelected
-                              ? AppColors.primary
-                              : AppColors.textSecondary,
-                          fontWeight:
-                              isSelected ? FontWeight.w600 : FontWeight.w500,
-                        ),
-                        padding: const EdgeInsets.symmetric(horizontal: 4),
-                      );
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 1),
-
-          // Results count
-          Container(
-            color: AppColors.surfaceHover,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            child: Row(
-              children: [
-                Text(
-                  '${_filteredResidents.length} resident${_filteredResidents.length != 1 ? 's' : ''}',
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-                const Spacer(),
-                Text(
-                  'Sort by name',
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: AppColors.primary,
                       ),
-                ),
-                const Icon(
-                  Icons.keyboard_arrow_down,
-                  size: 16,
-                  color: AppColors.primary,
-                ),
-              ],
-            ),
-          ),
+                    ),
+                    const SizedBox(height: 12),
+                    // Ward filter chips
+                    SizedBox(
+                      height: 36,
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: _wards.length,
+                        separatorBuilder: (_, __) => const SizedBox(width: 8),
+                        itemBuilder: (context, index) {
+                          final ward = _wards[index];
+                          final isSelected = ward == _selectedWard;
 
-          // Residents list
-          Expanded(
-            child: _buildContent(),
+                          return FilterChip(
+                            label: Text(ward),
+                            selected: isSelected,
+                            onSelected: (_) {
+                              setState(() => _selectedWard = ward);
+                            },
+                            backgroundColor: AppColors.surface,
+                            selectedColor: AppColors.primarySurface,
+                            checkmarkColor: AppColors.primary,
+                            side: BorderSide(
+                              color: isSelected
+                                  ? AppColors.primary
+                                  : AppColors.border,
+                            ),
+                            labelStyle: TextStyle(
+                              color: isSelected
+                                  ? AppColors.primary
+                                  : AppColors.textSecondary,
+                              fontWeight:
+                                  isSelected ? FontWeight.w600 : FontWeight.w500,
+                            ),
+                            padding: const EdgeInsets.symmetric(horizontal: 4),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 1),
+
+              // Results count
+              Container(
+                color: AppColors.surfaceHover,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                child: Row(
+                  children: [
+                    Text(
+                      '${_filteredResidents.length} resident${_filteredResidents.length != 1 ? 's' : ''}',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                    const Spacer(),
+                    Text(
+                      'Sort by name',
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                            color: AppColors.primary,
+                          ),
+                    ),
+                    const Icon(
+                      Icons.keyboard_arrow_down,
+                      size: 16,
+                      color: AppColors.primary,
+                    ),
+                  ],
+                ),
+              ),
+
+              // Residents list
+              Expanded(
+                child: _buildContent(),
+              ),
+            ],
           ),
-        ],
-      ),
-      bottomNavigationBar: const MainBottomNav(currentIndex: 1),
-      floatingActionButton: const MainScanFab(),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+          bottomNavigationBar: const MainBottomNav(currentIndex: 1),
+          floatingActionButton: const MainScanFab(),
+          floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+        );
+      },
     );
   }
 

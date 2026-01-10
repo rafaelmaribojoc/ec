@@ -179,7 +179,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
     final emailController = TextEditingController();
     final nameController = TextEditingController();
       final workIdController = TextEditingController();
-    String selectedRole = 'operator';
+    String selectedRole = 'staff';
     String selectedUnit = 'social';
 
     showDialog(
@@ -297,10 +297,8 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                           prefixIcon: Icon(Icons.admin_panel_settings_outlined, size: 20),
                         ),
                         items: const [
-                          DropdownMenuItem(value: 'operator', child: Text('Operator')),
-                          DropdownMenuItem(value: 'specialist', child: Text('Specialist')),
-                          DropdownMenuItem(value: 'reviewer', child: Text('Reviewer')),
-                          DropdownMenuItem(value: 'signatory', child: Text('Signatory')),
+                          DropdownMenuItem(value: 'staff', child: Text('Staff')),
+                          DropdownMenuItem(value: 'head', child: Text('Unit Head')),
                           DropdownMenuItem(value: 'center_head', child: Text('Center Head')),
                           DropdownMenuItem(value: 'super_admin', child: Text('Super Admin')),
                         ],
@@ -308,23 +306,25 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                       ),
                       const SizedBox(height: 20),
 
-                      // Unit
-                      Text('Service Unit', style: Theme.of(context).textTheme.labelLarge),
-                      const SizedBox(height: 8),
-                      DropdownButtonFormField<String>(
-                        value: selectedUnit,
-                        decoration: const InputDecoration(
-                          prefixIcon: Icon(Icons.business_outlined, size: 20),
+                      // Unit (only show for Staff and Head roles)
+                      if (selectedRole == 'staff' || selectedRole == 'head') ...[
+                        Text('Service Unit', style: Theme.of(context).textTheme.labelLarge),
+                        const SizedBox(height: 8),
+                        DropdownButtonFormField<String>(
+                          value: selectedUnit,
+                          decoration: const InputDecoration(
+                            prefixIcon: Icon(Icons.business_outlined, size: 20),
+                          ),
+                          items: const [
+                            DropdownMenuItem(value: 'social', child: Text('Social Service')),
+                            DropdownMenuItem(value: 'homelife', child: Text('Home Life Service')),
+                            DropdownMenuItem(value: 'psych', child: Text('Psychological Service')),
+                            DropdownMenuItem(value: 'medical', child: Text('Medical Service')),
+                            DropdownMenuItem(value: 'rehab', child: Text('Rehabilitation Service')),
+                          ],
+                          onChanged: (v) => setDialogState(() => selectedUnit = v!),
                         ),
-                        items: const [
-                          DropdownMenuItem(value: 'social', child: Text('Social Service')),
-                          DropdownMenuItem(value: 'homelife', child: Text('Home Life Service')),
-                          DropdownMenuItem(value: 'psych', child: Text('Psychological Service')),
-                          DropdownMenuItem(value: 'medical', child: Text('Medical Service')),
-                          DropdownMenuItem(value: 'rehab', child: Text('Rehabilitation Service')),
-                        ],
-                        onChanged: (v) => setDialogState(() => selectedUnit = v!),
-                      ),
+                      ],
                       const SizedBox(height: 32),
 
                       // Buttons
@@ -344,12 +344,16 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                                 if (!formKey.currentState!.validate()) return;
 
                                 Navigator.pop(context);
+                                // Only pass unit for staff and head roles
+                                final unitToSave = (selectedRole == 'staff' || selectedRole == 'head') 
+                                    ? selectedUnit 
+                                    : null;
                                 _createUser(
                                   email: emailController.text.trim(),
                                   fullName: nameController.text.trim(),
                                   workId: workIdController.text.trim(),
                                   role: selectedRole,
-                                  unit: selectedUnit,
+                                  unit: unitToSave,
                                 );
                               },
                               child: const Text('Create User'),
@@ -373,7 +377,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
     required String fullName,
     required String workId,
     required String role,
-    required String unit,
+    String? unit,
   }) async {
     // Show loading
     showDialog(
@@ -792,29 +796,46 @@ class _RoleBadge extends StatelessWidget {
           AppColors.unitPsychSurface,
           'Center Head',
         );
-      case 'reviewer':
+      case 'head':
         return (
           AppColors.warning,
           AppColors.warningSurface,
-          'Reviewer',
+          'Unit Head',
         );
-      case 'specialist':
+      case 'staff':
         return (
-          AppColors.success,
-          AppColors.successSurface,
-          'Specialist',
+          AppColors.primary,
+          AppColors.primarySurface,
+          'Staff',
         );
-      case 'signatory':
+      // Legacy role mappings for backwards compatibility
+      case 'social_head':
+      case 'medical_head':
+      case 'psych_head':
+      case 'rehab_head':
+      case 'homelife_head':
         return (
-          AppColors.info,
-          AppColors.infoSurface,
-          'Signatory',
+          AppColors.warning,
+          AppColors.warningSurface,
+          'Unit Head',
+        );
+      case 'social_staff':
+      case 'medical_staff':
+      case 'psych_staff':
+      case 'rehab_staff':
+      case 'homelife_staff':
+        return (
+          AppColors.primary,
+          AppColors.primarySurface,
+          'Staff',
         );
       default:
         return (
           AppColors.textSecondary,
           AppColors.surfaceHover,
-          'Operator',
+          role.replaceAll('_', ' ').split(' ').map((w) => 
+            w.isNotEmpty ? '${w[0].toUpperCase()}${w.substring(1)}' : w
+          ).join(' '),
         );
     }
   }

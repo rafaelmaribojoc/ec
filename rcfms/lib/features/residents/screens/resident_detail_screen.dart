@@ -1,14 +1,21 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:intl/intl.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../data/models/resident_model.dart';
+import '../../../data/models/form_submission_model.dart';
 import '../../../data/repositories/resident_repository.dart';
+import '../../../data/repositories/form_repository.dart';
 import '../../auth/bloc/auth_bloc.dart';
 import '../../forms/templates/form_templates.dart';
 
@@ -283,6 +290,11 @@ class _ResidentDetailScreenState extends State<ResidentDetailScreen> {
                       ),
                   ],
                 ),
+                const SizedBox(height: 16),
+                
+                // Recent Forms Section
+                _buildRecentFormsSection(context, resident),
+                
                 const SizedBox(height: 80), // Space for FAB
               ]),
             ),
@@ -304,45 +316,369 @@ class _ResidentDetailScreenState extends State<ResidentDetailScreen> {
   ) {
     final screenWidth = MediaQuery.of(context).size.width;
     final buttonSpacing = screenWidth < 360 ? 8.0 : 12.0;
+    
+    // Check if user can manage residents (transfer wards)
+    final authState = context.read<AuthBloc>().state;
+    final user = authState is AuthAuthenticated ? authState.user : null;
+    final canManage = AppConstants.canManageResidents(user?.role, user?.unit);
 
-    return Row(
+    return Column(
       children: [
-        Expanded(
-          child: _QuickActionButton(
-            icon: Icons.description,
-            label: 'New Form',
-            color: AppColors.primary,
-            compact: screenWidth < 360,
-            onTap: () => _showFormSelector(context, resident, userUnit),
-          ),
+        Row(
+          children: [
+            Expanded(
+              child: _QuickActionButton(
+                icon: Icons.description,
+                label: 'New Form',
+                color: AppColors.primary,
+                compact: screenWidth < 360,
+                onTap: () => _showFormSelector(context, resident, userUnit),
+              ),
+            ),
+            SizedBox(width: buttonSpacing),
+            Expanded(
+              child: _QuickActionButton(
+                icon: Icons.folder_open,
+                label: 'Forms',
+                color: AppColors.secondary,
+                compact: screenWidth < 360,
+                onTap: () => _showResidentForms(context, resident),
+              ),
+            ),
+            SizedBox(width: buttonSpacing),
+            Expanded(
+              child: _QuickActionButton(
+                icon: Icons.picture_as_pdf,
+                label: 'Export',
+                color: AppColors.accent,
+                compact: screenWidth < 360,
+                onTap: () => _exportResidentProfile(context, resident),
+              ),
+            ),
+          ],
         ),
-        SizedBox(width: buttonSpacing),
-        Expanded(
-          child: _QuickActionButton(
-            icon: Icons.history,
-            label: 'History',
-            color: AppColors.secondary,
-            compact: screenWidth < 360,
-            onTap: () => context.push('/residents/${resident.id}/timeline'),
+        if (canManage) ...[
+          SizedBox(height: buttonSpacing),
+          Row(
+            children: [
+              Expanded(
+                child: _QuickActionButton(
+                  icon: Icons.swap_horiz,
+                  label: 'Transfer Ward',
+                  color: AppColors.warning,
+                  compact: screenWidth < 360,
+                  onTap: () => _showWardTransferDialog(context, resident),
+                ),
+              ),
+              SizedBox(width: buttonSpacing),
+              Expanded(
+                child: _QuickActionButton(
+                  icon: Icons.history,
+                  label: 'Timeline',
+                  color: AppColors.info,
+                  compact: screenWidth < 360,
+                  onTap: () => context.push('/residents/${resident.id}/timeline'),
+                ),
+              ),
+            ],
           ),
-        ),
-        SizedBox(width: buttonSpacing),
-        Expanded(
-          child: _QuickActionButton(
-            icon: Icons.picture_as_pdf,
-            label: 'Export',
-            color: AppColors.accent,
-            compact: screenWidth < 360,
-            onTap: () {
-              // TODO: Export PDF
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Export feature coming soon')),
-              );
-            },
-          ),
-        ),
+        ],
       ],
     );
+  }
+  
+  void _showResidentForms(BuildContext context, ResidentModel resident) {
+    // Show a bottom sheet with all forms for this resident
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => _ResidentFormsSheet(resident: resident),
+    );
+  }
+  
+  Future<void> _exportResidentProfile(BuildContext context, ResidentModel resident) async {
+    // Show loading
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Generating PDF export...')),
+    );
+    
+    try {
+      // Import printing and pdf packages
+      final formRepo = FormRepository();
+      final forms = await formRepo.getFormsByResident(resident.id);
+      
+      // For now, show a dialog with export options
+      if (context.mounted) {
+        showDialog(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
+            title: const Text('Export Profile'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Export ${resident.fullName}\'s profile data?'),
+                const SizedBox(height: 16),
+                Text(
+                  '• Basic Information\n• Medical Information\n• ${forms.length} Form(s)',
+                  style: const TextStyle(color: AppColors.textSecondaryLight),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton.icon(
+                onPressed: () async {
+                  Navigator.pop(dialogContext);
+                  await _generateProfilePdf(resident, forms);
+                },
+                icon: const Icon(Icons.picture_as_pdf),
+                label: const Text('Export PDF'),
+              ),
+            ],
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Export failed: $e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
+  }
+  
+  Future<void> _generateProfilePdf(
+    ResidentModel resident,
+    List<FormSubmissionModel> forms,
+  ) async {
+    try {
+      // Use the printing package to generate PDF
+      final pdf = await _buildProfilePdf(resident, forms);
+      
+      // Import printing functionality
+      await Printing.layoutPdf(
+        onLayout: (format) async => pdf,
+        name: '${resident.fullName}_Profile',
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to generate PDF: $e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
+  }
+  
+  Future<Uint8List> _buildProfilePdf(
+    ResidentModel resident,
+    List<FormSubmissionModel> forms,
+  ) async {
+    final pdf = pw.Document();
+    
+    pdf.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.letter,
+        margin: const pw.EdgeInsets.all(40),
+        build: (context) => [
+          // Header
+          pw.Header(
+            level: 0,
+            child: pw.Text(
+              'RESIDENT PROFILE',
+              style: pw.TextStyle(
+                fontSize: 20,
+                fontWeight: pw.FontWeight.bold,
+              ),
+            ),
+          ),
+          pw.SizedBox(height: 20),
+          
+          // Resident Name
+          pw.Text(
+            resident.fullName,
+            style: pw.TextStyle(
+              fontSize: 18,
+              fontWeight: pw.FontWeight.bold,
+            ),
+          ),
+          pw.SizedBox(height: 20),
+          
+          // Basic Information
+          pw.Header(level: 1, child: pw.Text('Basic Information')),
+          _pdfInfoRow('Date of Birth', DateFormat('MMMM d, yyyy').format(resident.dateOfBirth)),
+          _pdfInfoRow('Age', '${resident.age} years'),
+          _pdfInfoRow('Gender', resident.gender),
+          _pdfInfoRow('Admission Date', DateFormat('MMMM d, yyyy').format(resident.admissionDate)),
+          pw.SizedBox(height: 20),
+          
+          // Emergency Contact
+          if (resident.emergencyContactName != null) ...[
+            pw.Header(level: 1, child: pw.Text('Emergency Contact')),
+            _pdfInfoRow('Name', resident.emergencyContactName!),
+            if (resident.emergencyContactPhone != null)
+              _pdfInfoRow('Phone', resident.emergencyContactPhone!),
+            if (resident.emergencyContactRelation != null)
+              _pdfInfoRow('Relationship', resident.emergencyContactRelation!),
+            pw.SizedBox(height: 20),
+          ],
+          
+          // Medical Information
+          pw.Header(level: 1, child: pw.Text('Medical Information')),
+          if (resident.primaryDiagnosis != null)
+            _pdfInfoRow('Primary Diagnosis', resident.primaryDiagnosis!),
+          if (resident.allergies != null)
+            _pdfInfoRow('Allergies', resident.allergies!),
+          if (resident.medicalNotes != null)
+            _pdfInfoRow('Notes', resident.medicalNotes!),
+          pw.SizedBox(height: 20),
+          
+          // Forms Summary
+          pw.Header(level: 1, child: pw.Text('Forms History')),
+          pw.Text('Total Forms: ${forms.length}'),
+          pw.SizedBox(height: 10),
+          if (forms.isNotEmpty) ...[
+            pw.Table.fromTextArray(
+              headers: ['Form Type', 'Date', 'Status'],
+              data: forms.map((f) => [
+                _getFormDisplayName(f.templateType),
+                DateFormat('MMM d, yyyy').format(f.createdAt),
+                f.status.toUpperCase(),
+              ]).toList(),
+            ),
+          ],
+        ],
+      ),
+    );
+    
+    return pdf.save();
+  }
+  
+  pw.Widget _pdfInfoRow(String label, String value) {
+    return pw.Padding(
+      padding: const pw.EdgeInsets.symmetric(vertical: 4),
+      child: pw.Row(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          pw.SizedBox(
+            width: 150,
+            child: pw.Text(
+              '$label:',
+              style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+            ),
+          ),
+          pw.Expanded(child: pw.Text(value)),
+        ],
+      ),
+    );
+  }
+  
+  void _showWardTransferDialog(BuildContext context, ResidentModel resident) {
+    String? selectedWardId = resident.currentWardId;
+    
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Transfer Ward'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Transfer ${resident.fullName} to a different ward:',
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+            const SizedBox(height: 16),
+            FutureBuilder(
+              future: context.read<ResidentRepository>().getWards(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (snapshot.hasError || !snapshot.hasData) {
+                  return const Text('Failed to load wards');
+                }
+                final wards = snapshot.data!;
+                return StatefulBuilder(
+                  builder: (context, setDialogState) {
+                    return DropdownButtonFormField<String>(
+                      value: selectedWardId,
+                      decoration: const InputDecoration(
+                        labelText: 'Select Ward',
+                        prefixIcon: Icon(Icons.location_on),
+                      ),
+                      items: wards.map((ward) {
+                        return DropdownMenuItem(
+                          value: ward.id,
+                          child: Text(ward.name),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        setDialogState(() => selectedWardId = value);
+                      },
+                    );
+                  },
+                );
+              },
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              if (selectedWardId != null && selectedWardId != resident.currentWardId) {
+                Navigator.pop(dialogContext);
+                await _transferResident(resident, selectedWardId!);
+              }
+            },
+            child: const Text('Transfer'),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  Future<void> _transferResident(ResidentModel resident, String newWardId) async {
+    try {
+      final repository = context.read<ResidentRepository>();
+      await repository.updateResident(
+        id: resident.id,
+        wardId: newWardId,
+      );
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Resident transferred successfully'),
+            backgroundColor: AppColors.success,
+          ),
+        );
+        _loadResident(); // Refresh the data
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to transfer: $e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
   }
 
   void _showFormSelector(
@@ -379,9 +715,31 @@ class _ResidentDetailScreenState extends State<ResidentDetailScreen> {
             ),
             child: Column(
               children: [
+                // Drag handle
+                GestureDetector(
+                  onVerticalDragUpdate: (details) {
+                    if (details.primaryDelta! > 10) {
+                      Navigator.pop(context);
+                    }
+                  },
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    child: Center(
+                      child: Container(
+                        width: 40,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: AppColors.textTertiary.withValues(alpha: 0.4),
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
                 // Header
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
+                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
                   child: Row(
                     children: [
                       Expanded(
@@ -451,6 +809,139 @@ class _ResidentDetailScreenState extends State<ResidentDetailScreen> {
         .split(' ')
         .map((w) => w.isNotEmpty ? w[0].toUpperCase() + w.substring(1) : w)
         .join(' ');
+  }
+  
+  Widget _buildRecentFormsSection(BuildContext context, ResidentModel resident) {
+    return FutureBuilder<List<FormSubmissionModel>>(
+      future: FormRepository().getFormsByResident(resident.id),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Card(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: const Padding(
+              padding: EdgeInsets.all(20),
+              child: Center(child: CircularProgressIndicator()),
+            ),
+          );
+        }
+        
+        final forms = snapshot.data ?? [];
+        
+        return Card(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.folder_open, color: AppColors.primary, size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Recent Forms',
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                      ),
+                    ),
+                    if (forms.isNotEmpty)
+                      TextButton(
+                        onPressed: () => _showResidentForms(context, resident),
+                        child: Text('See All (${forms.length})'),
+                      ),
+                  ],
+                ),
+                const Divider(height: 24),
+                if (forms.isEmpty)
+                  const Text(
+                    'No forms created yet',
+                    style: TextStyle(
+                      color: AppColors.textSecondaryLight,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  )
+                else
+                  // Show last 3 forms
+                  ...forms.take(3).map((form) => _buildFormTile(context, form)),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+  
+  Widget _buildFormTile(BuildContext context, FormSubmissionModel form) {
+    final statusColor = _getStatusColor(form.status);
+    
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      leading: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: statusColor.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Icon(
+          Icons.description,
+          color: statusColor,
+          size: 20,
+        ),
+      ),
+      title: Text(
+        _getFormDisplayName(form.templateType),
+        style: const TextStyle(fontWeight: FontWeight.w600),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      ),
+      subtitle: Text(
+        DateFormat('MMM d, yyyy').format(form.createdAt),
+        style: TextStyle(
+          color: AppColors.textSecondary,
+          fontSize: 12,
+        ),
+      ),
+      trailing: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: statusColor.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(4),
+        ),
+        child: Text(
+          form.status.toUpperCase(),
+          style: TextStyle(
+            color: statusColor,
+            fontSize: 10,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+      onTap: () {
+        context.push('/forms/${form.id}');
+      },
+    );
+  }
+  
+  Color _getStatusColor(String status) {
+    switch (status) {
+      case 'approved':
+        return AppColors.success;
+      case 'submitted':
+      case 'pending_review':
+        return AppColors.warning;
+      case 'returned':
+        return AppColors.error;
+      case 'draft':
+      default:
+        return AppColors.textSecondary;
+    }
   }
 
   Widget _buildSectionCard(
@@ -689,5 +1180,234 @@ class _FormTypeCard extends StatelessWidget {
         .split(' ')
         .map((w) => w.isNotEmpty ? w[0].toUpperCase() + w.substring(1) : w)
         .join(' ');
+  }
+}
+
+/// Bottom sheet showing all forms for a resident
+class _ResidentFormsSheet extends StatelessWidget {
+  final ResidentModel resident;
+  
+  const _ResidentFormsSheet({required this.resident});
+  
+  @override
+  Widget build(BuildContext context) {
+    return DraggableScrollableSheet(
+      initialChildSize: 0.7,
+      maxChildSize: 0.95,
+      minChildSize: 0.5,
+      expand: false,
+      builder: (context, scrollController) {
+        return Container(
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: Column(
+            children: [
+              // Drag handle
+              GestureDetector(
+                onVerticalDragUpdate: (details) {
+                  if (details.primaryDelta! > 10) {
+                    Navigator.pop(context);
+                  }
+                },
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  child: Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: AppColors.textTertiary.withValues(alpha: 0.4),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              // Header
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+                child: Row(
+                  children: [
+                    const Icon(Icons.folder_open, color: AppColors.primary),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Forms for ${resident.firstName}',
+                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'All submitted and draft forms',
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                  color: AppColors.textSecondary,
+                                ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(height: 1),
+              // Forms list
+              Expanded(
+                child: FutureBuilder<List<FormSubmissionModel>>(
+                  future: FormRepository().getFormsByResident(resident.id),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+                    
+                    final forms = snapshot.data ?? [];
+                    
+                    if (forms.isEmpty) {
+                      return Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.folder_off,
+                              size: 64,
+                              color: AppColors.textTertiary,
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'No forms yet',
+                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    color: AppColors.textSecondary,
+                                  ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Forms created for this resident will appear here',
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: AppColors.textTertiary,
+                                  ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+                    
+                    return ListView.separated(
+                      controller: scrollController,
+                      padding: const EdgeInsets.all(16),
+                      itemCount: forms.length,
+                      separatorBuilder: (_, __) => const Divider(),
+                      itemBuilder: (context, index) {
+                        final form = forms[index];
+                        return _FormListItem(form: form);
+                      },
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _FormListItem extends StatelessWidget {
+  final FormSubmissionModel form;
+  
+  const _FormListItem({required this.form});
+  
+  Color _getStatusColor(String status) {
+    switch (status) {
+      case 'approved':
+        return AppColors.success;
+      case 'submitted':
+      case 'pending_review':
+        return AppColors.warning;
+      case 'returned':
+        return AppColors.error;
+      case 'draft':
+      default:
+        return AppColors.textSecondary;
+    }
+  }
+  
+  String _getFormDisplayName(String templateType) {
+    final template = FormTemplatesRegistry.getById(templateType);
+    if (template != null) {
+      return template.name;
+    }
+    return templateType
+        .replaceAll(RegExp(r'^(ss_|hl_|ps_|med_|rehab_)'), '')
+        .replaceAll('_', ' ')
+        .split(' ')
+        .map((w) => w.isNotEmpty ? w[0].toUpperCase() + w.substring(1) : w)
+        .join(' ');
+  }
+  
+  @override
+  Widget build(BuildContext context) {
+    final statusColor = _getStatusColor(form.status);
+    
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+      leading: Container(
+        width: 48,
+        height: 48,
+        decoration: BoxDecoration(
+          color: statusColor.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Icon(
+          Icons.description,
+          color: statusColor,
+          size: 24,
+        ),
+      ),
+      title: Text(
+        _getFormDisplayName(form.templateType),
+        style: const TextStyle(fontWeight: FontWeight.w600),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      ),
+      subtitle: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: 4),
+          Text(
+            DateFormat('MMMM d, yyyy • h:mm a').format(form.createdAt),
+            style: TextStyle(
+              color: AppColors.textSecondary,
+              fontSize: 12,
+            ),
+          ),
+        ],
+      ),
+      trailing: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: statusColor.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: Text(
+          form.status.toUpperCase().replaceAll('_', ' '),
+          style: TextStyle(
+            color: statusColor,
+            fontSize: 11,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+      onTap: () {
+        Navigator.pop(context); // Close the sheet
+        context.push('/forms/${form.id}');
+      },
+    );
   }
 }

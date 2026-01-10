@@ -397,4 +397,49 @@ class FormRepository {
         )
         .subscribe();
   }
+  
+  /// Get list of users who can approve forms (Heads and Admins)
+  Future<List<Map<String, dynamic>>> getApprovers() async {
+    try {
+      _log('Fetching approvers...');
+      
+      final response = await _supabase
+          .from('profiles')
+          .select('id, full_name, role, unit, email')
+          .or('role.eq.head,role.eq.center_head,role.eq.super_admin')
+          .eq('is_active', true)
+          .order('role')
+          .order('full_name');
+      
+      _log('Fetched ${response.length} approvers');
+      return List<Map<String, dynamic>>.from(response);
+    } catch (e) {
+      _log('Error fetching approvers: $e');
+      throw Exception('Failed to fetch approvers: $e');
+    }
+  }
+  
+  /// Get forms for a specific resident
+  Future<List<FormSubmissionModel>> getFormsByResident(String residentId) async {
+    try {
+      _log('Fetching forms for resident: $residentId');
+      
+      final response = await _supabase
+          .from('form_submissions')
+          .select('''
+            *,
+            resident:residents(first_name, last_name),
+            submitter:profiles!form_submissions_submitted_by_fkey(full_name, signature_url),
+            reviewer:profiles!form_submissions_reviewed_by_fkey(full_name, signature_url)
+          ''')
+          .eq('resident_id', residentId)
+          .order('created_at', ascending: false);
+      
+      _log('Fetched ${response.length} forms for resident');
+      return response.map((json) => FormSubmissionModel.fromJson(json)).toList();
+    } catch (e) {
+      _log('Error fetching resident forms: $e');
+      throw Exception('Failed to fetch resident forms: $e');
+    }
+  }
 }

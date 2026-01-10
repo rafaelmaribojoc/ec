@@ -13,19 +13,58 @@ class AppConstants {
   static const String statusApproved = 'approved';
   static const String statusReturned = 'returned';
 
-  /// User roles
+  /// User roles (simplified per Blueprint)
+  /// - Super Admin: System Owner & Security, Exclusive User Provisioning
+  /// - Center Head: Operational Oversight, View Global Digital Timeline
+  /// - Head: Service Unit Heads (Reviewers) - associated with a unit
+  /// - Staff: Service Staff (Frontline) - associated with a unit
   static const String roleSuperAdmin = 'super_admin';
   static const String roleCenterHead = 'center_head';
-  static const String roleSocialHead = 'social_head';
-  static const String roleMedicalHead = 'medical_head';
-  static const String rolePsychHead = 'psych_head';
-  static const String roleRehabHead = 'rehab_head';
-  static const String roleHomelifeHead = 'homelife_head';
-  static const String roleSocialStaff = 'social_staff';
-  static const String roleMedicalStaff = 'medical_staff';
-  static const String rolePsychStaff = 'psych_staff';
-  static const String roleRehabStaff = 'rehab_staff';
-  static const String roleHomelifeStaff = 'homelife_staff';
+  static const String roleHead = 'head';
+  static const String roleStaff = 'staff';
+  
+  /// All available roles for user creation
+  static const List<String> availableRoles = [
+    roleStaff,
+    roleHead,
+    roleCenterHead,
+    roleSuperAdmin,
+  ];
+  
+  /// Roles that require a unit assignment
+  static const List<String> rolesRequiringUnit = [
+    roleStaff,
+    roleHead,
+  ];
+  
+  /// Admin roles (no unit required)
+  static const List<String> adminRoles = [
+    roleCenterHead,
+    roleSuperAdmin,
+  ];
+  
+  /// Check if role is admin level
+  static bool isAdminRole(String role) => adminRoles.contains(role);
+  
+  /// Check if role requires unit assignment
+  static bool requiresUnit(String role) => rolesRequiringUnit.contains(role);
+  
+  /// Check if user can manage residents (add/transfer)
+  /// Per Blueprint: Social Head has "Gatekeeper" privileges
+  static bool canManageResidents(String? role, String? unit) {
+    // Super Admin and Center Head can always manage
+    if (role == roleSuperAdmin || role == roleCenterHead) return true;
+    // Social Head can manage residents
+    if (role == roleHead && unit == unitSocial) return true;
+    return false;
+  }
+  
+  /// Check if user can approve/review forms
+  static bool canApproveforms(String? role) {
+    return role == roleSuperAdmin || 
+           role == roleCenterHead || 
+           role == roleHead;
+  }
 
   /// Unit types
   static const String unitSocial = 'social';

@@ -167,67 +167,54 @@ class _NavItemState extends State<_NavItem> with SingleTickerProviderStateMixin 
   Widget build(BuildContext context) {
     final iconSize = widget.isCompact ? 22.0 : 24.0;
     final fontSize = widget.isCompact ? 9.0 : 11.0;
-    final containerSize = widget.isCompact ? 38.0 : 44.0;
 
     return GestureDetector(
       onTapDown: _onTapDown,
       onTapUp: _onTapUp,
       onTapCancel: _onTapCancel,
+      behavior: HitTestBehavior.opaque,
       child: ScaleTransition(
         scale: _scaleAnimation,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // Circular icon container
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              curve: Curves.easeOutCubic,
-              width: containerSize,
-              height: containerSize,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: widget.isSelected
-                    ? AppColors.primary.withValues(alpha: 0.12)
-                    : _isPressed
-                        ? AppColors.textSecondary.withValues(alpha: 0.08)
-                        : Colors.transparent,
-              ),
-              child: Center(
-                child: AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 200),
-                  transitionBuilder: (child, animation) {
-                    return ScaleTransition(scale: animation, child: child);
-                  },
-                  child: Icon(
-                    widget.isSelected ? widget.activeIcon : widget.icon,
-                    key: ValueKey(widget.isSelected),
-                    color: widget.isSelected
-                        ? AppColors.primary
-                        : AppColors.textSecondary,
-                    size: iconSize,
-                  ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Icon without circle background
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 200),
+                transitionBuilder: (child, animation) {
+                  return ScaleTransition(scale: animation, child: child);
+                },
+                child: Icon(
+                  widget.isSelected ? widget.activeIcon : widget.icon,
+                  key: ValueKey(widget.isSelected),
+                  color: widget.isSelected
+                      ? AppColors.primary
+                      : AppColors.textSecondary,
+                  size: iconSize,
                 ),
               ),
-            ),
-            const SizedBox(height: 2),
-            // Label
-            AnimatedDefaultTextStyle(
-              duration: const Duration(milliseconds: 200),
-              style: TextStyle(
-                fontSize: fontSize,
-                fontWeight: widget.isSelected ? FontWeight.w700 : FontWeight.w500,
-                color: widget.isSelected
-                    ? AppColors.primary
-                    : AppColors.textSecondary,
+              const SizedBox(height: 4),
+              // Label
+              AnimatedDefaultTextStyle(
+                duration: const Duration(milliseconds: 200),
+                style: TextStyle(
+                  fontSize: fontSize,
+                  fontWeight: widget.isSelected ? FontWeight.w700 : FontWeight.w500,
+                  color: widget.isSelected
+                      ? AppColors.primary
+                      : AppColors.textSecondary,
+                ),
+                child: Text(
+                  widget.label,
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                ),
               ),
-              child: Text(
-                widget.label,
-                overflow: TextOverflow.ellipsis,
-                maxLines: 1,
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

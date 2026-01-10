@@ -491,6 +491,23 @@ class _FormFillScreenState extends State<FormFillScreen> {
       return;
     }
 
+    // Show recipient selector
+    _showSubmitToDialog();
+  }
+  
+  void _showSubmitToDialog() {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => _SubmitToDialog(
+        onSubmit: (recipientId, recipientName) async {
+          Navigator.pop(dialogContext);
+          await _doSubmit(recipientId, recipientName);
+        },
+      ),
+    );
+  }
+  
+  Future<void> _doSubmit(String? recipientId, String? recipientName) async {
     setState(() => _isSaving = true);
 
     try {
@@ -508,18 +525,28 @@ class _FormFillScreenState extends State<FormFillScreen> {
         _submissionId = draft.id;
       }
 
+      // Add recipient info to form data
+      final submissionData = Map<String, dynamic>.from(_formData);
+      if (recipientId != null) {
+        submissionData['submitted_to_id'] = recipientId;
+        submissionData['submitted_to_name'] = recipientName;
+      }
+
       // Submit the form for review
       await formRepository.submitForm(
         id: _submissionId!,
-        formData: _formData,
+        formData: submissionData,
       );
       
       setState(() => _isSaving = false);
 
       if (mounted) {
+        final message = recipientName != null 
+            ? 'Form submitted to $recipientName'
+            : 'Form submitted successfully';
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Form submitted successfully'),
+          SnackBar(
+            content: Text(message),
             backgroundColor: AppColors.success,
           ),
         );
@@ -569,5 +596,181 @@ class _FormFillScreenState extends State<FormFillScreen> {
           ),
         ) ??
         false;
+  }
+}
+
+/// Dialog for selecting a recipient to submit the form to
+class _SubmitToDialog extends StatefulWidget {
+  final Future<void> Function(String? recipientId, String? recipientName) onSubmit;
+
+  const _SubmitToDialog({required this.onSubmit});
+
+  @override
+  State<_SubmitToDialog> createState() => _SubmitToDialogState();
+}
+
+class _SubmitToDialogState extends State<_SubmitToDialog> {
+  List<Map<String, dynamic>> _users = [];
+  bool _isLoading = true;
+  String? _selectedUserId;
+  String? _selectedUserName;
+  bool _submitToUnitHead = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUsers();
+  }
+
+  Future<void> _loadUsers() async {
+    try {
+      final formRepository = context.read<FormRepository>();
+      final users = await formRepository.getApprovers();
+      setState(() {
+        _users = users;
+        _isLoading = false;
+        // Default select the first unit head if available
+        final heads = users.where((u) => 
+          u['role'] == 'head' || 
+          u['role'] == 'center_head' || 
+          u['role'] == 'super_admin'
+        ).toList();
+        if (heads.isNotEmpty) {
+          _selectedUserId = heads.first['id'];
+          _selectedUserName = heads.first['full_name'];
+        }
+      });
+    } catch (e) {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Submit Form'),
+      content: SizedBox(
+        width: double.maxFinite,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Select who should review this form:',
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+            const SizedBox(height: 16),
+            
+            // Quick option: Submit to Unit Head
+            CheckboxListTile(
+              value: _submitToUnitHead,
+              onChanged: (value) {
+                setState(() {
+                  _submitToUnitHead = value ?? true;
+                  if (_submitToUnitHead) {
+                    // Auto-select first head
+                    final heads = _users.where((u) => 
+                      u['role'] == 'head' || 
+                      u['role'] == 'center_head'
+                    ).toList();
+                    if (heads.isNotEmpty) {
+                      _selectedUserId = heads.first['id'];
+                      _selectedUserName = heads.first['full_name'];
+                    }
+                  }
+                });
+              },
+              title: const Text('Submit to Unit Head'),
+              subtitle: const Text('Recommended for standard approval'),
+              contentPadding: EdgeInsets.zero,
+            ),
+            
+            const SizedBox(height: 8),
+            
+            // Or select specific user
+            if (!_submitToUnitHead) ...[
+              const Divider(),
+              const SizedBox(height: 8),
+              Text(
+                'Or select a specific reviewer:',
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                  color: AppColors.textSecondary,
+                ),
+              ),
+              const SizedBox(height: 8),
+              if (_isLoading)
+                const Center(child: CircularProgressIndicator())
+              else
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxHeight: 200),
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: _users.length,
+                    itemBuilder: (context, index) {
+                      final user = _users[index];
+                      final isSelected = user['id'] == _selectedUserId;
+                      final roleName = _formatRole(user['role'] ?? '');
+                      
+                      return ListTile(
+                        leading: CircleAvatar(
+                          backgroundColor: isSelected 
+                              ? AppColors.primary 
+                              : AppColors.surfaceHover,
+                          child: Text(
+                            (user['full_name'] as String? ?? 'U')[0].toUpperCase(),
+                            style: TextStyle(
+                              color: isSelected ? Colors.white : AppColors.textSecondary,
+                            ),
+                          ),
+                        ),
+                        title: Text(user['full_name'] ?? 'Unknown'),
+                        subtitle: Text(roleName),
+                        selected: isSelected,
+                        onTap: () {
+                          setState(() {
+                            _selectedUserId = user['id'];
+                            _selectedUserName = user['full_name'];
+                          });
+                        },
+                        trailing: isSelected 
+                            ? const Icon(Icons.check_circle, color: AppColors.primary)
+                            : null,
+                      );
+                    },
+                  ),
+                ),
+            ],
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+        ElevatedButton.icon(
+          onPressed: _selectedUserId != null
+              ? () => widget.onSubmit(_selectedUserId, _selectedUserName)
+              : null,
+          icon: const Icon(Icons.send),
+          label: const Text('Submit'),
+        ),
+      ],
+    );
+  }
+  
+  String _formatRole(String role) {
+    switch (role) {
+      case 'super_admin':
+        return 'Super Admin';
+      case 'center_head':
+        return 'Center Head';
+      case 'head':
+        return 'Unit Head';
+      case 'staff':
+        return 'Staff';
+      default:
+        return role.replaceAll('_', ' ');
+    }
   }
 }
