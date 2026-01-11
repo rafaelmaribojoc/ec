@@ -51,8 +51,9 @@ class _AttentionScreenState extends State<AttentionScreen>
     } else if (correct >= 1) {
       score += 1;
     }
-    _serial7Score =
-        correct >= 4 ? 3 : (correct >= 2 ? 2 : (correct >= 1 ? 1 : 0));
+    _serial7Score = correct >= 4
+        ? 3
+        : (correct >= 2 ? 2 : (correct >= 1 ? 1 : 0));
     return score;
   }
 
@@ -104,22 +105,29 @@ class _AttentionScreenState extends State<AttentionScreen>
           Text(
             'Forward Digit Span (1 point)',
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+              fontWeight: FontWeight.bold,
+              fontFamily: MocaColors.fontFamily,
+            ),
           ),
           const SizedBox(height: 8),
           const Text(
-              'Read digits at 1 per second. Subject repeats in forward order.'),
+            'Read digits at 1 per second. Subject repeats in forward order.',
+          ),
           const SizedBox(height: 16),
           Card(
             color: MocaColors.attentionColor.withOpacity(0.1),
             child: Padding(
               padding: const EdgeInsets.all(16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: MocaConstants.digitSpanForward
-                    .map((d) => _buildDigitCircle(d.toString()))
-                    .toList(),
+              // Use Wrap to prevent overflow on small screens
+              child: Center(
+                child: Wrap(
+                  alignment: WrapAlignment.center,
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: MocaConstants.digitSpanForward
+                      .map((d) => _buildDigitCircle(d.toString()))
+                      .toList(),
+                ),
               ),
             ),
           ),
@@ -133,8 +141,9 @@ class _AttentionScreenState extends State<AttentionScreen>
           Text(
             'Backward Digit Span (1 point)',
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+              fontWeight: FontWeight.bold,
+              fontFamily: MocaColors.fontFamily,
+            ),
           ),
           const SizedBox(height: 8),
           const Text('Subject repeats digits in BACKWARD order.'),
@@ -145,8 +154,11 @@ class _AttentionScreenState extends State<AttentionScreen>
               padding: const EdgeInsets.all(16),
               child: Column(
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                  // Use Wrap to prevent overflow on small screens
+                  Wrap(
+                    alignment: WrapAlignment.center,
+                    spacing: 8,
+                    runSpacing: 8,
                     children: MocaConstants.digitSpanBackward
                         .map((d) => _buildDigitCircle(d.toString()))
                         .toList(),
@@ -155,9 +167,11 @@ class _AttentionScreenState extends State<AttentionScreen>
                   Text(
                     'Correct answer: ${MocaConstants.digitSpanBackward.reversed.join('-')}',
                     style: TextStyle(
+                      fontFamily: MocaColors.fontFamily,
                       color: MocaColors.textSecondary,
                       fontStyle: FontStyle.italic,
                     ),
+                    textAlign: TextAlign.center,
                   ),
                 ],
               ),
@@ -176,9 +190,8 @@ class _AttentionScreenState extends State<AttentionScreen>
 
   Widget _buildDigitCircle(String digit) {
     return Container(
-      width: 44,
-      height: 44,
-      margin: const EdgeInsets.symmetric(horizontal: 6),
+      width: 42,
+      height: 42,
       decoration: BoxDecoration(
         color: MocaColors.attentionColor,
         shape: BoxShape.circle,
@@ -187,8 +200,9 @@ class _AttentionScreenState extends State<AttentionScreen>
         child: Text(
           digit,
           style: const TextStyle(
+            fontFamily: 'Poppins',
             color: Colors.white,
-            fontSize: 20,
+            fontSize: 18,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -205,52 +219,60 @@ class _AttentionScreenState extends State<AttentionScreen>
           Text(
             'Vigilance Task (1 point)',
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+              fontWeight: FontWeight.bold,
+              fontFamily: MocaColors.fontFamily,
+            ),
           ),
           const SizedBox(height: 8),
           const Text(
             'Read the letter sequence. Subject taps hand each time they hear the letter "A".',
           ),
           const SizedBox(height: 24),
+          // MoCA-P style: centered, bold letters in bordered boxes
           Card(
             child: Padding(
               padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  Wrap(
-                    spacing: 4,
-                    runSpacing: 8,
-                    children:
-                        MocaConstants.vigilanceLetters.split('').map((letter) {
-                      final isTarget = letter == 'A';
-                      return Container(
-                        width: 28,
-                        height: 28,
-                        decoration: BoxDecoration(
+              child: Center(
+                child: Wrap(
+                  alignment: WrapAlignment.center,
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: MocaConstants.vigilanceLetters.split('').map((
+                    letter,
+                  ) {
+                    final isTarget = letter == 'A';
+                    return Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        color: isTarget
+                            ? MocaColors.attentionColor.withOpacity(0.15)
+                            : Colors.white,
+                        borderRadius: BorderRadius.circular(4),
+                        border: Border.all(
                           color: isTarget
-                              ? MocaColors.attentionColor.withOpacity(0.2)
-                              : Colors.transparent,
-                          borderRadius: BorderRadius.circular(4),
+                              ? MocaColors.attentionColor
+                              : MocaColors.border,
+                          width: isTarget ? 2 : 1,
                         ),
-                        child: Center(
-                          child: Text(
-                            letter,
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: isTarget
-                                  ? FontWeight.bold
-                                  : FontWeight.normal,
-                              color: isTarget
-                                  ? MocaColors.attentionColor
-                                  : MocaColors.textPrimary,
-                            ),
+                      ),
+                      child: Center(
+                        child: Text(
+                          letter,
+                          style: TextStyle(
+                            fontFamily: MocaColors.fontFamily,
+                            fontSize: 16,
+                            // All letters are bold as per MoCA-P style
+                            fontWeight: FontWeight.bold,
+                            color: isTarget
+                                ? MocaColors.attentionColor
+                                : MocaColors.textPrimary,
                           ),
                         ),
-                      );
-                    }).toList(),
-                  ),
-                ],
+                      ),
+                    );
+                  }).toList(),
+                ),
               ),
             ),
           ),
@@ -260,13 +282,17 @@ class _AttentionScreenState extends State<AttentionScreen>
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Icon(Icons.info_outline, color: MocaColors.info),
                   const SizedBox(width: 12),
-                  const Expanded(
+                  Expanded(
                     child: Text(
                       'Subject should tap 11 times (one for each "A"). Score 1 point if ≤2 errors.',
-                      style: TextStyle(color: MocaColors.info),
+                      style: TextStyle(
+                        fontFamily: MocaColors.fontFamily,
+                        color: MocaColors.info,
+                      ),
                     ),
                   ),
                 ],
@@ -293,8 +319,9 @@ class _AttentionScreenState extends State<AttentionScreen>
           Text(
             'Serial 7 Subtraction (3 points)',
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+              fontWeight: FontWeight.bold,
+              fontFamily: MocaColors.fontFamily,
+            ),
           ),
           const SizedBox(height: 8),
           const Text(
@@ -303,7 +330,7 @@ class _AttentionScreenState extends State<AttentionScreen>
           const SizedBox(height: 24),
           Card(
             child: Padding(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(16),
               child: Column(
                 children: [
                   ...MocaConstants.serial7Answers.asMap().entries.map((entry) {
@@ -312,13 +339,62 @@ class _AttentionScreenState extends State<AttentionScreen>
                     final previous = index == 0
                         ? 100
                         : MocaConstants.serial7Answers[index - 1];
-                    return CheckboxListTile(
-                      value: _serial7Answers[index],
-                      onChanged: (value) {
-                        setState(() => _serial7Answers[index] = value ?? false);
+                    final isCorrect = _serial7Answers[index];
+                    return InkWell(
+                      onTap: () {
+                        setState(() => _serial7Answers[index] = !isCorrect);
                       },
-                      title: Text('$previous - 7 = $answer'),
-                      activeColor: MocaColors.attentionColor,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 12,
+                          horizontal: 16,
+                        ),
+                        margin: const EdgeInsets.only(bottom: 8),
+                        decoration: BoxDecoration(
+                          color: isCorrect
+                              ? MocaColors.attentionColor.withOpacity(0.1)
+                              : Colors.transparent,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: isCorrect
+                                ? MocaColors.attentionColor
+                                : MocaColors.border,
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              isCorrect
+                                  ? Icons.check_circle
+                                  : Icons.circle_outlined,
+                              color: isCorrect
+                                  ? MocaColors.attentionColor
+                                  : MocaColors.textSecondary,
+                              size: 24,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                '$previous - 7 = $answer',
+                                style: TextStyle(
+                                  fontFamily: MocaColors.fontFamily,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w500,
+                                  color: isCorrect
+                                      ? MocaColors.textSecondary
+                                      : MocaColors.textPrimary,
+                                  // Strikethrough for correct answers
+                                  decoration: isCorrect
+                                      ? TextDecoration.lineThrough
+                                      : null,
+                                  decorationColor: MocaColors.attentionColor,
+                                  decorationThickness: 2,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     );
                   }),
                 ],
@@ -326,27 +402,32 @@ class _AttentionScreenState extends State<AttentionScreen>
             ),
           ),
           const SizedBox(height: 16),
+          // Scoring guide - centered and responsive
           Card(
             color: MocaColors.infoLight,
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  const Text(
+                  Text(
                     'Scoring:',
                     style: TextStyle(
-                        fontWeight: FontWeight.bold, color: MocaColors.info),
+                      fontFamily: MocaColors.fontFamily,
+                      fontWeight: FontWeight.bold,
+                      color: MocaColors.info,
+                    ),
+                    textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 8),
-                  const Text('• 4-5 correct = 3 points',
-                      style: TextStyle(color: MocaColors.info)),
-                  const Text('• 2-3 correct = 2 points',
-                      style: TextStyle(color: MocaColors.info)),
-                  const Text('• 1 correct = 1 point',
-                      style: TextStyle(color: MocaColors.info)),
-                  const Text('• 0 correct = 0 points',
-                      style: TextStyle(color: MocaColors.info)),
+                  Text(
+                    '4-5 correct = 3 points\n2-3 correct = 2 points\n1 correct = 1 point\n0 correct = 0 points',
+                    style: TextStyle(
+                      fontFamily: MocaColors.fontFamily,
+                      color: MocaColors.info,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
                 ],
               ),
             ),
@@ -390,8 +471,9 @@ class _AttentionScreenState extends State<AttentionScreen>
                   child: Text(
                     label,
                     style: TextStyle(
-                      color:
-                          value ? MocaColors.success : MocaColors.textPrimary,
+                      color: value
+                          ? MocaColors.success
+                          : MocaColors.textPrimary,
                     ),
                   ),
                 ),
@@ -404,8 +486,11 @@ class _AttentionScreenState extends State<AttentionScreen>
   }
 
   Widget _buildBottomBar() {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isSmallScreen = screenWidth < 400;
+
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(isSmallScreen ? 12 : 20),
       decoration: BoxDecoration(
         color: Colors.white,
         boxShadow: [
@@ -418,56 +503,82 @@ class _AttentionScreenState extends State<AttentionScreen>
       ),
       child: SafeArea(
         top: false,
-        child: Row(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Expanded(
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: MocaColors.attentionColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(16),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: MocaColors.attentionColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                'Score: $totalScore/6',
+                style: TextStyle(
+                  fontFamily: MocaColors.fontFamily,
+                  fontWeight: FontWeight.bold,
+                  color: MocaColors.attentionColor,
+                  fontSize: 13,
                 ),
-                child: Text(
-                  'Score: $totalScore/6',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: MocaColors.attentionColor,
+                textAlign: TextAlign.center,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => context.pop(),
+                    child: Text(
+                      'Back',
+                      style: TextStyle(
+                        fontFamily: MocaColors.fontFamily,
+                        fontSize: 13,
+                      ),
+                    ),
                   ),
                 ),
-              ),
-            ),
-            OutlinedButton(
-              onPressed: () => context.pop(),
-              child: const Text('Back'),
-            ),
-            const SizedBox(width: 8),
-            ElevatedButton(
-              onPressed: () {
-                context.read<MocaAssessmentBloc>().add(
-                      MocaSaveSectionResult(
-                        section: 'attention',
-                        score: totalScore,
-                        maxScore: 6,
-                        details: {
-                          'digit_forward': _digitForwardCorrect,
-                          'digit_backward': _digitBackwardCorrect,
-                          'vigilance': _vigilanceCorrect,
-                          'serial7': _serial7Score,
-                        },
+                const SizedBox(width: 8),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: _onContinue,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: MocaColors.attentionColor,
+                      foregroundColor: Colors.white,
+                    ),
+                    child: Text(
+                      'Continue',
+                      style: TextStyle(
+                        fontFamily: MocaColors.fontFamily,
+                        fontSize: 13,
                       ),
-                    );
-                context.read<MocaAssessmentBloc>().add(MocaNextSection());
-                context.push('/moca/language');
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: MocaColors.attentionColor,
-              ),
-              child: const Text('Continue'),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
       ),
     );
+  }
+
+  void _onContinue() {
+    context.read<MocaAssessmentBloc>().add(
+      MocaSaveSectionResult(
+        section: 'attention',
+        score: totalScore,
+        maxScore: 6,
+        details: {
+          'digit_forward': _digitForwardCorrect,
+          'digit_backward': _digitBackwardCorrect,
+          'vigilance': _vigilanceCorrect,
+          'serial7': _serial7Score,
+        },
+      ),
+    );
+    context.read<MocaAssessmentBloc>().add(MocaNextSection());
+    context.push('/moca/language');
   }
 }

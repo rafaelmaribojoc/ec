@@ -43,8 +43,10 @@ class _AbstractionScreenState extends State<AbstractionScreen> {
                       padding: const EdgeInsets.all(16),
                       child: Row(
                         children: [
-                          const Icon(Icons.info_outline,
-                              color: MocaColors.info),
+                          const Icon(
+                            Icons.info_outline,
+                            color: MocaColors.info,
+                          ),
                           const SizedBox(width: 12),
                           const Expanded(
                             child: Text(
@@ -68,7 +70,9 @@ class _AbstractionScreenState extends State<AbstractionScreen> {
                         children: [
                           Container(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 4),
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
                             decoration: BoxDecoration(
                               color: MocaColors.textSecondary,
                               borderRadius: BorderRadius.circular(4),
@@ -76,9 +80,10 @@ class _AbstractionScreenState extends State<AbstractionScreen> {
                             child: const Text(
                               'EXAMPLE',
                               style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.bold),
+                                color: Colors.white,
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
                           const SizedBox(height: 12),
@@ -94,9 +99,10 @@ class _AbstractionScreenState extends State<AbstractionScreen> {
                               children: [
                                 Icon(Icons.check, color: MocaColors.success),
                                 SizedBox(width: 8),
-                                Text('Correct answer: "fruit"',
-                                    style:
-                                        TextStyle(fontWeight: FontWeight.w500)),
+                                Text(
+                                  'Correct answer: "fruit"',
+                                  style: TextStyle(fontWeight: FontWeight.w500),
+                                ),
                               ],
                             ),
                           ),
@@ -107,18 +113,18 @@ class _AbstractionScreenState extends State<AbstractionScreen> {
 
                   const SizedBox(height: 24),
 
-                  ...MocaConstants.abstractionPairs
-                      .asMap()
-                      .entries
-                      .map((entry) {
+                  ...MocaConstants.abstractionPairs.asMap().entries.map((
+                    entry,
+                  ) {
                     final index = entry.key;
                     final pair = entry.value;
                     return _buildAbstractionCard(
                       index: index,
                       item1: pair['item1'] as String,
                       item2: pair['item2'] as String,
-                      acceptedAnswers:
-                          List<String>.from(pair['acceptedAnswers']),
+                      acceptedAnswers: List<String>.from(
+                        pair['acceptedAnswers'],
+                      ),
                     );
                   }),
                 ],
@@ -132,34 +138,47 @@ class _AbstractionScreenState extends State<AbstractionScreen> {
   }
 
   Widget _buildItemPair(String item1, String item2) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        _buildItemChip(item1),
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 8),
-          child: Text('&',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-        ),
-        _buildItemChip(item2),
-      ],
+    // Use Wrap to prevent overflow on small screens
+    return Center(
+      child: Wrap(
+        alignment: WrapAlignment.center,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        spacing: 8,
+        runSpacing: 8,
+        children: [
+          _buildItemChip(item1),
+          Text(
+            '&',
+            style: TextStyle(
+              fontFamily: MocaColors.fontFamily,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          _buildItemChip(item2),
+        ],
+      ),
     );
   }
 
   Widget _buildItemChip(String item) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      constraints: const BoxConstraints(maxWidth: 140),
       decoration: BoxDecoration(
         color: MocaColors.abstractionColor,
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
         item.toUpperCase(),
-        style: const TextStyle(
+        style: TextStyle(
+          fontFamily: MocaColors.fontFamily,
           color: Colors.white,
           fontWeight: FontWeight.bold,
-          fontSize: 16,
+          fontSize: 14,
         ),
+        textAlign: TextAlign.center,
+        overflow: TextOverflow.ellipsis,
       ),
     );
   }
@@ -238,8 +257,9 @@ class _AbstractionScreenState extends State<AbstractionScreen> {
                   child: Text(
                     label,
                     style: TextStyle(
-                      color:
-                          value ? MocaColors.success : MocaColors.textPrimary,
+                      color: value
+                          ? MocaColors.success
+                          : MocaColors.textPrimary,
                     ),
                   ),
                 ),
@@ -252,8 +272,11 @@ class _AbstractionScreenState extends State<AbstractionScreen> {
   }
 
   Widget _buildBottomBar() {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isSmallScreen = screenWidth < 360;
+
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(isSmallScreen ? 12 : 20),
       decoration: BoxDecoration(
         color: Colors.white,
         boxShadow: [
@@ -266,49 +289,123 @@ class _AbstractionScreenState extends State<AbstractionScreen> {
       ),
       child: SafeArea(
         top: false,
-        child: Row(
-          children: [
-            Expanded(
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: MocaColors.abstractionColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Text(
-                  'Score: $totalScore/2',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: MocaColors.abstractionColor,
-                  ),
-                ),
-              ),
-            ),
-            OutlinedButton(
-              onPressed: () => context.pop(),
-              child: const Text('Back'),
-            ),
-            const SizedBox(width: 8),
-            ElevatedButton(
-              onPressed: () {
-                context.read<MocaAssessmentBloc>().add(
-                      MocaSaveSectionResult(
-                        section: 'abstraction',
-                        score: totalScore,
-                        maxScore: 2,
+        child: isSmallScreen
+            ? Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: MocaColors.abstractionColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Text(
+                      'Score: $totalScore/2',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontFamily: MocaColors.fontFamily,
+                        fontWeight: FontWeight.bold,
+                        color: MocaColors.abstractionColor,
                       ),
-                    );
-                context.read<MocaAssessmentBloc>().add(MocaNextSection());
-                context.push('/moca/delayed-recall');
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: MocaColors.abstractionColor,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => context.pop(),
+                          child: Text(
+                            'Back',
+                            style: TextStyle(fontFamily: MocaColors.fontFamily),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () {
+                            context.read<MocaAssessmentBloc>().add(
+                              MocaSaveSectionResult(
+                                section: 'abstraction',
+                                score: totalScore,
+                                maxScore: 2,
+                              ),
+                            );
+                            context.read<MocaAssessmentBloc>().add(
+                              MocaNextSection(),
+                            );
+                            context.push('/moca/delayed-recall');
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: MocaColors.abstractionColor,
+                          ),
+                          child: Text(
+                            'Continue',
+                            style: TextStyle(fontFamily: MocaColors.fontFamily),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              )
+            : Row(
+                children: [
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: MocaColors.abstractionColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Text(
+                        'Score: $totalScore/2',
+                        style: TextStyle(
+                          fontFamily: MocaColors.fontFamily,
+                          fontWeight: FontWeight.bold,
+                          color: MocaColors.abstractionColor,
+                        ),
+                      ),
+                    ),
+                  ),
+                  OutlinedButton(
+                    onPressed: () => context.pop(),
+                    child: Text(
+                      'Back',
+                      style: TextStyle(fontFamily: MocaColors.fontFamily),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  ElevatedButton(
+                    onPressed: () {
+                      context.read<MocaAssessmentBloc>().add(
+                        MocaSaveSectionResult(
+                          section: 'abstraction',
+                          score: totalScore,
+                          maxScore: 2,
+                        ),
+                      );
+                      context.read<MocaAssessmentBloc>().add(MocaNextSection());
+                      context.push('/moca/delayed-recall');
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: MocaColors.abstractionColor,
+                    ),
+                    child: Text(
+                      'Continue',
+                      style: TextStyle(fontFamily: MocaColors.fontFamily),
+                    ),
+                  ),
+                ],
               ),
-              child: const Text('Continue'),
-            ),
-          ],
-        ),
       ),
     );
   }

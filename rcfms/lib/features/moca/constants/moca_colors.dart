@@ -1,13 +1,18 @@
 import 'package:flutter/material.dart';
+import '../../../core/theme/app_colors.dart';
 
 /// MoCA-P specific colors for assessment sections
+/// Uses Poppins font family from ElderCare assets
 class MocaColors {
   MocaColors._();
 
-  // Primary MoCA Colors
-  static const Color primary = Color(0xFF4F46E5); // Indigo - matches unitPsych
-  static const Color primaryLight = Color(0xFFE0E7FF);
-  static const Color primaryDark = Color(0xFF3730A3);
+  // Font family for MoCA module
+  static const String fontFamily = 'Poppins';
+
+  // Primary MoCA Colors - Using app branding colors (Teal)
+  static const Color primary = AppColors.primary; // Teal - main app brand color
+  static const Color primaryLight = Color(0xFFE0F7FA);
+  static const Color primaryDark = AppColors.primaryDark;
 
   // Section Colors for Assessment
   static const Color visuospatialColor = Color(0xFF7E57C2);
@@ -45,9 +50,9 @@ class MocaColors {
   static const Color border = Color(0xFFE5E7EB);
   static const Color divider = Color(0xFFE5E7EB);
 
-  // Gradient
+  // Gradient - Using app branding teal colors
   static const LinearGradient primaryGradient = LinearGradient(
-    colors: [Color(0xFF4F46E5), Color(0xFF6366F1), Color(0xFF818CF8)],
+    colors: [Color(0xFF0E7490), Color(0xFF0891B2), Color(0xFF22D3EE)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );

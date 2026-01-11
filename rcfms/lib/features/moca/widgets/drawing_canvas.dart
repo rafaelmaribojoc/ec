@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
 import '../constants/moca_colors.dart';
@@ -10,7 +11,17 @@ class DrawPoint {
   const DrawPoint(this.x, this.y);
 }
 
+/// Custom recognizer that immediately claims all gestures to prevent conflicts
+class _ImmediateMultiDragGestureRecognizer
+    extends ImmediateMultiDragGestureRecognizer {
+  _ImmediateMultiDragGestureRecognizer({required super.supportedDevices});
+
+  @override
+  bool isPointerPanZoomAllowed(PointerPanZoomStartEvent event) => true;
+}
+
 /// Drawing canvas widget for visuospatial tasks
+/// Uses RawGestureDetector to prevent gesture conflicts with parent scrolls/swipes
 class DrawingCanvas extends StatefulWidget {
   final Function(List<List<DrawPoint>>)? onDrawingChanged;
   final Color strokeColor;
@@ -34,7 +45,6 @@ class DrawingCanvas extends StatefulWidget {
 class DrawingCanvasState extends State<DrawingCanvas> {
   List<List<DrawPoint>> _strokes = [];
   List<DrawPoint> _currentStroke = [];
-  bool _isDrawing = false;
 
   /// Clear the canvas
   void clear() {
@@ -80,40 +90,40 @@ class DrawingCanvasState extends State<DrawingCanvas> {
             // Guide layer
             if (widget.showGuide && widget.guideWidget != null)
               Positioned.fill(
-                child: Opacity(
-                  opacity: 0.3,
-                  child: widget.guideWidget!,
-                ),
+                child: Opacity(opacity: 0.3, child: widget.guideWidget!),
               ),
 
-            // Drawing layer with gesture handling that prevents parent scroll
+            // Drawing layer with RawGestureDetector to prevent gesture conflicts
             Positioned.fill(
-              child: Listener(
-                // Use Listener to capture pointer events before they bubble up
-                onPointerDown: (_) {
-                  setState(() => _isDrawing = true);
+              child: RawGestureDetector(
+                gestures: <Type, GestureRecognizerFactory>{
+                  // Use PanGestureRecognizer with immediate win
+                  PanGestureRecognizer:
+                      GestureRecognizerFactoryWithHandlers<
+                        PanGestureRecognizer
+                      >(
+                        () =>
+                            PanGestureRecognizer()
+                              ..gestureSettings = const DeviceGestureSettings(
+                                touchSlop: 0, // Immediate response
+                              ),
+                        (PanGestureRecognizer instance) {
+                          instance
+                            ..onStart = _onPanStart
+                            ..onUpdate = _onPanUpdate
+                            ..onEnd = _onPanEnd;
+                        },
+                      ),
                 },
-                onPointerUp: (_) {
-                  setState(() => _isDrawing = false);
-                },
-                onPointerCancel: (_) {
-                  setState(() => _isDrawing = false);
-                },
-                child: GestureDetector(
-                  // Use eager gesture recognition to claim touches immediately
-                  behavior: HitTestBehavior.opaque,
-                  onPanStart: _onPanStart,
-                  onPanUpdate: _onPanUpdate,
-                  onPanEnd: _onPanEnd,
-                  child: CustomPaint(
-                    painter: _DrawingPainter(
-                      strokes: _strokes,
-                      currentStroke: _currentStroke,
-                      strokeColor: widget.strokeColor,
-                      strokeWidth: widget.strokeWidth,
-                    ),
-                    size: Size.infinite,
+                behavior: HitTestBehavior.opaque,
+                child: CustomPaint(
+                  painter: _DrawingPainter(
+                    strokes: _strokes,
+                    currentStroke: _currentStroke,
+                    strokeColor: widget.strokeColor,
+                    strokeWidth: widget.strokeWidth,
                   ),
+                  size: Size.infinite,
                 ),
               ),
             ),
@@ -126,10 +136,7 @@ class DrawingCanvasState extends State<DrawingCanvas> {
   void _onPanStart(DragStartDetails details) {
     setState(() {
       _currentStroke = [
-        DrawPoint(
-          details.localPosition.dx,
-          details.localPosition.dy,
-        ),
+        DrawPoint(details.localPosition.dx, details.localPosition.dy),
       ];
     });
   }
@@ -137,12 +144,7 @@ class DrawingCanvasState extends State<DrawingCanvas> {
   void _onPanUpdate(DragUpdateDetails details) {
     setState(() {
       _currentStroke = List.from(_currentStroke)
-        ..add(
-          DrawPoint(
-            details.localPosition.dx,
-            details.localPosition.dy,
-          ),
-        );
+        ..add(DrawPoint(details.localPosition.dx, details.localPosition.dy));
     });
   }
 

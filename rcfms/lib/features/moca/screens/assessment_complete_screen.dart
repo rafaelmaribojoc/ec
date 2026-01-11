@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/theme/app_colors.dart';
 import '../bloc/moca_assessment_bloc.dart';
 import '../constants/moca_constants.dart';
 import '../constants/moca_colors.dart';
@@ -23,8 +24,11 @@ class AssessmentCompleteScreen extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.error_outline,
-                      size: 64, color: MocaColors.error),
+                  const Icon(
+                    Icons.error_outline,
+                    size: 64,
+                    color: MocaColors.error,
+                  ),
                   const SizedBox(height: 16),
                   const Text('No assessment data found'),
                   const SizedBox(height: 24),
@@ -43,8 +47,9 @@ class AssessmentCompleteScreen extends StatelessWidget {
         final isNormal = adjustedScore >= MocaConstants.normalThreshold;
 
         // Calculate dementia probability
-        final probabilityResult =
-            DementiaProbabilityCalculator.calculate(adjustedScore);
+        final probabilityResult = DementiaProbabilityCalculator.calculate(
+          adjustedScore,
+        );
 
         return Scaffold(
           body: SafeArea(
@@ -68,8 +73,9 @@ class AssessmentCompleteScreen extends StatelessWidget {
                       child: Icon(
                         isNormal ? Icons.check_circle : Icons.info,
                         size: 60,
-                        color:
-                            isNormal ? MocaColors.success : MocaColors.warning,
+                        color: isNormal
+                            ? MocaColors.success
+                            : MocaColors.warning,
                       ),
                     ),
 
@@ -77,10 +83,8 @@ class AssessmentCompleteScreen extends StatelessWidget {
 
                     Text(
                       'Assessment Complete',
-                      style:
-                          Theme.of(context).textTheme.headlineMedium?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
+                      style: Theme.of(context).textTheme.headlineMedium
+                          ?.copyWith(fontWeight: FontWeight.bold),
                     ),
 
                     const SizedBox(height: 8),
@@ -90,8 +94,9 @@ class AssessmentCompleteScreen extends StatelessWidget {
                           ? 'Score is within normal range'
                           : 'Score indicates possible impairment',
                       style: TextStyle(
-                        color:
-                            isNormal ? MocaColors.success : MocaColors.warning,
+                        color: isNormal
+                            ? MocaColors.success
+                            : MocaColors.warning,
                         fontSize: 16,
                       ),
                     ),
@@ -118,7 +123,9 @@ class AssessmentCompleteScreen extends StatelessWidget {
                             if (assessment.educationAdjustment) ...[
                               Container(
                                 padding: const EdgeInsets.symmetric(
-                                    horizontal: 10, vertical: 6),
+                                  horizontal: 10,
+                                  vertical: 6,
+                                ),
                                 decoration: BoxDecoration(
                                   color: MocaColors.successLight,
                                   borderRadius: BorderRadius.circular(20),
@@ -126,8 +133,11 @@ class AssessmentCompleteScreen extends StatelessWidget {
                                 child: const Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    Icon(Icons.add_circle,
-                                        size: 14, color: MocaColors.success),
+                                    Icon(
+                                      Icons.add_circle,
+                                      size: 14,
+                                      color: MocaColors.success,
+                                    ),
                                     SizedBox(width: 4),
                                     Text(
                                       '+1 (≤12 yrs edu)',
@@ -222,14 +232,14 @@ class AssessmentCompleteScreen extends StatelessWidget {
                               width: double.infinity,
                               padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
-                                color:
-                                    _getRiskColor(probabilityResult.riskLevel)
-                                        .withOpacity(0.1),
+                                color: _getRiskColor(
+                                  probabilityResult.riskLevel,
+                                ).withOpacity(0.1),
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
-                                  color:
-                                      _getRiskColor(probabilityResult.riskLevel)
-                                          .withOpacity(0.3),
+                                  color: _getRiskColor(
+                                    probabilityResult.riskLevel,
+                                  ).withOpacity(0.3),
                                 ),
                               ),
                               child: Column(
@@ -240,7 +250,8 @@ class AssessmentCompleteScreen extends StatelessWidget {
                                       fontWeight: FontWeight.bold,
                                       fontSize: 16,
                                       color: _getRiskColor(
-                                          probabilityResult.riskLevel),
+                                        probabilityResult.riskLevel,
+                                      ),
                                     ),
                                   ),
                                   const SizedBox(height: 4),
@@ -300,13 +311,16 @@ class AssessmentCompleteScreen extends StatelessWidget {
                             const Text(
                               'Section Breakdown',
                               style: TextStyle(
-                                  fontSize: 18, fontWeight: FontWeight.bold),
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                             const SizedBox(height: 16),
                             _buildSectionRow(
                               'Visuospatial/Executive',
                               assessment
-                                      .sectionResults['visuospatial']?.score ??
+                                      .sectionResults['visuospatial']
+                                      ?.score ??
                                   0,
                               5,
                               MocaColors.visuospatialColor,
@@ -340,7 +354,8 @@ class AssessmentCompleteScreen extends StatelessWidget {
                             _buildSectionRow(
                               'Delayed Recall',
                               assessment
-                                      .sectionResults['delayedRecall']?.score ??
+                                      .sectionResults['delayedRecall']
+                                      ?.score ??
                                   0,
                               5,
                               MocaColors.recallColor,
@@ -365,28 +380,35 @@ class AssessmentCompleteScreen extends StatelessWidget {
                         Expanded(
                           child: OutlinedButton.icon(
                             onPressed: () {
-                              context
-                                  .read<MocaAssessmentBloc>()
-                                  .add(MocaResetAssessment());
+                              context.read<MocaAssessmentBloc>().add(
+                                MocaResetAssessment(),
+                              );
                               context.go('/moca');
                             },
                             icon: const Icon(Icons.refresh),
                             label: const Text('New Assessment'),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: AppColors.primary,
+                              side: BorderSide(color: AppColors.primary),
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                            ),
                           ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
                           child: ElevatedButton.icon(
                             onPressed: () {
-                              context
-                                  .read<MocaAssessmentBloc>()
-                                  .add(MocaResetAssessment());
+                              context.read<MocaAssessmentBloc>().add(
+                                MocaResetAssessment(),
+                              );
                               context.go('/dashboard');
                             },
                             icon: const Icon(Icons.home),
                             label: const Text('Go Home'),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: MocaColors.primary,
+                              backgroundColor: AppColors.primary,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 14),
                             ),
                           ),
                         ),
@@ -420,12 +442,16 @@ class AssessmentCompleteScreen extends StatelessWidget {
                   Container(
                     width: 8,
                     height: 8,
-                    decoration:
-                        BoxDecoration(color: color, shape: BoxShape.circle),
+                    decoration: BoxDecoration(
+                      color: color,
+                      shape: BoxShape.circle,
+                    ),
                   ),
                   const SizedBox(width: 8),
-                  Text(name,
-                      style: const TextStyle(fontWeight: FontWeight.w500)),
+                  Text(
+                    name,
+                    style: const TextStyle(fontWeight: FontWeight.w500),
+                  ),
                 ],
               ),
               Text(
@@ -459,10 +485,7 @@ class AssessmentCompleteScreen extends StatelessWidget {
           children: [
             Text(
               label,
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-              ),
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
             ),
             Text(
               '$percentage%',

@@ -53,8 +53,10 @@ class _DelayedRecallScreenState extends State<DelayedRecallScreen> {
                       padding: const EdgeInsets.all(16),
                       child: Row(
                         children: [
-                          const Icon(Icons.info_outline,
-                              color: MocaColors.info),
+                          const Icon(
+                            Icons.info_outline,
+                            color: MocaColors.info,
+                          ),
                           const SizedBox(width: 12),
                           const Expanded(
                             child: Text(
@@ -70,8 +72,8 @@ class _DelayedRecallScreenState extends State<DelayedRecallScreen> {
                   Text(
                     'Free Recall (5 points)',
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: 8),
                   const Text(
@@ -83,14 +85,13 @@ class _DelayedRecallScreenState extends State<DelayedRecallScreen> {
                     child: Padding(
                       padding: const EdgeInsets.all(16),
                       child: Column(
-                        children: MocaConstants.memoryWords
-                            .asMap()
-                            .entries
-                            .map((entry) {
-                          final index = entry.key;
-                          final word = entry.value;
-                          return _buildWordRow(index, word);
-                        }).toList(),
+                        children: MocaConstants.memoryWords.asMap().entries.map(
+                          (entry) {
+                            final index = entry.key;
+                            final word = entry.value;
+                            return _buildWordRow(index, word);
+                          },
+                        ).toList(),
                       ),
                     ),
                   ),
@@ -105,8 +106,10 @@ class _DelayedRecallScreenState extends State<DelayedRecallScreen> {
                       padding: const EdgeInsets.all(16),
                       child: Row(
                         children: [
-                          const Icon(Icons.warning_amber,
-                              color: MocaColors.warning),
+                          const Icon(
+                            Icons.warning_amber,
+                            color: MocaColors.warning,
+                          ),
                           const SizedBox(width: 12),
                           Expanded(
                             child: Text(
@@ -129,67 +132,79 @@ class _DelayedRecallScreenState extends State<DelayedRecallScreen> {
   }
 
   Widget _buildWordRow(int index, String word) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(
-            color: index < 4 ? MocaColors.divider : Colors.transparent,
+    final isRecalled = _uncuedRecall[index];
+    return InkWell(
+      onTap: () {
+        setState(() {
+          _uncuedRecall[index] = !isRecalled;
+          if (!isRecalled) {
+            // If marking as recalled, clear cues
+            _categoryRecall[index] = false;
+            _multipleChoiceRecall[index] = false;
+          }
+        });
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+        margin: const EdgeInsets.only(bottom: 8),
+        decoration: BoxDecoration(
+          color: isRecalled
+              ? MocaColors.success.withOpacity(0.1)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: isRecalled ? MocaColors.success : MocaColors.border,
           ),
         ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: _uncuedRecall[index]
-                  ? MocaColors.success
-                  : MocaColors.recallColor.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Center(
-              child: _uncuedRecall[index]
-                  ? const Icon(Icons.check, color: Colors.white, size: 20)
-                  : Text(
-                      '${index + 1}',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: MocaColors.recallColor,
-                      ),
-                    ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              word,
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: _uncuedRecall[index]
+        child: Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: isRecalled
                     ? MocaColors.success
-                    : MocaColors.textPrimary,
-                decoration:
-                    _uncuedRecall[index] ? TextDecoration.lineThrough : null,
+                    : MocaColors.recallColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Center(
+                child: isRecalled
+                    ? const Icon(Icons.check, color: Colors.white, size: 20)
+                    : Text(
+                        '${index + 1}',
+                        style: TextStyle(
+                          fontFamily: MocaColors.fontFamily,
+                          fontWeight: FontWeight.bold,
+                          color: MocaColors.recallColor,
+                        ),
+                      ),
               ),
             ),
-          ),
-          Switch(
-            value: _uncuedRecall[index],
-            onChanged: (value) {
-              setState(() {
-                _uncuedRecall[index] = value;
-                if (value) {
-                  _categoryRecall[index] = false;
-                  _multipleChoiceRecall[index] = false;
-                }
-              });
-            },
-            activeColor: MocaColors.success,
-          ),
-        ],
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                word,
+                style: TextStyle(
+                  fontFamily: MocaColors.fontFamily,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: isRecalled
+                      ? MocaColors.textSecondary
+                      : MocaColors.textPrimary,
+                  // Strikethrough for recalled words
+                  decoration: isRecalled ? TextDecoration.lineThrough : null,
+                  decorationColor: MocaColors.success,
+                  decorationThickness: 2,
+                ),
+              ),
+            ),
+            Icon(
+              isRecalled ? Icons.check_circle : Icons.circle_outlined,
+              color: isRecalled ? MocaColors.success : MocaColors.textSecondary,
+              size: 24,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -197,8 +212,14 @@ class _DelayedRecallScreenState extends State<DelayedRecallScreen> {
   Widget _buildCategoryExpansionTile() {
     return Card(
       child: ExpansionTile(
-        title: const Text('Category Cues (optional)'),
-        subtitle: const Text('Use if word not recalled freely'),
+        title: Text(
+          'Category Cues (optional)',
+          style: TextStyle(fontFamily: MocaColors.fontFamily),
+        ),
+        subtitle: Text(
+          'Use if word not recalled freely',
+          style: TextStyle(fontFamily: MocaColors.fontFamily, fontSize: 12),
+        ),
         children: [
           Padding(
             padding: const EdgeInsets.all(16),
@@ -207,15 +228,80 @@ class _DelayedRecallScreenState extends State<DelayedRecallScreen> {
                 final index = entry.key;
                 final word = entry.value;
                 final hint = _categoryHints[index];
-                return CheckboxListTile(
-                  value: _categoryRecall[index],
-                  onChanged: _uncuedRecall[index]
+                final isDisabled = _uncuedRecall[index];
+                final isSelected = _categoryRecall[index];
+                return InkWell(
+                  onTap: isDisabled
                       ? null
-                      : (value) => setState(
-                          () => _categoryRecall[index] = value ?? false),
-                  title: Text('$word (hint: $hint)'),
-                  subtitle: Text('Category: $hint'),
-                  activeColor: MocaColors.recallColor,
+                      : () => setState(
+                          () => _categoryRecall[index] = !isSelected,
+                        ),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 10,
+                      horizontal: 12,
+                    ),
+                    margin: const EdgeInsets.only(bottom: 8),
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? MocaColors.recallColor.withOpacity(0.1)
+                          : (isDisabled
+                                ? Colors.grey.withOpacity(0.1)
+                                : Colors.transparent),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: isSelected
+                            ? MocaColors.recallColor
+                            : (isDisabled
+                                  ? Colors.grey.shade300
+                                  : MocaColors.border),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          isSelected
+                              ? Icons.check_circle
+                              : Icons.circle_outlined,
+                          color: isDisabled
+                              ? Colors.grey.shade400
+                              : (isSelected
+                                    ? MocaColors.recallColor
+                                    : MocaColors.textSecondary),
+                          size: 20,
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                word,
+                                style: TextStyle(
+                                  fontFamily: MocaColors.fontFamily,
+                                  fontWeight: FontWeight.w500,
+                                  color: isDisabled
+                                      ? Colors.grey
+                                      : MocaColors.textPrimary,
+                                  decoration: isDisabled
+                                      ? TextDecoration.lineThrough
+                                      : null,
+                                ),
+                              ),
+                              Text(
+                                'Hint: $hint',
+                                style: TextStyle(
+                                  fontFamily: MocaColors.fontFamily,
+                                  fontSize: 12,
+                                  color: MocaColors.textSecondary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 );
               }).toList(),
             ),
@@ -228,8 +314,14 @@ class _DelayedRecallScreenState extends State<DelayedRecallScreen> {
   Widget _buildMultipleChoiceExpansionTile() {
     return Card(
       child: ExpansionTile(
-        title: const Text('Multiple Choice (optional)'),
-        subtitle: const Text('Use if category cue fails'),
+        title: Text(
+          'Multiple Choice (optional)',
+          style: TextStyle(fontFamily: MocaColors.fontFamily),
+        ),
+        subtitle: Text(
+          'Use if category cue fails',
+          style: TextStyle(fontFamily: MocaColors.fontFamily, fontSize: 12),
+        ),
         children: [
           Padding(
             padding: const EdgeInsets.all(16),
@@ -237,14 +329,68 @@ class _DelayedRecallScreenState extends State<DelayedRecallScreen> {
               children: MocaConstants.memoryWords.asMap().entries.map((entry) {
                 final index = entry.key;
                 final word = entry.value;
-                return CheckboxListTile(
-                  value: _multipleChoiceRecall[index],
-                  onChanged: (_uncuedRecall[index] || _categoryRecall[index])
+                final isDisabled =
+                    _uncuedRecall[index] || _categoryRecall[index];
+                final isSelected = _multipleChoiceRecall[index];
+                return InkWell(
+                  onTap: isDisabled
                       ? null
-                      : (value) => setState(
-                          () => _multipleChoiceRecall[index] = value ?? false),
-                  title: Text(word),
-                  activeColor: MocaColors.recallColor,
+                      : () => setState(
+                          () => _multipleChoiceRecall[index] = !isSelected,
+                        ),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 10,
+                      horizontal: 12,
+                    ),
+                    margin: const EdgeInsets.only(bottom: 8),
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? MocaColors.recallColor.withOpacity(0.1)
+                          : (isDisabled
+                                ? Colors.grey.withOpacity(0.1)
+                                : Colors.transparent),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: isSelected
+                            ? MocaColors.recallColor
+                            : (isDisabled
+                                  ? Colors.grey.shade300
+                                  : MocaColors.border),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          isSelected
+                              ? Icons.check_circle
+                              : Icons.circle_outlined,
+                          color: isDisabled
+                              ? Colors.grey.shade400
+                              : (isSelected
+                                    ? MocaColors.recallColor
+                                    : MocaColors.textSecondary),
+                          size: 20,
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            word,
+                            style: TextStyle(
+                              fontFamily: MocaColors.fontFamily,
+                              fontWeight: FontWeight.w500,
+                              color: isDisabled
+                                  ? Colors.grey
+                                  : MocaColors.textPrimary,
+                              decoration: isDisabled
+                                  ? TextDecoration.lineThrough
+                                  : null,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 );
               }).toList(),
             ),
@@ -255,8 +401,11 @@ class _DelayedRecallScreenState extends State<DelayedRecallScreen> {
   }
 
   Widget _buildBottomBar() {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isSmallScreen = screenWidth < 360;
+
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(isSmallScreen ? 12 : 20),
       decoration: BoxDecoration(
         color: Colors.white,
         boxShadow: [
@@ -269,54 +418,133 @@ class _DelayedRecallScreenState extends State<DelayedRecallScreen> {
       ),
       child: SafeArea(
         top: false,
-        child: Row(
-          children: [
-            Expanded(
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: MocaColors.recallColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Text(
-                  'Score: $totalScore/5 (uncued only)',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: MocaColors.recallColor,
-                  ),
-                ),
-              ),
-            ),
-            OutlinedButton(
-              onPressed: () => context.pop(),
-              child: const Text('Back'),
-            ),
-            const SizedBox(width: 8),
-            ElevatedButton(
-              onPressed: () {
-                context.read<MocaAssessmentBloc>().add(
-                      MocaSaveSectionResult(
-                        section: 'delayedRecall',
-                        score: totalScore,
-                        maxScore: 5,
-                        details: {
-                          'uncued': _uncuedRecall,
-                          'category': _categoryRecall,
-                          'multiple_choice': _multipleChoiceRecall,
-                        },
+        child: isSmallScreen
+            ? Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: MocaColors.recallColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Text(
+                      'Score: $totalScore/5 (uncued only)',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontFamily: MocaColors.fontFamily,
+                        fontWeight: FontWeight.bold,
+                        color: MocaColors.recallColor,
                       ),
-                    );
-                context.read<MocaAssessmentBloc>().add(MocaNextSection());
-                context.push('/moca/orientation');
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: MocaColors.recallColor,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => context.pop(),
+                          child: Text(
+                            'Back',
+                            style: TextStyle(fontFamily: MocaColors.fontFamily),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () {
+                            context.read<MocaAssessmentBloc>().add(
+                              MocaSaveSectionResult(
+                                section: 'delayedRecall',
+                                score: totalScore,
+                                maxScore: 5,
+                                details: {
+                                  'uncued': _uncuedRecall,
+                                  'category': _categoryRecall,
+                                  'multiple_choice': _multipleChoiceRecall,
+                                },
+                              ),
+                            );
+                            context.read<MocaAssessmentBloc>().add(
+                              MocaNextSection(),
+                            );
+                            context.push('/moca/orientation');
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: MocaColors.recallColor,
+                          ),
+                          child: Text(
+                            'Continue',
+                            style: TextStyle(fontFamily: MocaColors.fontFamily),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              )
+            : Row(
+                children: [
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: MocaColors.recallColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Text(
+                        'Score: $totalScore/5 (uncued only)',
+                        style: TextStyle(
+                          fontFamily: MocaColors.fontFamily,
+                          fontWeight: FontWeight.bold,
+                          color: MocaColors.recallColor,
+                        ),
+                      ),
+                    ),
+                  ),
+                  OutlinedButton(
+                    onPressed: () => context.pop(),
+                    child: Text(
+                      'Back',
+                      style: TextStyle(fontFamily: MocaColors.fontFamily),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  ElevatedButton(
+                    onPressed: () {
+                      context.read<MocaAssessmentBloc>().add(
+                        MocaSaveSectionResult(
+                          section: 'delayedRecall',
+                          score: totalScore,
+                          maxScore: 5,
+                          details: {
+                            'uncued': _uncuedRecall,
+                            'category': _categoryRecall,
+                            'multiple_choice': _multipleChoiceRecall,
+                          },
+                        ),
+                      );
+                      context.read<MocaAssessmentBloc>().add(MocaNextSection());
+                      context.push('/moca/orientation');
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: MocaColors.recallColor,
+                    ),
+                    child: Text(
+                      'Continue',
+                      style: TextStyle(fontFamily: MocaColors.fontFamily),
+                    ),
+                  ),
+                ],
               ),
-              child: const Text('Continue'),
-            ),
-          ],
-        ),
       ),
     );
   }

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../constants/moca_colors.dart';
 
 /// Responsive bottom bar for assessment screens
+/// Handles small screens by stacking elements vertically
 class ResponsiveBottomBar extends StatelessWidget {
   final String scoreText;
   final Color scoreColor;
@@ -26,7 +27,7 @@ class ResponsiveBottomBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
-    final isSmallScreen = screenWidth < 360;
+    final isSmallScreen = screenWidth < 400;
 
     return Container(
       padding: EdgeInsets.all(isSmallScreen ? 12 : 20),
@@ -58,8 +59,10 @@ class ResponsiveBottomBar extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: scoreColor.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(16),
@@ -67,6 +70,7 @@ class ResponsiveBottomBar extends StatelessWidget {
                 child: Text(
                   scoreText,
                   style: TextStyle(
+                    fontFamily: MocaColors.fontFamily,
                     fontWeight: FontWeight.bold,
                     color: scoreColor,
                     fontSize: 13,
@@ -77,7 +81,8 @@ class ResponsiveBottomBar extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   subtitle!,
-                  style: const TextStyle(
+                  style: TextStyle(
+                    fontFamily: MocaColors.fontFamily,
                     fontSize: 11,
                     color: MocaColors.textSecondary,
                   ),
@@ -95,7 +100,10 @@ class ResponsiveBottomBar extends StatelessWidget {
               style: OutlinedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
               ),
-              child: const Text('Back'),
+              child: Text(
+                'Back',
+                style: TextStyle(fontFamily: MocaColors.fontFamily),
+              ),
             ),
           ),
           const SizedBox(width: 8),
@@ -106,6 +114,7 @@ class ResponsiveBottomBar extends StatelessWidget {
             onPressed: isLoading ? null : onContinue,
             style: ElevatedButton.styleFrom(
               backgroundColor: scoreColor,
+              foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(horizontal: 20),
             ),
             child: isLoading
@@ -117,7 +126,10 @@ class ResponsiveBottomBar extends StatelessWidget {
                       color: Colors.white,
                     ),
                   )
-                : Text(continueText),
+                : Text(
+                    continueText,
+                    style: TextStyle(fontFamily: MocaColors.fontFamily),
+                  ),
           ),
         ),
       ],
@@ -128,76 +140,89 @@ class ResponsiveBottomBar extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Flexible(
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: scoreColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
+        // Score and subtitle row
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            color: scoreColor.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                scoreText,
+                style: TextStyle(
+                  fontFamily: MocaColors.fontFamily,
+                  fontWeight: FontWeight.bold,
+                  color: scoreColor,
+                  fontSize: 13,
                 ),
-                child: Text(
-                  scoreText,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: scoreColor,
-                    fontSize: 12,
-                  ),
-                ),
+                textAlign: TextAlign.center,
               ),
-            ),
-            if (subtitle != null)
-              Flexible(
-                child: Text(
+              if (subtitle != null) ...[
+                const SizedBox(height: 2),
+                Text(
                   subtitle!,
-                  style: const TextStyle(
+                  style: TextStyle(
+                    fontFamily: MocaColors.fontFamily,
                     fontSize: 10,
                     color: MocaColors.textSecondary,
                   ),
-                  textAlign: TextAlign.right,
+                  textAlign: TextAlign.center,
                 ),
-              ),
-          ],
+              ],
+            ],
+          ),
         ),
         const SizedBox(height: 10),
-        Row(
+        // Buttons row - using Wrap for responsiveness
+        Wrap(
+          alignment: WrapAlignment.center,
+          spacing: 8,
+          runSpacing: 8,
           children: [
-            if (onBack != null) ...[
-              Expanded(
-                child: SizedBox(
-                  height: 40,
-                  child: OutlinedButton(
-                    onPressed: onBack,
-                    child: const Text('Back', style: TextStyle(fontSize: 13)),
+            if (onBack != null)
+              SizedBox(
+                width: onBack != null ? 100 : double.infinity,
+                height: 40,
+                child: OutlinedButton(
+                  onPressed: onBack,
+                  child: Text(
+                    'Back',
+                    style: TextStyle(
+                      fontFamily: MocaColors.fontFamily,
+                      fontSize: 13,
+                    ),
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
-            ],
-            Expanded(
-              flex: onBack != null ? 1 : 2,
-              child: SizedBox(
-                height: 40,
-                child: ElevatedButton(
-                  onPressed: isLoading ? null : onContinue,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: scoreColor,
-                  ),
-                  child: isLoading
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        )
-                      : Text(continueText,
-                          style: const TextStyle(fontSize: 13)),
+            SizedBox(
+              width: 120,
+              height: 40,
+              child: ElevatedButton(
+                onPressed: isLoading ? null : onContinue,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: scoreColor,
+                  foregroundColor: Colors.white,
                 ),
+                child: isLoading
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : Text(
+                        continueText,
+                        style: TextStyle(
+                          fontFamily: MocaColors.fontFamily,
+                          fontSize: 13,
+                        ),
+                      ),
               ),
             ),
           ],

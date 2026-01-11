@@ -72,6 +72,8 @@ class _VisuospatialScreenState extends State<VisuospatialScreen>
           Expanded(
             child: TabBarView(
               controller: _tabController,
+              // Disable swipe to prevent conflicts with drawing canvas
+              physics: const NeverScrollableScrollPhysics(),
               children: [
                 _buildTrailMaking(),
                 _buildCubeCopy(),
@@ -96,28 +98,23 @@ class _VisuospatialScreenState extends State<VisuospatialScreen>
         children: [
           Text(
             'Trail Making Test (1 point)',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
           const Text(
             'Draw a line connecting the numbers and letters in alternating order: 1 → A → 2 → B → 3 → C → 4 → D → 5 → E',
           ),
           const SizedBox(height: 20),
-          // Wrap canvas in GestureDetector with eager behavior to prevent scroll
-          GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onVerticalDragStart: (_) {},
-            onVerticalDragUpdate: (_) {},
-            child: AspectRatio(
-              aspectRatio: 1,
-              child: DrawingCanvas(
-                key: _trailCanvasKey,
-                strokeColor: MocaColors.visuospatialColor,
-                showGuide: true,
-                guideWidget: CustomPaint(painter: _TrailGuidePainter()),
-              ),
+          // Drawing canvas handles its own gesture conflicts
+          AspectRatio(
+            aspectRatio: 1,
+            child: DrawingCanvas(
+              key: _trailCanvasKey,
+              strokeColor: MocaColors.visuospatialColor,
+              showGuide: true,
+              guideWidget: CustomPaint(painter: _TrailGuidePainter()),
             ),
           ),
           const SizedBox(height: 16),
@@ -161,42 +158,33 @@ class _VisuospatialScreenState extends State<VisuospatialScreen>
         children: [
           Text(
             'Cube Copy (1 point)',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
           const Text('Copy the 3D cube as accurately as possible.'),
           const SizedBox(height: 20),
-          Row(
-            children: [
-              Expanded(
-                child: Column(
-                  children: [
-                    const Text(
-                      'Template',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        color: MocaColors.textSecondary,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Container(
-                      height: 150,
-                      decoration: BoxDecoration(
-                        color: Colors.grey[100],
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: MocaColors.border),
-                      ),
-                      child: CustomPaint(
-                        painter: _CubeTemplatePainter(),
-                        size: Size.infinite,
-                      ),
-                    ),
-                  ],
+          // Fixed cube template - square aspect ratio and centered
+          Center(
+            child: AspectRatio(
+              aspectRatio: 1.0, // Perfect square
+              child: Container(
+                constraints: const BoxConstraints(
+                  maxWidth: 200,
+                  maxHeight: 200,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.grey[100],
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: MocaColors.border),
+                ),
+                child: CustomPaint(
+                  painter: _CubeTemplatePainter(),
+                  size: Size.infinite,
                 ),
               ),
-            ],
+            ),
           ),
           const SizedBox(height: 16),
           const Text(
@@ -204,17 +192,12 @@ class _VisuospatialScreenState extends State<VisuospatialScreen>
             style: TextStyle(fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 8),
-          // Wrap canvas to prevent scroll conflicts
-          GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onVerticalDragStart: (_) {},
-            onVerticalDragUpdate: (_) {},
-            child: AspectRatio(
-              aspectRatio: 1.5,
-              child: DrawingCanvas(
-                key: _cubeCanvasKey,
-                strokeColor: MocaColors.visuospatialColor,
-              ),
+          // Drawing canvas handles its own gesture conflicts
+          AspectRatio(
+            aspectRatio: 1.5,
+            child: DrawingCanvas(
+              key: _cubeCanvasKey,
+              strokeColor: MocaColors.visuospatialColor,
             ),
           ),
           const SizedBox(height: 16),
@@ -258,26 +241,21 @@ class _VisuospatialScreenState extends State<VisuospatialScreen>
         children: [
           Text(
             'Clock Drawing (3 points)',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
           const Text(
             'Draw a clock showing "ten past eleven" (11:10). Include all numbers and hands.',
           ),
           const SizedBox(height: 20),
-          // Wrap canvas to prevent scroll conflicts
-          GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onVerticalDragStart: (_) {},
-            onVerticalDragUpdate: (_) {},
-            child: AspectRatio(
-              aspectRatio: 1,
-              child: DrawingCanvas(
-                key: _clockCanvasKey,
-                strokeColor: MocaColors.visuospatialColor,
-              ),
+          // Drawing canvas handles its own gesture conflicts
+          AspectRatio(
+            aspectRatio: 1,
+            child: DrawingCanvas(
+              key: _clockCanvasKey,
+              strokeColor: MocaColors.visuospatialColor,
             ),
           ),
           const SizedBox(height: 16),
@@ -356,8 +334,9 @@ class _VisuospatialScreenState extends State<VisuospatialScreen>
                   child: Text(
                     label,
                     style: TextStyle(
-                      color:
-                          value ? MocaColors.success : MocaColors.textPrimary,
+                      color: value
+                          ? MocaColors.success
+                          : MocaColors.textPrimary,
                     ),
                   ),
                 ),
@@ -370,8 +349,11 @@ class _VisuospatialScreenState extends State<VisuospatialScreen>
   }
 
   Widget _buildBottomBar() {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isSmallScreen = screenWidth < 400;
+
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(isSmallScreen ? 12 : 20),
       decoration: BoxDecoration(
         color: Colors.white,
         boxShadow: [
@@ -384,64 +366,134 @@ class _VisuospatialScreenState extends State<VisuospatialScreen>
       ),
       child: SafeArea(
         top: false,
-        child: Row(
+        child: isSmallScreen
+            ? _buildCompactBottomBar()
+            : _buildNormalBottomBar(),
+      ),
+    );
+  }
+
+  Widget _buildNormalBottomBar() {
+    return Row(
+      children: [
+        Flexible(
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: MocaColors.visuospatialColor.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Text(
+              'Score: $totalScore/5',
+              style: TextStyle(
+                fontFamily: MocaColors.fontFamily,
+                fontWeight: FontWeight.bold,
+                color: MocaColors.visuospatialColor,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        OutlinedButton(
+          onPressed: () => context.pop(),
+          child: Text(
+            'Back',
+            style: TextStyle(fontFamily: MocaColors.fontFamily),
+          ),
+        ),
+        const SizedBox(width: 8),
+        ElevatedButton(
+          onPressed: _onContinue,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: MocaColors.visuospatialColor,
+            foregroundColor: Colors.white,
+          ),
+          child: Text(
+            'Continue',
+            style: TextStyle(fontFamily: MocaColors.fontFamily),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCompactBottomBar() {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            color: MocaColors.visuospatialColor.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Text(
+            'Score: $totalScore/5',
+            style: TextStyle(
+              fontFamily: MocaColors.fontFamily,
+              fontWeight: FontWeight.bold,
+              color: MocaColors.visuospatialColor,
+              fontSize: 13,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ),
+        const SizedBox(height: 10),
+        Row(
           children: [
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: MocaColors.visuospatialColor.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Text(
-                      'Score: $totalScore/5',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: MocaColors.visuospatialColor,
-                      ),
-                    ),
+              child: OutlinedButton(
+                onPressed: () => context.pop(),
+                child: Text(
+                  'Back',
+                  style: TextStyle(
+                    fontFamily: MocaColors.fontFamily,
+                    fontSize: 13,
                   ),
-                ],
+                ),
               ),
-            ),
-            OutlinedButton(
-              onPressed: () => context.pop(),
-              child: const Text('Back'),
             ),
             const SizedBox(width: 8),
-            ElevatedButton(
-              onPressed: () {
-                context.read<MocaAssessmentBloc>().add(
-                      MocaSaveSectionResult(
-                        section: 'visuospatial',
-                        score: totalScore,
-                        maxScore: 5,
-                        details: {
-                          'trail': _trailScore,
-                          'cube': _cubeScore,
-                          'clock_contour': _clockContourScore,
-                          'clock_numbers': _clockNumbersScore,
-                          'clock_hands': _clockHandsScore,
-                        },
-                      ),
-                    );
-                context.read<MocaAssessmentBloc>().add(MocaNextSection());
-                context.push('/moca/naming');
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: MocaColors.visuospatialColor,
+            Expanded(
+              child: ElevatedButton(
+                onPressed: _onContinue,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: MocaColors.visuospatialColor,
+                  foregroundColor: Colors.white,
+                ),
+                child: Text(
+                  'Continue',
+                  style: TextStyle(
+                    fontFamily: MocaColors.fontFamily,
+                    fontSize: 13,
+                  ),
+                ),
               ),
-              child: const Text('Continue'),
             ),
           ],
         ),
+      ],
+    );
+  }
+
+  void _onContinue() {
+    context.read<MocaAssessmentBloc>().add(
+      MocaSaveSectionResult(
+        section: 'visuospatial',
+        score: totalScore,
+        maxScore: 5,
+        details: {
+          'trail': _trailScore,
+          'cube': _cubeScore,
+          'clock_contour': _clockContourScore,
+          'clock_numbers': _clockNumbersScore,
+          'clock_hands': _clockHandsScore,
+        },
       ),
     );
+    context.read<MocaAssessmentBloc>().add(MocaNextSection());
+    context.push('/moca/naming');
   }
 }
 
@@ -462,9 +514,7 @@ class _TrailGuidePainter extends CustomPainter {
       ..strokeWidth = 2
       ..style = PaintingStyle.stroke;
 
-    final textPainter = TextPainter(
-      textDirection: TextDirection.ltr,
-    );
+    final textPainter = TextPainter(textDirection: TextDirection.ltr);
 
     // Official MoCA-P trail pattern positions (carefully arranged for proper alternation)
     // The pattern should be solvable without crossing lines

@@ -60,8 +60,10 @@ class _OrientationScreenState extends State<OrientationScreen> {
                       padding: const EdgeInsets.all(16),
                       child: Row(
                         children: [
-                          Icon(Icons.calendar_today,
-                              color: MocaColors.orientationColor),
+                          Icon(
+                            Icons.calendar_today,
+                            color: MocaColors.orientationColor,
+                          ),
                           const SizedBox(width: 12),
                           Expanded(
                             child: Column(
@@ -70,8 +72,9 @@ class _OrientationScreenState extends State<OrientationScreen> {
                                 const Text(
                                   'Today\'s Date (for reference)',
                                   style: TextStyle(
-                                      fontSize: 12,
-                                      color: MocaColors.textSecondary),
+                                    fontSize: 12,
+                                    color: MocaColors.textSecondary,
+                                  ),
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
@@ -95,8 +98,8 @@ class _OrientationScreenState extends State<OrientationScreen> {
                   Text(
                     'Time Orientation (4 points)',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: 16),
 
@@ -134,8 +137,8 @@ class _OrientationScreenState extends State<OrientationScreen> {
                   Text(
                     'Place Orientation (2 points)',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: 16),
 
@@ -186,21 +189,27 @@ class _OrientationScreenState extends State<OrientationScreen> {
                       Text(
                         label,
                         style: const TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 16),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         hint,
                         style: const TextStyle(
-                            color: MocaColors.textSecondary, fontSize: 13),
+                          color: MocaColors.textSecondary,
+                          fontSize: 13,
+                        ),
                       ),
                     ],
                   ),
                 ),
                 if (correctAnswer != 'Varies')
                   Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: MocaColors.orientationColor.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8),
@@ -258,8 +267,9 @@ class _OrientationScreenState extends State<OrientationScreen> {
                   child: Text(
                     label,
                     style: TextStyle(
-                      color:
-                          value ? MocaColors.success : MocaColors.textPrimary,
+                      color: value
+                          ? MocaColors.success
+                          : MocaColors.textPrimary,
                     ),
                   ),
                 ),
@@ -272,8 +282,11 @@ class _OrientationScreenState extends State<OrientationScreen> {
   }
 
   Widget _buildBottomBar() {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isSmallScreen = screenWidth < 360;
+
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(isSmallScreen ? 12 : 20),
       decoration: BoxDecoration(
         color: Colors.white,
         boxShadow: [
@@ -286,59 +299,141 @@ class _OrientationScreenState extends State<OrientationScreen> {
       ),
       child: SafeArea(
         top: false,
-        child: Row(
-          children: [
-            Expanded(
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: MocaColors.orientationColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Text(
-                  'Score: $totalScore/6',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: MocaColors.orientationColor,
-                  ),
-                ),
-              ),
-            ),
-            OutlinedButton(
-              onPressed: () => context.pop(),
-              child: const Text('Back'),
-            ),
-            const SizedBox(width: 8),
-            ElevatedButton(
-              onPressed: () {
-                context.read<MocaAssessmentBloc>().add(
-                      MocaSaveSectionResult(
-                        section: 'orientation',
-                        score: totalScore,
-                        maxScore: 6,
-                        details: {
-                          'date': _dateCorrect,
-                          'month': _monthCorrect,
-                          'year': _yearCorrect,
-                          'day': _dayCorrect,
-                          'place': _placeCorrect,
-                          'city': _cityCorrect,
-                        },
+        child: isSmallScreen
+            ? Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: MocaColors.orientationColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Text(
+                      'Score: $totalScore/6',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontFamily: MocaColors.fontFamily,
+                        fontWeight: FontWeight.bold,
+                        color: MocaColors.orientationColor,
                       ),
-                    );
-                context
-                    .read<MocaAssessmentBloc>()
-                    .add(MocaCompleteAssessment());
-                context.push('/moca/complete');
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: MocaColors.orientationColor,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => context.pop(),
+                          child: Text(
+                            'Back',
+                            style: TextStyle(fontFamily: MocaColors.fontFamily),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () {
+                            context.read<MocaAssessmentBloc>().add(
+                              MocaSaveSectionResult(
+                                section: 'orientation',
+                                score: totalScore,
+                                maxScore: 6,
+                                details: {
+                                  'date': _dateCorrect,
+                                  'month': _monthCorrect,
+                                  'year': _yearCorrect,
+                                  'day': _dayCorrect,
+                                  'place': _placeCorrect,
+                                  'city': _cityCorrect,
+                                },
+                              ),
+                            );
+                            context.read<MocaAssessmentBloc>().add(
+                              MocaCompleteAssessment(),
+                            );
+                            context.push('/moca/complete');
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: MocaColors.orientationColor,
+                          ),
+                          child: Text(
+                            'Complete',
+                            style: TextStyle(fontFamily: MocaColors.fontFamily),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              )
+            : Row(
+                children: [
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: MocaColors.orientationColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Text(
+                        'Score: $totalScore/6',
+                        style: TextStyle(
+                          fontFamily: MocaColors.fontFamily,
+                          fontWeight: FontWeight.bold,
+                          color: MocaColors.orientationColor,
+                        ),
+                      ),
+                    ),
+                  ),
+                  OutlinedButton(
+                    onPressed: () => context.pop(),
+                    child: Text(
+                      'Back',
+                      style: TextStyle(fontFamily: MocaColors.fontFamily),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  ElevatedButton(
+                    onPressed: () {
+                      context.read<MocaAssessmentBloc>().add(
+                        MocaSaveSectionResult(
+                          section: 'orientation',
+                          score: totalScore,
+                          maxScore: 6,
+                          details: {
+                            'date': _dateCorrect,
+                            'month': _monthCorrect,
+                            'year': _yearCorrect,
+                            'day': _dayCorrect,
+                            'place': _placeCorrect,
+                            'city': _cityCorrect,
+                          },
+                        ),
+                      );
+                      context.read<MocaAssessmentBloc>().add(
+                        MocaCompleteAssessment(),
+                      );
+                      context.push('/moca/complete');
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: MocaColors.orientationColor,
+                    ),
+                    child: Text(
+                      'Complete',
+                      style: TextStyle(fontFamily: MocaColors.fontFamily),
+                    ),
+                  ),
+                ],
               ),
-              child: const Text('Complete'),
-            ),
-          ],
-        ),
       ),
     );
   }

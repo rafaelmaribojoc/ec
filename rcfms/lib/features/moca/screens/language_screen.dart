@@ -100,10 +100,7 @@ class _LanguageScreenState extends State<LanguageScreen>
           Expanded(
             child: TabBarView(
               controller: _tabController,
-              children: [
-                _buildRepetition(),
-                _buildFluency(),
-              ],
+              children: [_buildRepetition(), _buildFluency()],
             ),
           ),
           _buildBottomBar(),
@@ -120,25 +117,37 @@ class _LanguageScreenState extends State<LanguageScreen>
         children: [
           Text(
             'Sentence Repetition (2 points)',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
           const Text('Read each sentence once. Subject must repeat exactly.'),
           const SizedBox(height: 24),
-          _buildSentenceCard(1, MocaConstants.repetitionSentences[0],
-              _sentence1Correct, (v) => setState(() => _sentence1Correct = v)),
+          _buildSentenceCard(
+            1,
+            MocaConstants.repetitionSentences[0],
+            _sentence1Correct,
+            (v) => setState(() => _sentence1Correct = v),
+          ),
           const SizedBox(height: 16),
-          _buildSentenceCard(2, MocaConstants.repetitionSentences[1],
-              _sentence2Correct, (v) => setState(() => _sentence2Correct = v)),
+          _buildSentenceCard(
+            2,
+            MocaConstants.repetitionSentences[1],
+            _sentence2Correct,
+            (v) => setState(() => _sentence2Correct = v),
+          ),
         ],
       ),
     );
   }
 
   Widget _buildSentenceCard(
-      int index, String sentence, bool isCorrect, Function(bool) onChanged) {
+    int index,
+    String sentence,
+    bool isCorrect,
+    Function(bool) onChanged,
+  ) {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(20),
@@ -158,13 +167,17 @@ class _LanguageScreenState extends State<LanguageScreen>
                     child: Text(
                       '$index',
                       style: const TextStyle(
-                          color: Colors.white, fontWeight: FontWeight.bold),
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ),
                 const SizedBox(width: 12),
-                Text('Sentence $index',
-                    style: const TextStyle(fontWeight: FontWeight.bold)),
+                Text(
+                  'Sentence $index',
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
               ],
             ),
             const SizedBox(height: 16),
@@ -176,8 +189,10 @@ class _LanguageScreenState extends State<LanguageScreen>
               ),
               child: Text(
                 '"$sentence"',
-                style:
-                    const TextStyle(fontSize: 16, fontStyle: FontStyle.italic),
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontStyle: FontStyle.italic,
+                ),
               ),
             ),
             const SizedBox(height: 16),
@@ -197,101 +212,132 @@ class _LanguageScreenState extends State<LanguageScreen>
           Text(
             'Verbal Fluency (1 point)',
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+              fontWeight: FontWeight.bold,
+              fontFamily: MocaColors.fontFamily,
+            ),
           ),
           const SizedBox(height: 8),
           Text(
             'Name as many words as possible beginning with "${MocaConstants.fluencyLetter}" in 60 seconds.',
           ),
           const SizedBox(height: 24),
-          Card(
-            color: _timerCompleted
-                ? MocaColors.successLight
-                : MocaColors.languageColor.withOpacity(0.1),
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                children: [
-                  Text(
-                    _timerStarted
-                        ? '${_remainingSeconds}s'
-                        : '${MocaConstants.fluencyDurationSeconds}s',
-                    style: TextStyle(
-                      fontSize: 48,
-                      fontWeight: FontWeight.bold,
-                      color: _timerCompleted
-                          ? MocaColors.success
-                          : MocaColors.languageColor,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  if (!_timerStarted)
-                    ElevatedButton.icon(
-                      onPressed: _startTimer,
-                      icon: const Icon(Icons.play_arrow),
-                      label: const Text('Start Timer'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: MocaColors.languageColor,
-                      ),
-                    )
-                  else if (!_timerCompleted)
-                    ElevatedButton.icon(
-                      onPressed: _resetTimer,
-                      icon: const Icon(Icons.refresh),
-                      label: const Text('Reset'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: MocaColors.error,
-                      ),
-                    )
-                  else
-                    const Text(
-                      'Time\'s up!',
+          // Timer card - centered
+          Center(
+            child: Card(
+              color: _timerCompleted
+                  ? MocaColors.successLight
+                  : MocaColors.languageColor.withOpacity(0.1),
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      _timerStarted
+                          ? '${_remainingSeconds}s'
+                          : '${MocaConstants.fluencyDurationSeconds}s',
                       style: TextStyle(
-                        fontSize: 18,
+                        fontFamily: MocaColors.fontFamily,
+                        fontSize: 48,
                         fontWeight: FontWeight.bold,
-                        color: MocaColors.success,
+                        color: _timerCompleted
+                            ? MocaColors.success
+                            : MocaColors.languageColor,
                       ),
                     ),
-                ],
+                    const SizedBox(height: 16),
+                    if (!_timerStarted)
+                      ElevatedButton.icon(
+                        onPressed: _startTimer,
+                        icon: const Icon(Icons.play_arrow),
+                        label: Text(
+                          'Start Timer',
+                          style: TextStyle(fontFamily: MocaColors.fontFamily),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: MocaColors.languageColor,
+                          foregroundColor: Colors.white,
+                        ),
+                      )
+                    else if (!_timerCompleted)
+                      ElevatedButton.icon(
+                        onPressed: _resetTimer,
+                        icon: const Icon(Icons.refresh),
+                        label: Text(
+                          'Reset',
+                          style: TextStyle(fontFamily: MocaColors.fontFamily),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: MocaColors.error,
+                          foregroundColor: Colors.white,
+                        ),
+                      )
+                    else
+                      Text(
+                        'Time\'s up!',
+                        style: TextStyle(
+                          fontFamily: MocaColors.fontFamily,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: MocaColors.success,
+                        ),
+                      ),
+                  ],
+                ),
               ),
             ),
           ),
           const SizedBox(height: 24),
-          Text('Word Count:', style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              IconButton(
-                onPressed:
-                    _wordCount > 0 ? () => setState(() => _wordCount--) : null,
-                icon: const Icon(Icons.remove_circle_outline),
-                iconSize: 32,
+          // Word Count - centered and responsive
+          Center(
+            child: Text(
+              'Word Count:',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontFamily: MocaColors.fontFamily,
               ),
-              Container(
-                width: 80,
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                decoration: BoxDecoration(
-                  color: MocaColors.languageColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Center(
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                IconButton(
+                  onPressed: _wordCount > 0
+                      ? () => setState(() => _wordCount--)
+                      : null,
+                  icon: const Icon(Icons.remove_circle_outline),
+                  iconSize: 32,
+                  color: MocaColors.languageColor,
                 ),
-                child: Center(
-                  child: Text(
-                    '$_wordCount',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: MocaColors.languageColor,
+                Container(
+                  width: 80,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  decoration: BoxDecoration(
+                    color: MocaColors.languageColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Center(
+                    child: Text(
+                      '$_wordCount',
+                      style: TextStyle(
+                        fontFamily: MocaColors.fontFamily,
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: MocaColors.languageColor,
+                      ),
                     ),
                   ),
                 ),
-              ),
-              IconButton(
-                onPressed: () => setState(() => _wordCount++),
-                icon: const Icon(Icons.add_circle_outline),
-                iconSize: 32,
-              ),
-            ],
+                IconButton(
+                  onPressed: () => setState(() => _wordCount++),
+                  icon: const Icon(Icons.add_circle_outline),
+                  iconSize: 32,
+                  color: MocaColors.languageColor,
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: 16),
           Card(
@@ -299,13 +345,17 @@ class _LanguageScreenState extends State<LanguageScreen>
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Icon(Icons.info_outline, color: MocaColors.info),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
                       'Score 1 point if ≥${MocaConstants.fluencyMinimumWords} words. Current: ${_wordCount >= MocaConstants.fluencyMinimumWords ? "Pass ✓" : "Need more words"}',
-                      style: const TextStyle(color: MocaColors.info),
+                      style: TextStyle(
+                        fontFamily: MocaColors.fontFamily,
+                        color: MocaColors.info,
+                      ),
                     ),
                   ),
                 ],
@@ -351,8 +401,9 @@ class _LanguageScreenState extends State<LanguageScreen>
                   child: Text(
                     label,
                     style: TextStyle(
-                      color:
-                          value ? MocaColors.success : MocaColors.textPrimary,
+                      color: value
+                          ? MocaColors.success
+                          : MocaColors.textPrimary,
                     ),
                   ),
                 ),
@@ -365,8 +416,11 @@ class _LanguageScreenState extends State<LanguageScreen>
   }
 
   Widget _buildBottomBar() {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isSmallScreen = screenWidth < 360;
+
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(isSmallScreen ? 12 : 20),
       decoration: BoxDecoration(
         color: Colors.white,
         boxShadow: [
@@ -379,54 +433,133 @@ class _LanguageScreenState extends State<LanguageScreen>
       ),
       child: SafeArea(
         top: false,
-        child: Row(
-          children: [
-            Expanded(
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: MocaColors.languageColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Text(
-                  'Score: $totalScore/3',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: MocaColors.languageColor,
-                  ),
-                ),
-              ),
-            ),
-            OutlinedButton(
-              onPressed: () => context.pop(),
-              child: const Text('Back'),
-            ),
-            const SizedBox(width: 8),
-            ElevatedButton(
-              onPressed: () {
-                context.read<MocaAssessmentBloc>().add(
-                      MocaSaveSectionResult(
-                        section: 'language',
-                        score: totalScore,
-                        maxScore: 3,
-                        details: {
-                          'sentence1': _sentence1Correct,
-                          'sentence2': _sentence2Correct,
-                          'fluency_count': _wordCount,
-                        },
+        child: isSmallScreen
+            ? Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: MocaColors.languageColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Text(
+                      'Score: $totalScore/3',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontFamily: MocaColors.fontFamily,
+                        fontWeight: FontWeight.bold,
+                        color: MocaColors.languageColor,
                       ),
-                    );
-                context.read<MocaAssessmentBloc>().add(MocaNextSection());
-                context.push('/moca/abstraction');
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: MocaColors.languageColor,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => context.pop(),
+                          child: Text(
+                            'Back',
+                            style: TextStyle(fontFamily: MocaColors.fontFamily),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () {
+                            context.read<MocaAssessmentBloc>().add(
+                              MocaSaveSectionResult(
+                                section: 'language',
+                                score: totalScore,
+                                maxScore: 3,
+                                details: {
+                                  'sentence1': _sentence1Correct,
+                                  'sentence2': _sentence2Correct,
+                                  'fluency_count': _wordCount,
+                                },
+                              ),
+                            );
+                            context.read<MocaAssessmentBloc>().add(
+                              MocaNextSection(),
+                            );
+                            context.push('/moca/abstraction');
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: MocaColors.languageColor,
+                          ),
+                          child: Text(
+                            'Continue',
+                            style: TextStyle(fontFamily: MocaColors.fontFamily),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              )
+            : Row(
+                children: [
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: MocaColors.languageColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Text(
+                        'Score: $totalScore/3',
+                        style: TextStyle(
+                          fontFamily: MocaColors.fontFamily,
+                          fontWeight: FontWeight.bold,
+                          color: MocaColors.languageColor,
+                        ),
+                      ),
+                    ),
+                  ),
+                  OutlinedButton(
+                    onPressed: () => context.pop(),
+                    child: Text(
+                      'Back',
+                      style: TextStyle(fontFamily: MocaColors.fontFamily),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  ElevatedButton(
+                    onPressed: () {
+                      context.read<MocaAssessmentBloc>().add(
+                        MocaSaveSectionResult(
+                          section: 'language',
+                          score: totalScore,
+                          maxScore: 3,
+                          details: {
+                            'sentence1': _sentence1Correct,
+                            'sentence2': _sentence2Correct,
+                            'fluency_count': _wordCount,
+                          },
+                        ),
+                      );
+                      context.read<MocaAssessmentBloc>().add(MocaNextSection());
+                      context.push('/moca/abstraction');
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: MocaColors.languageColor,
+                    ),
+                    child: Text(
+                      'Continue',
+                      style: TextStyle(fontFamily: MocaColors.fontFamily),
+                    ),
+                  ),
+                ],
               ),
-              child: const Text('Continue'),
-            ),
-          ],
-        ),
       ),
     );
   }
