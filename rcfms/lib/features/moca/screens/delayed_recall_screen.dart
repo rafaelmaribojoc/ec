@@ -72,8 +72,8 @@ class _DelayedRecallScreenState extends State<DelayedRecallScreen> {
                   Text(
                     'Free Recall (5 points)',
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+                          fontWeight: FontWeight.bold,
+                        ),
                   ),
                   const SizedBox(height: 8),
                   const Text(
@@ -133,77 +133,86 @@ class _DelayedRecallScreenState extends State<DelayedRecallScreen> {
 
   Widget _buildWordRow(int index, String word) {
     final isRecalled = _uncuedRecall[index];
-    return InkWell(
-      onTap: () {
-        setState(() {
-          _uncuedRecall[index] = !isRecalled;
-          if (!isRecalled) {
-            // If marking as recalled, clear cues
-            _categoryRecall[index] = false;
-            _multipleChoiceRecall[index] = false;
-          }
-        });
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-        margin: const EdgeInsets.only(bottom: 8),
-        decoration: BoxDecoration(
-          color: isRecalled
-              ? MocaColors.success.withOpacity(0.1)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: isRecalled ? MocaColors.success : MocaColors.border,
-          ),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: isRecalled
-                    ? MocaColors.success
-                    : MocaColors.recallColor.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Center(
-                child: isRecalled
-                    ? const Icon(Icons.check, color: Colors.white, size: 20)
-                    : Text(
-                        '${index + 1}',
-                        style: TextStyle(
-                          fontFamily: MocaColors.fontFamily,
-                          fontWeight: FontWeight.bold,
-                          color: MocaColors.recallColor,
-                        ),
-                      ),
-              ),
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(8),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () {
+          setState(() {
+            _uncuedRecall[index] = !isRecalled;
+            if (!isRecalled) {
+              // If marking as recalled, clear cues
+              _categoryRecall[index] = false;
+              _multipleChoiceRecall[index] = false;
+            }
+          });
+        },
+        splashColor: MocaColors.success.withOpacity(0.15),
+        highlightColor: MocaColors.success.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+          margin: const EdgeInsets.only(bottom: 8),
+          decoration: BoxDecoration(
+            color: isRecalled
+                ? MocaColors.success.withOpacity(0.1)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: isRecalled ? MocaColors.success : MocaColors.border,
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                word,
-                style: TextStyle(
-                  fontFamily: MocaColors.fontFamily,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
                   color: isRecalled
-                      ? MocaColors.textSecondary
-                      : MocaColors.textPrimary,
-                  // Strikethrough for recalled words
-                  decoration: isRecalled ? TextDecoration.lineThrough : null,
-                  decorationColor: MocaColors.success,
-                  decorationThickness: 2,
+                      ? MocaColors.success
+                      : MocaColors.recallColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Center(
+                  child: isRecalled
+                      ? const Icon(Icons.check, color: Colors.white, size: 20)
+                      : Text(
+                          '${index + 1}',
+                          style: TextStyle(
+                            fontFamily: MocaColors.fontFamily,
+                            fontWeight: FontWeight.bold,
+                            color: MocaColors.recallColor,
+                          ),
+                        ),
                 ),
               ),
-            ),
-            Icon(
-              isRecalled ? Icons.check_circle : Icons.circle_outlined,
-              color: isRecalled ? MocaColors.success : MocaColors.textSecondary,
-              size: 24,
-            ),
-          ],
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  word,
+                  style: TextStyle(
+                    fontFamily: MocaColors.fontFamily,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: isRecalled
+                        ? MocaColors.textSecondary
+                        : MocaColors.textPrimary,
+                    // Strikethrough for recalled words
+                    decoration: isRecalled ? TextDecoration.lineThrough : null,
+                    decorationColor: MocaColors.success,
+                    decorationThickness: 2,
+                  ),
+                ),
+              ),
+              Icon(
+                isRecalled ? Icons.check_circle : Icons.circle_outlined,
+                color:
+                    isRecalled ? MocaColors.success : MocaColors.textSecondary,
+                size: 24,
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -234,8 +243,8 @@ class _DelayedRecallScreenState extends State<DelayedRecallScreen> {
                   onTap: isDisabled
                       ? null
                       : () => setState(
-                          () => _categoryRecall[index] = !isSelected,
-                        ),
+                            () => _categoryRecall[index] = !isSelected,
+                          ),
                   child: Container(
                     padding: const EdgeInsets.symmetric(
                       vertical: 10,
@@ -246,15 +255,15 @@ class _DelayedRecallScreenState extends State<DelayedRecallScreen> {
                       color: isSelected
                           ? MocaColors.recallColor.withOpacity(0.1)
                           : (isDisabled
-                                ? Colors.grey.withOpacity(0.1)
-                                : Colors.transparent),
+                              ? Colors.grey.withOpacity(0.1)
+                              : Colors.transparent),
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
                         color: isSelected
                             ? MocaColors.recallColor
                             : (isDisabled
-                                  ? Colors.grey.shade300
-                                  : MocaColors.border),
+                                ? Colors.grey.shade300
+                                : MocaColors.border),
                       ),
                     ),
                     child: Row(
@@ -266,8 +275,8 @@ class _DelayedRecallScreenState extends State<DelayedRecallScreen> {
                           color: isDisabled
                               ? Colors.grey.shade400
                               : (isSelected
-                                    ? MocaColors.recallColor
-                                    : MocaColors.textSecondary),
+                                  ? MocaColors.recallColor
+                                  : MocaColors.textSecondary),
                           size: 20,
                         ),
                         const SizedBox(width: 10),
@@ -336,8 +345,8 @@ class _DelayedRecallScreenState extends State<DelayedRecallScreen> {
                   onTap: isDisabled
                       ? null
                       : () => setState(
-                          () => _multipleChoiceRecall[index] = !isSelected,
-                        ),
+                            () => _multipleChoiceRecall[index] = !isSelected,
+                          ),
                   child: Container(
                     padding: const EdgeInsets.symmetric(
                       vertical: 10,
@@ -348,15 +357,15 @@ class _DelayedRecallScreenState extends State<DelayedRecallScreen> {
                       color: isSelected
                           ? MocaColors.recallColor.withOpacity(0.1)
                           : (isDisabled
-                                ? Colors.grey.withOpacity(0.1)
-                                : Colors.transparent),
+                              ? Colors.grey.withOpacity(0.1)
+                              : Colors.transparent),
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
                         color: isSelected
                             ? MocaColors.recallColor
                             : (isDisabled
-                                  ? Colors.grey.shade300
-                                  : MocaColors.border),
+                                ? Colors.grey.shade300
+                                : MocaColors.border),
                       ),
                     ),
                     child: Row(
@@ -368,8 +377,8 @@ class _DelayedRecallScreenState extends State<DelayedRecallScreen> {
                           color: isDisabled
                               ? Colors.grey.shade400
                               : (isSelected
-                                    ? MocaColors.recallColor
-                                    : MocaColors.textSecondary),
+                                  ? MocaColors.recallColor
+                                  : MocaColors.textSecondary),
                           size: 20,
                         ),
                         const SizedBox(width: 10),
@@ -459,20 +468,20 @@ class _DelayedRecallScreenState extends State<DelayedRecallScreen> {
                         child: ElevatedButton(
                           onPressed: () {
                             context.read<MocaAssessmentBloc>().add(
-                              MocaSaveSectionResult(
-                                section: 'delayedRecall',
-                                score: totalScore,
-                                maxScore: 5,
-                                details: {
-                                  'uncued': _uncuedRecall,
-                                  'category': _categoryRecall,
-                                  'multiple_choice': _multipleChoiceRecall,
-                                },
-                              ),
-                            );
+                                  MocaSaveSectionResult(
+                                    section: 'delayedRecall',
+                                    score: totalScore,
+                                    maxScore: 5,
+                                    details: {
+                                      'uncued': _uncuedRecall,
+                                      'category': _categoryRecall,
+                                      'multiple_choice': _multipleChoiceRecall,
+                                    },
+                                  ),
+                                );
                             context.read<MocaAssessmentBloc>().add(
-                              MocaNextSection(),
-                            );
+                                  MocaNextSection(),
+                                );
                             context.push('/moca/orientation');
                           },
                           style: ElevatedButton.styleFrom(
@@ -521,17 +530,17 @@ class _DelayedRecallScreenState extends State<DelayedRecallScreen> {
                   ElevatedButton(
                     onPressed: () {
                       context.read<MocaAssessmentBloc>().add(
-                        MocaSaveSectionResult(
-                          section: 'delayedRecall',
-                          score: totalScore,
-                          maxScore: 5,
-                          details: {
-                            'uncued': _uncuedRecall,
-                            'category': _categoryRecall,
-                            'multiple_choice': _multipleChoiceRecall,
-                          },
-                        ),
-                      );
+                            MocaSaveSectionResult(
+                              section: 'delayedRecall',
+                              score: totalScore,
+                              maxScore: 5,
+                              details: {
+                                'uncued': _uncuedRecall,
+                                'category': _categoryRecall,
+                                'multiple_choice': _multipleChoiceRecall,
+                              },
+                            ),
+                          );
                       context.read<MocaAssessmentBloc>().add(MocaNextSection());
                       context.push('/moca/orientation');
                     },

@@ -434,13 +434,17 @@ class _FormCard extends StatelessWidget {
                     Text(
                       _formatTemplateName(form.templateType),
                       style: Theme.of(context).textTheme.titleSmall,
+                      overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 4),
                     Row(
                       children: [
-                        Text(
-                          'Resident: ${form.residentId}',
-                          style: Theme.of(context).textTheme.bodySmall,
+                        Flexible(
+                          child: Text(
+                            form.residentName ?? 'Resident: ${form.residentId.substring(0, 8)}...',
+                            style: Theme.of(context).textTheme.bodySmall,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
                         const SizedBox(width: 8),
                         Text(

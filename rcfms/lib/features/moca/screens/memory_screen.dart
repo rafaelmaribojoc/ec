@@ -65,8 +65,8 @@ class _MemoryScreenState extends State<MemoryScreen> {
                   Text(
                     'Words to Remember',
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+                          fontWeight: FontWeight.bold,
+                        ),
                   ),
                   const SizedBox(height: 16),
                   if (!_wordsShown)
@@ -92,7 +92,9 @@ class _MemoryScreenState extends State<MemoryScreen> {
                       children: [
                         Text(
                           'Trial $_currentTrial of 2',
-                          style: Theme.of(context).textTheme.titleMedium
+                          style: Theme.of(context)
+                              .textTheme
+                              .titleMedium
                               ?.copyWith(fontWeight: FontWeight.bold),
                         ),
                         const Spacer(),
@@ -181,9 +183,9 @@ class _MemoryScreenState extends State<MemoryScreen> {
                   Text(
                     word,
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: MocaColors.memoryColor,
-                    ),
+                          fontWeight: FontWeight.bold,
+                          color: MocaColors.memoryColor,
+                        ),
                   ),
                 ],
               ),
@@ -210,59 +212,69 @@ class _MemoryScreenState extends State<MemoryScreen> {
               final index = entry.key;
               final word = entry.value;
               final isRecalled = _trialResults[_currentTrial - 1][index];
-              return InkWell(
-                onTap: () {
-                  setState(() {
-                    _trialResults[_currentTrial - 1][index] = !isRecalled;
-                  });
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    vertical: 12,
-                    horizontal: 16,
-                  ),
-                  margin: const EdgeInsets.only(bottom: 8),
-                  decoration: BoxDecoration(
-                    color: isRecalled
-                        ? MocaColors.memoryColor.withOpacity(0.1)
-                        : Colors.transparent,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: isRecalled
-                          ? MocaColors.memoryColor
-                          : MocaColors.border,
+              return Material(
+                color: Colors.transparent,
+                borderRadius: BorderRadius.circular(8),
+                clipBehavior: Clip.antiAlias,
+                child: InkWell(
+                  onTap: () {
+                    setState(() {
+                      _trialResults[_currentTrial - 1][index] = !isRecalled;
+                    });
+                  },
+                  splashColor: MocaColors.memoryColor.withOpacity(0.15),
+                  highlightColor: MocaColors.memoryColor.withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(8),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 12,
+                      horizontal: 16,
                     ),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        isRecalled ? Icons.check_circle : Icons.circle_outlined,
+                    margin: const EdgeInsets.only(bottom: 8),
+                    decoration: BoxDecoration(
+                      color: isRecalled
+                          ? MocaColors.memoryColor.withOpacity(0.1)
+                          : Colors.transparent,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
                         color: isRecalled
                             ? MocaColors.memoryColor
-                            : MocaColors.textSecondary,
-                        size: 24,
+                            : MocaColors.border,
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          word,
-                          style: TextStyle(
-                            fontFamily: MocaColors.fontFamily,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                            color: isRecalled
-                                ? MocaColors.textSecondary
-                                : MocaColors.textPrimary,
-                            // Strikethrough effect for recalled words
-                            decoration: isRecalled
-                                ? TextDecoration.lineThrough
-                                : null,
-                            decorationColor: MocaColors.memoryColor,
-                            decorationThickness: 2,
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          isRecalled
+                              ? Icons.check_circle
+                              : Icons.circle_outlined,
+                          color: isRecalled
+                              ? MocaColors.memoryColor
+                              : MocaColors.textSecondary,
+                          size: 24,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            word,
+                            style: TextStyle(
+                              fontFamily: MocaColors.fontFamily,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                              color: isRecalled
+                                  ? MocaColors.textSecondary
+                                  : MocaColors.textPrimary,
+                              // Strikethrough effect for recalled words
+                              decoration: isRecalled
+                                  ? TextDecoration.lineThrough
+                                  : null,
+                              decorationColor: MocaColors.memoryColor,
+                              decorationThickness: 2,
+                            ),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               );
@@ -373,16 +385,16 @@ class _MemoryScreenState extends State<MemoryScreen> {
   void _onContinue() {
     // Store words for delayed recall
     context.read<MocaAssessmentBloc>().add(
-      MocaSetMemoryWords(MocaConstants.memoryWords),
-    );
+          MocaSetMemoryWords(MocaConstants.memoryWords),
+        );
     context.read<MocaAssessmentBloc>().add(
-      MocaSaveSectionResult(
-        section: 'memory',
-        score: 0,
-        maxScore: 0,
-        details: {'trial1': _trialResults[0], 'trial2': _trialResults[1]},
-      ),
-    );
+          MocaSaveSectionResult(
+            section: 'memory',
+            score: 0,
+            maxScore: 0,
+            details: {'trial1': _trialResults[0], 'trial2': _trialResults[1]},
+          ),
+        );
     context.read<MocaAssessmentBloc>().add(MocaNextSection());
     context.push('/moca/attention');
   }

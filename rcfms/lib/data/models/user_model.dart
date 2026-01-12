@@ -13,6 +13,12 @@ class UserModel extends Equatable {
   final bool isActive;
   final DateTime createdAt;
   final DateTime? updatedAt;
+  
+  /// Professional title (e.g., RSW, RPm, RN, MD)
+  final String? title;
+  
+  /// Auto-generated employee ID (e.g., EMP-001)
+  final String? employeeId;
 
   const UserModel({
     required this.id,
@@ -26,6 +32,8 @@ class UserModel extends Equatable {
     this.isActive = true,
     required this.createdAt,
     this.updatedAt,
+    this.title,
+    this.employeeId,
   });
 
   /// Check if user is a super admin
@@ -35,16 +43,22 @@ class UserModel extends Equatable {
   bool get isCenterHead => role == 'center_head';
 
   /// Check if user is a unit head
-  bool get isUnitHead => role.endsWith('_head') && !isCenterHead;
+  bool get isUnitHead => role == 'head' || (role.endsWith('_head') && !isCenterHead);
 
   /// Check if user is staff
-  bool get isStaff => role.endsWith('_staff');
+  bool get isStaff => role == 'staff' || role.endsWith('_staff');
 
   /// Check if user can add residents (Social Head only)
-  bool get canAddResidents => role == 'social_head';
+  bool get canAddResidents => (role == 'head' && unit == 'social') || role == 'social_head';
 
   /// Check if user can administer MOCA-P (Psych Head only)
-  bool get canAdministerMocaP => role == 'psych_head';
+  bool get canAdministerMocaP => (role == 'head' && unit == 'psych') || role == 'psych_head';
+  
+  /// Display name with title (e.g., "Juan Dela Cruz, RSW")
+  String get displayNameWithTitle => title != null ? '$fullName, $title' : fullName;
+  
+  /// Display employee ID with name (e.g., "EMP-001 - Juan Dela Cruz")
+  String get displayWithEmployeeId => employeeId != null ? '$employeeId - $fullName' : fullName;
 
   /// Check if user can provision users (Super Admin only)
   bool get canProvisionUsers => isSuperAdmin;
@@ -59,7 +73,7 @@ class UserModel extends Equatable {
       fullName: json['full_name'] as String? ?? 'Unknown',
       workId: json['work_id'] as String? ?? '',
       username: json['username'] as String?,
-      role: json['role'] as String? ?? 'social_staff',
+      role: json['role'] as String? ?? 'staff',
       unit: json['unit'] as String?,
       signatureUrl: json['signature_url'] as String?,
       isActive: json['is_active'] as bool? ?? true,
@@ -69,6 +83,8 @@ class UserModel extends Equatable {
       updatedAt: json['updated_at'] != null
           ? DateTime.parse(json['updated_at'] as String)
           : null,
+      title: json['title'] as String?,
+      employeeId: json['employee_id'] as String?,
     );
   }
 
@@ -85,6 +101,8 @@ class UserModel extends Equatable {
       'is_active': isActive,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt?.toIso8601String(),
+      'title': title,
+      'employee_id': employeeId,
     };
   }
 
@@ -100,6 +118,8 @@ class UserModel extends Equatable {
     bool? isActive,
     DateTime? createdAt,
     DateTime? updatedAt,
+    String? title,
+    String? employeeId,
   }) {
     return UserModel(
       id: id ?? this.id,
@@ -113,6 +133,8 @@ class UserModel extends Equatable {
       isActive: isActive ?? this.isActive,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      title: title ?? this.title,
+      employeeId: employeeId ?? this.employeeId,
     );
   }
 
@@ -129,5 +151,7 @@ class UserModel extends Equatable {
         isActive,
         createdAt,
         updatedAt,
+        title,
+        employeeId,
       ];
 }

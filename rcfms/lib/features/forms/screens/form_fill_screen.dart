@@ -7,7 +7,9 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/responsive.dart';
 import '../../../core/widgets/shell_scaffold.dart';
 import '../../../data/repositories/form_repository.dart';
+import '../../../data/repositories/approval_repository.dart';
 import '../../../data/models/form_submission_model.dart';
+import '../../auth/bloc/auth_bloc.dart';
 import 'form_pdf_preview_screen.dart';
 
 /// Responsive form filling screen
@@ -19,6 +21,7 @@ class FormFillScreen extends StatefulWidget {
   final Map<String, dynamic>? initialData;
   final String? existingSubmissionId;
   final bool isEditing;
+
   /// Resident data for smart defaults (auto-population)
   final Map<String, dynamic>? residentData;
 
@@ -113,7 +116,8 @@ class _FormFillScreenState extends State<FormFillScreen> {
           ),
         ],
       ),
-      backgroundColor: AppColors.getServiceUnitColor(widget.template.serviceUnit.name),
+      backgroundColor:
+          AppColors.getServiceUnitColor(widget.template.serviceUnit.name),
       foregroundColor: AppColors.textOnPrimary,
       toolbarHeight: screen.value(mobile: 64.0, tablet: 68.0, desktop: 72.0),
       actions: _buildAppBarActions(screen),
@@ -150,7 +154,8 @@ class _FormFillScreenState extends State<FormFillScreen> {
                 value: 'discard',
                 child: ListTile(
                   leading: Icon(Icons.restore, color: Colors.red),
-                  title: Text('Discard Changes', style: TextStyle(color: Colors.red)),
+                  title: Text('Discard Changes',
+                      style: TextStyle(color: Colors.red)),
                   dense: true,
                   contentPadding: EdgeInsets.zero,
                 ),
@@ -206,7 +211,8 @@ class _FormFillScreenState extends State<FormFillScreen> {
     return Form(
       key: _formKey,
       child: ResponsiveContainer(
-        maxWidth: screen.value(mobile: double.infinity, tablet: 800.0, desktop: 900.0),
+        maxWidth: screen.value(
+            mobile: double.infinity, tablet: 800.0, desktop: 900.0),
         padding: EdgeInsets.symmetric(
           horizontal: screen.horizontalPadding,
           vertical: screen.value(mobile: 16.0, tablet: 20.0, desktop: 24.0),
@@ -228,7 +234,9 @@ class _FormFillScreenState extends State<FormFillScreen> {
                   _formData,
                   _updateField,
                 ),
-                SizedBox(height: screen.value(mobile: 16.0, tablet: 20.0, desktop: 24.0)),
+                SizedBox(
+                    height: screen.value(
+                        mobile: 16.0, tablet: 20.0, desktop: 24.0)),
               ],
             ),
           ),
@@ -248,17 +256,20 @@ class _FormFillScreenState extends State<FormFillScreen> {
                 screen.value(mobile: 8.0, tablet: 10.0, desktop: 12.0),
               ),
               decoration: BoxDecoration(
-                color: AppColors.getServiceUnitColor(widget.template.serviceUnit.name)
+                color: AppColors.getServiceUnitColor(
+                        widget.template.serviceUnit.name)
                     .withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(
                 widget.template.icon,
-                color: AppColors.getServiceUnitColor(widget.template.serviceUnit.name),
+                color: AppColors.getServiceUnitColor(
+                    widget.template.serviceUnit.name),
                 size: screen.value(mobile: 24.0, tablet: 28.0, desktop: 32.0),
               ),
             ),
-            SizedBox(width: screen.value(mobile: 12.0, tablet: 14.0, desktop: 16.0)),
+            SizedBox(
+                width: screen.value(mobile: 12.0, tablet: 14.0, desktop: 16.0)),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -266,7 +277,8 @@ class _FormFillScreenState extends State<FormFillScreen> {
                   Text(
                     widget.template.name,
                     style: TextStyle(
-                      fontSize: screen.value(mobile: 18.0, tablet: 20.0, desktop: 22.0),
+                      fontSize: screen.value(
+                          mobile: 18.0, tablet: 20.0, desktop: 22.0),
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -274,7 +286,8 @@ class _FormFillScreenState extends State<FormFillScreen> {
                   Text(
                     widget.template.serviceUnit.displayName,
                     style: TextStyle(
-                      fontSize: screen.value(mobile: 13.0, tablet: 14.0, desktop: 15.0),
+                      fontSize: screen.value(
+                          mobile: 13.0, tablet: 14.0, desktop: 15.0),
                       color: AppColors.textSecondary,
                     ),
                   ),
@@ -284,7 +297,8 @@ class _FormFillScreenState extends State<FormFillScreen> {
           ],
         ),
         if (widget.template.description.isNotEmpty) ...[
-          SizedBox(height: screen.value(mobile: 12.0, tablet: 14.0, desktop: 16.0)),
+          SizedBox(
+              height: screen.value(mobile: 12.0, tablet: 14.0, desktop: 16.0)),
           Text(
             widget.template.description,
             style: TextStyle(
@@ -407,7 +421,8 @@ class _FormFillScreenState extends State<FormFillScreen> {
               ? const SizedBox(
                   width: 18,
                   height: 18,
-                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                  child: CircularProgressIndicator(
+                      strokeWidth: 2, color: Colors.white),
                 )
               : const Icon(Icons.check),
           label: Text(_isSaving ? 'Submitting...' : 'Submit Form'),
@@ -431,7 +446,7 @@ class _FormFillScreenState extends State<FormFillScreen> {
 
   Future<void> _saveDraft() async {
     setState(() => _isSaving = true);
-    
+
     try {
       final formRepository = context.read<FormRepository>();
       FormSubmissionModel submission;
@@ -453,7 +468,7 @@ class _FormFillScreenState extends State<FormFillScreen> {
         );
         _submissionId = submission.id;
       }
-      
+
       setState(() {
         _isDirty = false;
         _isSaving = false;
@@ -494,7 +509,7 @@ class _FormFillScreenState extends State<FormFillScreen> {
     // Show recipient selector
     _showSubmitToDialog();
   }
-  
+
   void _showSubmitToDialog() {
     showDialog(
       context: context,
@@ -506,13 +521,19 @@ class _FormFillScreenState extends State<FormFillScreen> {
       ),
     );
   }
-  
+
   Future<void> _doSubmit(String? recipientId, String? recipientName) async {
     setState(() => _isSaving = true);
 
     try {
       final formRepository = context.read<FormRepository>();
-      
+      final approvalRepository = ApprovalRepository();
+
+      // Get current user
+      final authState = context.read<AuthBloc>().state;
+      final currentUser =
+          authState is AuthAuthenticated ? authState.user : null;
+
       // If no submission exists yet, create a draft first
       if (_submissionId == null) {
         final draft = await formRepository.createDraft(
@@ -525,11 +546,19 @@ class _FormFillScreenState extends State<FormFillScreen> {
         _submissionId = draft.id;
       }
 
-      // Add recipient info to form data
+      // Add recipient info and prepared by info to form data
       final submissionData = Map<String, dynamic>.from(_formData);
       if (recipientId != null) {
         submissionData['submitted_to_id'] = recipientId;
         submissionData['submitted_to_name'] = recipientName;
+      }
+
+      // Auto-populate "Prepared By" with current user info
+      if (currentUser != null) {
+        submissionData['prepared_by_id'] = currentUser.id;
+        submissionData['prepared_by_name'] = currentUser.fullName;
+        submissionData['prepared_by_title'] = currentUser.title;
+        submissionData['prepared_by_employee_id'] = currentUser.employeeId;
       }
 
       // Submit the form for review
@@ -537,11 +566,26 @@ class _FormFillScreenState extends State<FormFillScreen> {
         id: _submissionId!,
         formData: submissionData,
       );
-      
+
+      // Create an approval request if recipient is specified
+      if (recipientId != null && recipientName != null && currentUser != null) {
+        try {
+          await approvalRepository.createApprovalRequest(
+            formId: _submissionId!,
+            recipientId: recipientId,
+            recipientName: recipientName,
+            signatureFieldName: 'approved_by', // Default signature field
+          );
+        } catch (e) {
+          // Log but don't fail the submission if approval request fails
+          debugPrint('Failed to create approval request: $e');
+        }
+      }
+
       setState(() => _isSaving = false);
 
       if (mounted) {
-        final message = recipientName != null 
+        final message = recipientName != null
             ? 'Form submitted to $recipientName'
             : 'Form submitted successfully';
         ScaffoldMessenger.of(context).showSnackBar(
@@ -601,7 +645,8 @@ class _FormFillScreenState extends State<FormFillScreen> {
 
 /// Dialog for selecting a recipient to submit the form to
 class _SubmitToDialog extends StatefulWidget {
-  final Future<void> Function(String? recipientId, String? recipientName) onSubmit;
+  final Future<void> Function(String? recipientId, String? recipientName)
+      onSubmit;
 
   const _SubmitToDialog({required this.onSubmit});
 
@@ -630,11 +675,12 @@ class _SubmitToDialogState extends State<_SubmitToDialog> {
         _users = users;
         _isLoading = false;
         // Default select the first unit head if available
-        final heads = users.where((u) => 
-          u['role'] == 'head' || 
-          u['role'] == 'center_head' || 
-          u['role'] == 'super_admin'
-        ).toList();
+        final heads = users
+            .where((u) =>
+                u['role'] == 'head' ||
+                u['role'] == 'center_head' ||
+                u['role'] == 'super_admin')
+            .toList();
         if (heads.isNotEmpty) {
           _selectedUserId = heads.first['id'];
           _selectedUserName = heads.first['full_name'];
@@ -660,7 +706,7 @@ class _SubmitToDialogState extends State<_SubmitToDialog> {
               style: Theme.of(context).textTheme.bodyMedium,
             ),
             const SizedBox(height: 16),
-            
+
             // Quick option: Submit to Unit Head
             CheckboxListTile(
               value: _submitToUnitHead,
@@ -669,10 +715,10 @@ class _SubmitToDialogState extends State<_SubmitToDialog> {
                   _submitToUnitHead = value ?? true;
                   if (_submitToUnitHead) {
                     // Auto-select first head
-                    final heads = _users.where((u) => 
-                      u['role'] == 'head' || 
-                      u['role'] == 'center_head'
-                    ).toList();
+                    final heads = _users
+                        .where((u) =>
+                            u['role'] == 'head' || u['role'] == 'center_head')
+                        .toList();
                     if (heads.isNotEmpty) {
                       _selectedUserId = heads.first['id'];
                       _selectedUserName = heads.first['full_name'];
@@ -684,9 +730,9 @@ class _SubmitToDialogState extends State<_SubmitToDialog> {
               subtitle: const Text('Recommended for standard approval'),
               contentPadding: EdgeInsets.zero,
             ),
-            
+
             const SizedBox(height: 8),
-            
+
             // Or select specific user
             if (!_submitToUnitHead) ...[
               const Divider(),
@@ -694,8 +740,8 @@ class _SubmitToDialogState extends State<_SubmitToDialog> {
               Text(
                 'Or select a specific reviewer:',
                 style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  color: AppColors.textSecondary,
-                ),
+                      color: AppColors.textSecondary,
+                    ),
               ),
               const SizedBox(height: 8),
               if (_isLoading)
@@ -710,16 +756,19 @@ class _SubmitToDialogState extends State<_SubmitToDialog> {
                       final user = _users[index];
                       final isSelected = user['id'] == _selectedUserId;
                       final roleName = _formatRole(user['role'] ?? '');
-                      
+
                       return ListTile(
                         leading: CircleAvatar(
-                          backgroundColor: isSelected 
-                              ? AppColors.primary 
+                          backgroundColor: isSelected
+                              ? AppColors.primary
                               : AppColors.surfaceHover,
                           child: Text(
-                            (user['full_name'] as String? ?? 'U')[0].toUpperCase(),
+                            (user['full_name'] as String? ?? 'U')[0]
+                                .toUpperCase(),
                             style: TextStyle(
-                              color: isSelected ? Colors.white : AppColors.textSecondary,
+                              color: isSelected
+                                  ? Colors.white
+                                  : AppColors.textSecondary,
                             ),
                           ),
                         ),
@@ -732,8 +781,9 @@ class _SubmitToDialogState extends State<_SubmitToDialog> {
                             _selectedUserName = user['full_name'];
                           });
                         },
-                        trailing: isSelected 
-                            ? const Icon(Icons.check_circle, color: AppColors.primary)
+                        trailing: isSelected
+                            ? const Icon(Icons.check_circle,
+                                color: AppColors.primary)
                             : null,
                       );
                     },
@@ -758,7 +808,7 @@ class _SubmitToDialogState extends State<_SubmitToDialog> {
       ],
     );
   }
-  
+
   String _formatRole(String role) {
     switch (role) {
       case 'super_admin':

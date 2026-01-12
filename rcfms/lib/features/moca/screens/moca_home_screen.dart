@@ -184,39 +184,8 @@ class MocaHomeScreen extends StatelessWidget {
                         ),
                       ),
 
-                      const SizedBox(height: 40),
+                      const SizedBox(height: 100), // Space for FAB
                     ],
-                  ),
-                ),
-              ),
-
-              // Start button - using app branding color
-              ElevatedButton(
-                onPressed: () {
-                  final clinicianId = user?.id;
-                  context.read<MocaAssessmentBloc>().add(
-                        MocaStartAssessment(
-                          residentId: residentId,
-                          clinicianId: clinicianId,
-                          educationAdjustment: false,
-                        ),
-                      );
-                  context.push('/moca/visuospatial');
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: Text(
-                  'Start Assessment',
-                  style: TextStyle(
-                    fontFamily: MocaColors.fontFamily,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
@@ -224,6 +193,41 @@ class MocaHomeScreen extends StatelessWidget {
           ),
         ),
       ),
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24),
+        child: SizedBox(
+          width: double.infinity,
+          height: 52,
+          child: FloatingActionButton.extended(
+            onPressed: () {
+              final clinicianId = user?.id;
+              context.read<MocaAssessmentBloc>().add(
+                    MocaStartAssessment(
+                      residentId: residentId,
+                      clinicianId: clinicianId,
+                      educationAdjustment: false,
+                    ),
+                  );
+              context.push('/moca/visuospatial');
+            },
+            backgroundColor: AppColors.primary,
+            foregroundColor: Colors.white,
+            elevation: 2,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            label: Text(
+              'Start Assessment',
+              style: TextStyle(
+                fontFamily: MocaColors.fontFamily,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
   }
 
