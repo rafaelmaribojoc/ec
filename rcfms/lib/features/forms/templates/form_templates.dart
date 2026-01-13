@@ -55,6 +55,7 @@ class FormTemplatesRegistry {
       description: 'Initial checklist for client pre-admission screening',
       serviceUnit: ServiceUnit.socialService,
       templateType: 'pre_admission_checklist',
+      requiresSignature: false, // No Prepared By/Noted By - just acknowledge
       icon: Icons.checklist,
     ),
     FormTemplate(
@@ -63,6 +64,7 @@ class FormTemplatesRegistry {
       description: 'Document requirements verification checklist',
       serviceUnit: ServiceUnit.socialService,
       templateType: 'requirements_checklist',
+      requiresSignature: false, // No Prepared By/Noted By - just acknowledge
       icon: Icons.fact_check,
     ),
     FormTemplate(

@@ -630,11 +630,15 @@ class _FormFillScreenState extends State<FormFillScreen> {
           safeRecipientName != null &&
           currentUser != null) {
         try {
+          // Only pass signatureFieldName if the form requires signatures
+          // Forms without signatures will just be acknowledged/received
           await approvalRepository.createApprovalRequest(
             formId: _submissionId!,
             recipientId: safeRecipientId,
             recipientName: safeRecipientName,
-            signatureFieldName: 'approved_by', // Default signature field
+            signatureFieldName: widget.template.requiresSignature
+                ? 'noted_by' // Forms with signatures need Noted By approval
+                : null, // No signature required - just acknowledge/receive
           );
         } catch (e) {
           // Log but don't fail the submission if approval request fails

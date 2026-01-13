@@ -706,7 +706,8 @@ class ApprovalRepository {
   }
 
   /// Acknowledge form without signature
-  Future<void> acknowledgeFormSimple({
+  /// Returns a map with the acknowledger info for immediate UI update
+  Future<Map<String, dynamic>> acknowledgeFormSimple({
     required String approvalId,
     String? comment,
   }) async {
@@ -721,6 +722,7 @@ class ApprovalRepository {
         .single();
 
     final userName = profile['full_name'] as String;
+    final now = DateTime.now();
 
     // Get approval details
     final approval = await _supabase
@@ -734,9 +736,9 @@ class ApprovalRepository {
     // Update approval
     await _supabase.from('form_approvals').update({
       'status': 'acknowledged',
-      'action_at': DateTime.now().toIso8601String(),
+      'action_at': now.toIso8601String(),
       'comment': comment,
-      'updated_at': DateTime.now().toIso8601String(),
+      'updated_at': now.toIso8601String(),
     }).eq('id', approvalId);
 
     // Update form status
@@ -744,9 +746,9 @@ class ApprovalRepository {
     await _supabase.from('form_submissions').update({
       'status': 'approved',
       'reviewed_by': userId,
-      'reviewed_at': DateTime.now().toIso8601String(),
+      'reviewed_at': now.toIso8601String(),
       'review_comment': comment,
-      'updated_at': DateTime.now().toIso8601String(),
+      'updated_at': now.toIso8601String(),
     }).eq('id', formId);
 
     // Notify sender
@@ -759,6 +761,13 @@ class ApprovalRepository {
       formSubmissionId: formId,
       formApprovalId: approvalId,
     );
+
+    // Return info for immediate UI update
+    return {
+      'acknowledgedBy': userId,
+      'acknowledgerName': userName,
+      'acknowledgedAt': now,
+    };
   }
 
   /// Get current user's profile with signature

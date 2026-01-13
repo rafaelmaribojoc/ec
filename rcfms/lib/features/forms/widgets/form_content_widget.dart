@@ -75,10 +75,20 @@ class FormContentWidget extends StatelessWidget {
                   // Form fields
                   ..._buildFormFields(context, screen),
 
-                  // Signatures section (only in view mode)
-                  if (showSignatures && existingSubmission != null) ...[
+                  // Signatures section (only if template requires signatures and in view mode)
+                  if (showSignatures &&
+                      existingSubmission != null &&
+                      template.requiresSignature) ...[
                     const SizedBox(height: 24),
                     _buildSignaturesSection(context, screen),
+                  ],
+
+                  // Acknowledgement info for forms without signatures
+                  if (showSignatures &&
+                      existingSubmission != null &&
+                      !template.requiresSignature) ...[
+                    const SizedBox(height: 24),
+                    _buildAcknowledgementSection(context, screen),
                   ],
 
                   SizedBox(
@@ -462,5 +472,93 @@ class FormContentWidget extends StatelessWidget {
         ),
       );
     }
+  }
+
+  /// Build acknowledgement section for forms that don't require signatures
+  Widget _buildAcknowledgementSection(BuildContext context, ScreenInfo screen) {
+    final form = existingSubmission!;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Status',
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+        ),
+        const Divider(height: 24),
+
+        // Submitted By info
+        _buildInfoBlock(
+          context,
+          'Submitted By',
+          form.submitterName ?? 'Unknown',
+          form.submittedAt,
+          icon: Icons.person_outline,
+        ),
+
+        // Acknowledged By info (if acknowledged)
+        if (form.reviewedBy != null) ...[
+          const SizedBox(height: 16),
+          _buildInfoBlock(
+            context,
+            form.isApproved ? 'Acknowledged By' : 'Reviewed By',
+            form.reviewerName ?? 'Unknown',
+            form.reviewedAt,
+            icon: form.isApproved ? Icons.check_circle : Icons.visibility,
+            iconColor: form.isApproved ? AppColors.success : null,
+          ),
+        ],
+      ],
+    );
+  }
+
+  /// Build a simple info block for acknowledgement section
+  Widget _buildInfoBlock(
+    BuildContext context,
+    String label,
+    String name,
+    DateTime? timestamp, {
+    IconData? icon,
+    Color? iconColor,
+  }) {
+    return Row(
+      children: [
+        if (icon != null) ...[
+          Icon(icon, size: 20, color: iconColor ?? AppColors.textSecondaryLight),
+          const SizedBox(width: 8),
+        ],
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: const TextStyle(
+                  color: AppColors.textSecondaryLight,
+                  fontSize: 12,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                name,
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
+              if (timestamp != null) ...[
+                const SizedBox(height: 2),
+                Text(
+                  DateFormat('MMM d, yyyy • h:mm a').format(timestamp),
+                  style: const TextStyle(
+                    color: AppColors.textSecondaryLight,
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ],
+    );
   }
 }

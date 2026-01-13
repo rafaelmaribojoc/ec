@@ -286,6 +286,7 @@ class _FormViewScreenState extends State<FormViewScreen> {
 
     try {
       Map<String, dynamic>? signatureInfo;
+      Map<String, dynamic>? acknowledgeInfo;
 
       if (_signatureFieldName != null) {
         // Requires signature - determine action type from field name
@@ -306,26 +307,40 @@ class _FormViewScreenState extends State<FormViewScreen> {
         );
       } else {
         // Simple acknowledge without signature
-        await _approvalRepository.acknowledgeFormSimple(
+        acknowledgeInfo = await _approvalRepository.acknowledgeFormSimple(
           approvalId: _pendingApproval!.id,
         );
       }
 
       if (mounted) {
-        // Immediately update the local form state with the new signature
-        if (signatureInfo != null && _form != null) {
-          setState(() {
-            _form = _form!.copyWith(
-              status: 'approved',
-              reviewedBy: signatureInfo!['signerId'] as String?,
-              reviewerName: signatureInfo['signerName'] as String?,
-              reviewerSignatureUrl: signatureInfo['signatureUrl'] as String?,
-              reviewedAt: signatureInfo['signedAt'] as DateTime?,
-            );
-            // User has acted, so they can no longer act
-            _canAct = false;
-            _pendingApproval = null;
-          });
+        // Update the local form state
+        if (_form != null) {
+          if (signatureInfo != null) {
+            // Update with signature info
+            setState(() {
+              _form = _form!.copyWith(
+                status: 'approved',
+                reviewedBy: signatureInfo!['signerId'] as String?,
+                reviewerName: signatureInfo['signerName'] as String?,
+                reviewerSignatureUrl: signatureInfo['signatureUrl'] as String?,
+                reviewedAt: signatureInfo['signedAt'] as DateTime?,
+              );
+              _canAct = false;
+              _pendingApproval = null;
+            });
+          } else if (acknowledgeInfo != null) {
+            // Update for simple acknowledge (no signature)
+            setState(() {
+              _form = _form!.copyWith(
+                status: 'approved',
+                reviewedBy: acknowledgeInfo!['acknowledgedBy'] as String?,
+                reviewerName: acknowledgeInfo['acknowledgerName'] as String?,
+                reviewedAt: acknowledgeInfo['acknowledgedAt'] as DateTime?,
+              );
+              _canAct = false;
+              _pendingApproval = null;
+            });
+          }
         }
 
         ScaffoldMessenger.of(context).showSnackBar(
