@@ -469,9 +469,9 @@ class _NFCScanScreenState extends State<NFCScanScreen>
           ),
         );
 
-    // Navigate to MoCA assessment
-    // Use push() to allow back navigation
-    context.push('/moca');
+    // Navigate directly to first assessment section
+    // Skip MoCA home screen - assessments start immediately from resident selection
+    context.push('/moca/visuospatial');
   }
 }
 

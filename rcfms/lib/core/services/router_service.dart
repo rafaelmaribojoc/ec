@@ -299,15 +299,22 @@ class RouterService {
             ],
           ),
 
-          // MoCA-P Assessment routes (Psych Head only)
-          // Note: MoCA routes moved outside ShellRoute for proper navigation
+          // MoCA-P Assessment routes - accessed only via resident selection (NFC or Browse)
         ],
       ),
 
       // MoCA-P Assessment routes (outside ShellRoute for full-screen experience)
+      // The /moca route redirects to dashboard - assessments must start from a resident
       GoRoute(
         path: '/moca',
         name: 'moca',
+        redirect: (context, state) {
+          // If accessing /moca directly (not a sub-route), redirect to dashboard
+          if (state.matchedLocation == '/moca') {
+            return '/dashboard';
+          }
+          return null;
+        },
         builder: (context, state) => const MocaHomeScreen(),
         routes: [
           GoRoute(

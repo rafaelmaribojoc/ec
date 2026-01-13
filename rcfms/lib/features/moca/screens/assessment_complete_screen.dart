@@ -470,10 +470,10 @@ class _AssessmentCompleteScreenState extends State<AssessmentCompleteScreen> {
                                     context.read<MocaAssessmentBloc>().add(
                                           MocaResetAssessment(),
                                         );
-                                    context.go('/moca');
+                                    context.go('/residents');
                                   },
-                            icon: const Icon(Icons.refresh),
-                            label: const Text('New Assessment'),
+                            icon: const Icon(Icons.people),
+                            label: const Text('Back to Residents'),
                             style: OutlinedButton.styleFrom(
                               foregroundColor: AppColors.primary,
                               side: BorderSide(color: AppColors.primary),

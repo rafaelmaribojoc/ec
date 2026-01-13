@@ -9,7 +9,6 @@ import '../../../core/widgets/main_bottom_nav.dart';
 import '../../../data/models/notification_model.dart';
 import '../../../data/repositories/approval_repository.dart';
 import '../../auth/bloc/auth_bloc.dart';
-import '../../moca/constants/moca_colors.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -55,14 +54,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   child: _buildHeader(context, user?.fullName ?? 'User'),
                 ),
 
-                // Quick Actions Section
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
-                    child: _buildQuickActions(context),
-                  ),
-                ),
-
                 // Quick Stats
                 SliverToBoxAdapter(
                   child: Padding(
@@ -91,119 +82,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
               FloatingActionButtonLocation.centerDocked,
         );
       },
-    );
-  }
-
-  Widget _buildQuickActions(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Quick Actions',
-          style: Theme.of(context).textTheme.titleMedium,
-        ),
-        const SizedBox(height: 12),
-        _buildMocaPButton(context),
-      ],
-    );
-  }
-
-  Widget _buildMocaPButton(BuildContext context) {
-    return GestureDetector(
-      onTap: () => context.push('/moca'),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [MocaColors.primary, MocaColors.primaryDark],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(AppTheme.radiusLg),
-          boxShadow: [
-            BoxShadow(
-              color: MocaColors.primary.withValues(alpha: 0.3),
-              blurRadius: 8,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(AppTheme.radiusMd),
-              ),
-              child: const Icon(
-                Icons.psychology,
-                color: Colors.white,
-                size: 28,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Flexible(
-                        child: Text(
-                          'MoCA-P Assessment',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.25),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: const Text(
-                          'NEW',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 9,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Montreal Cognitive Assessment - Philippine Version',
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.9),
-                      fontSize: 11,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 8),
-            const Icon(
-              Icons.arrow_forward_ios,
-              color: Colors.white,
-              size: 16,
-            ),
-          ],
-        ),
-      ),
     );
   }
 
