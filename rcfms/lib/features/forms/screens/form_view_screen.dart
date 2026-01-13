@@ -684,7 +684,7 @@ class _FormViewScreenState extends State<FormViewScreen> {
         signatureUrl.isNotEmpty &&
         (signatureUrl.startsWith('http://') ||
             signatureUrl.startsWith('https://'));
-    
+
     return Row(
       children: [
         Expanded(
@@ -747,7 +747,8 @@ class _FormViewScreenState extends State<FormViewScreen> {
                             size: 20, color: AppColors.textSecondaryLight),
                         Text('Load failed',
                             style: TextStyle(
-                                fontSize: 8, color: AppColors.textSecondaryLight)),
+                                fontSize: 8,
+                                color: AppColors.textSecondaryLight)),
                       ],
                     ),
                   );

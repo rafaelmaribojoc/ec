@@ -158,8 +158,9 @@ class MocaAssessmentBloc
     try {
       // Determine education adjustment based on years of education
       // MoCA scoring: +1 point if education < 12 years
-      final shouldAdjust = event.educationYears > 0 && event.educationYears < 12;
-      
+      final shouldAdjust =
+          event.educationYears > 0 && event.educationYears < 12;
+
       final assessment = MocaAssessmentModel.empty(
         id: _uuid.v4(),
         clinicianId: event.clinicianId,

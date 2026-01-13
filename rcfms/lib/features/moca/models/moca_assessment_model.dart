@@ -22,7 +22,7 @@ class MocaAssessmentModel {
   final bool educationAdjustment;
   final Map<String, SectionResult> sectionResults;
   final DateTime createdAt;
-  
+
   // Resident details for auto-fill
   final String? residentName;
   final String? residentSex;

@@ -84,7 +84,7 @@ class _NFCScanScreenState extends State<NFCScanScreen>
             // Get NFC tag ID from the tag data
             final tagData = tag.data as Map<String, dynamic>;
             List<int>? nfcTagId;
-            
+
             // Try to get identifier from different tag types
             if (tagData.containsKey('nfca')) {
               final nfca = tagData['nfca'] as Map<String, dynamic>?;
@@ -102,7 +102,8 @@ class _NFCScanScreenState extends State<NFCScanScreen>
               final mifare = tagData['mifareclassic'] as Map<String, dynamic>?;
               nfcTagId = (mifare?['identifier'] as List?)?.cast<int>();
             } else if (tagData.containsKey('mifareultralight')) {
-              final mifareUl = tagData['mifareultralight'] as Map<String, dynamic>?;
+              final mifareUl =
+                  tagData['mifareultralight'] as Map<String, dynamic>?;
               nfcTagId = (mifareUl?['identifier'] as List?)?.cast<int>();
             }
 
@@ -410,14 +411,16 @@ class _NFCScanScreenState extends State<NFCScanScreen>
                       Icon(
                         Icons.people_outline,
                         size: 64,
-                        color: AppColors.textSecondaryLight.withValues(alpha: 0.5),
+                        color:
+                            AppColors.textSecondaryLight.withValues(alpha: 0.5),
                       ),
                       const SizedBox(height: 16),
                       Text(
                         'No residents in this ward',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              color: AppColors.textSecondaryLight,
-                            ),
+                        style:
+                            Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  color: AppColors.textSecondaryLight,
+                                ),
                       ),
                     ],
                   ),
@@ -431,7 +434,8 @@ class _NFCScanScreenState extends State<NFCScanScreen>
                       resident: resident,
                       onTap: () => context.push('/residents/${resident.id}'),
                       onNewForm: () => _showFormOptions(context, resident),
-                      onNewAssessment: () => _startMocaAssessment(context, resident),
+                      onNewAssessment: () =>
+                          _startMocaAssessment(context, resident),
                     );
                   },
                 ),
@@ -439,32 +443,32 @@ class _NFCScanScreenState extends State<NFCScanScreen>
       ],
     );
   }
-  
+
   void _showFormOptions(BuildContext context, ResidentModel resident) {
     context.push('/residents/${resident.id}');
   }
-  
+
   /// Start MoCA-P assessment with auto-filled resident data
   void _startMocaAssessment(BuildContext context, ResidentModel resident) {
     final authState = context.read<AuthBloc>().state;
     final user = authState is AuthAuthenticated ? authState.user : null;
-    
+
     // Default education years to 0 (will trigger adjustment if < 12 years)
     const educationYears = 0;
-    
+
     // Start assessment with resident data auto-filled
     context.read<MocaAssessmentBloc>().add(
-      MocaStartAssessment(
-        residentId: resident.id,
-        clinicianId: user?.id,
-        residentName: resident.fullName,
-        residentSex: resident.gender,
-        residentBirthday: resident.dateOfBirth,
-        educationYears: educationYears,
-        educationAdjustment: educationYears < 12,
-      ),
-    );
-    
+          MocaStartAssessment(
+            residentId: resident.id,
+            clinicianId: user?.id,
+            residentName: resident.fullName,
+            residentSex: resident.gender,
+            residentBirthday: resident.dateOfBirth,
+            educationYears: educationYears,
+            educationAdjustment: educationYears < 12,
+          ),
+        );
+
     // Navigate to MoCA assessment
     // Use go() instead of push() since both are in the same ShellRoute
     context.go('/moca');
@@ -488,9 +492,10 @@ class _ResidentTile extends StatelessWidget {
   Widget build(BuildContext context) {
     // Check if user is from psych unit
     final authState = context.read<AuthBloc>().state;
-    final userUnit = authState is AuthAuthenticated ? authState.user.unit : null;
+    final userUnit =
+        authState is AuthAuthenticated ? authState.user.unit : null;
     final isPsychUnit = userUnit == 'psych';
-    
+
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       shape: RoundedRectangleBorder(
@@ -507,7 +512,8 @@ class _ResidentTile extends StatelessWidget {
                 children: [
                   CircleAvatar(
                     radius: 28,
-                    backgroundColor: AppColors.primaryLight.withValues(alpha: 0.2),
+                    backgroundColor:
+                        AppColors.primaryLight.withValues(alpha: 0.2),
                     child: Text(
                       resident.firstName[0] + resident.lastName[0],
                       style: const TextStyle(
@@ -524,9 +530,10 @@ class _ResidentTile extends StatelessWidget {
                       children: [
                         Text(
                           resident.fullName,
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.w600,
-                              ),
+                          style:
+                              Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                  ),
                         ),
                         const SizedBox(height: 4),
                         Row(
@@ -540,7 +547,10 @@ class _ResidentTile extends StatelessWidget {
                             Flexible(
                               child: Text(
                                 '${resident.age} years',
-                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodySmall
+                                    ?.copyWith(
                                       color: AppColors.textSecondaryLight,
                                     ),
                                 overflow: TextOverflow.ellipsis,
@@ -557,7 +567,10 @@ class _ResidentTile extends StatelessWidget {
                               Flexible(
                                 child: Text(
                                   'Room ${resident.roomNumber}',
-                                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodySmall
+                                      ?.copyWith(
                                         color: AppColors.textSecondaryLight,
                                       ),
                                   overflow: TextOverflow.ellipsis,
@@ -586,7 +599,8 @@ class _ResidentTile extends StatelessWidget {
                       label: const Text('New Form'),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: AppColors.primary,
-                        side: BorderSide(color: AppColors.primary.withValues(alpha: 0.5)),
+                        side: BorderSide(
+                            color: AppColors.primary.withValues(alpha: 0.5)),
                         padding: const EdgeInsets.symmetric(vertical: 8),
                       ),
                     ),
@@ -600,7 +614,8 @@ class _ResidentTile extends StatelessWidget {
                         label: const Text('Assessment'),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: MocaColors.primary,
-                          side: BorderSide(color: MocaColors.primary.withValues(alpha: 0.5)),
+                          side: BorderSide(
+                              color: MocaColors.primary.withValues(alpha: 0.5)),
                           padding: const EdgeInsets.symmetric(vertical: 8),
                         ),
                       ),

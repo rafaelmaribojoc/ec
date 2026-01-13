@@ -298,14 +298,14 @@ class MocaHomeScreen extends StatelessWidget {
       ),
     );
   }
-  
+
   /// Build resident info card with auto-filled details
   Widget _buildResidentInfoCard(BuildContext context, assessment) {
     final birthday = assessment.residentBirthday;
     final age = birthday != null
         ? DateTime.now().difference(birthday).inDays ~/ 365
         : null;
-    
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -344,7 +344,8 @@ class MocaHomeScreen extends StatelessWidget {
               ),
               if (assessment.educationAdjustment)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
                     color: MocaColors.primary.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(8),
@@ -392,7 +393,8 @@ class MocaHomeScreen extends StatelessWidget {
             const SizedBox(height: 8),
             Row(
               children: [
-                const Icon(Icons.school, size: 16, color: MocaColors.textSecondary),
+                const Icon(Icons.school,
+                    size: 16, color: MocaColors.textSecondary),
                 const SizedBox(width: 8),
                 Text(
                   'Education: ${assessment.educationYears} years',
@@ -419,7 +421,7 @@ class MocaHomeScreen extends StatelessWidget {
       ),
     );
   }
-  
+
   Widget _buildInfoItem(String label, String value, IconData icon) {
     return Row(
       mainAxisSize: MainAxisSize.min,

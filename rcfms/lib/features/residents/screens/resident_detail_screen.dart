@@ -97,7 +97,8 @@ class _ResidentDetailScreenState extends State<ResidentDetailScreen> {
 
     final resident = _resident!;
     final authState = context.watch<AuthBloc>().state;
-    final userUnit = authState is AuthAuthenticated ? authState.user.unit : null;
+    final userUnit =
+        authState is AuthAuthenticated ? authState.user.unit : null;
 
     // Get screen dimensions for responsive layout
     final screenHeight = MediaQuery.of(context).size.height;
@@ -147,7 +148,8 @@ class _ResidentDetailScreenState extends State<ResidentDetailScreen> {
                                 : null,
                             child: resident.photoUrl == null
                                 ? Text(
-                                    resident.firstName[0] + resident.lastName[0],
+                                    resident.firstName[0] +
+                                        resident.lastName[0],
                                     style: TextStyle(
                                       fontSize: avatarRadius * 0.64,
                                       fontWeight: FontWeight.bold,
@@ -237,12 +239,16 @@ class _ResidentDetailScreenState extends State<ResidentDetailScreen> {
                   title: 'Basic Information',
                   icon: Icons.person,
                   children: [
-                    _buildInfoRow('Date of Birth',
-                        DateFormat('MMMM d, yyyy').format(resident.dateOfBirth)),
+                    _buildInfoRow(
+                        'Date of Birth',
+                        DateFormat('MMMM d, yyyy')
+                            .format(resident.dateOfBirth)),
                     _buildInfoRow('Age', '${resident.age} years old'),
                     _buildInfoRow('Gender', resident.gender.toUpperCase()),
-                    _buildInfoRow('Admission Date',
-                        DateFormat('MMMM d, yyyy').format(resident.admissionDate)),
+                    _buildInfoRow(
+                        'Admission Date',
+                        DateFormat('MMMM d, yyyy')
+                            .format(resident.admissionDate)),
                   ],
                 ),
                 const SizedBox(height: 16),
@@ -258,7 +264,8 @@ class _ResidentDetailScreenState extends State<ResidentDetailScreen> {
                         children: [
                           _buildInfoRow('Name', resident.emergencyContactName!),
                           if (resident.emergencyContactPhone != null)
-                            _buildInfoRow('Phone', resident.emergencyContactPhone!),
+                            _buildInfoRow(
+                                'Phone', resident.emergencyContactPhone!),
                           if (resident.emergencyContactRelation != null)
                             _buildInfoRow('Relationship',
                                 resident.emergencyContactRelation!),
@@ -275,7 +282,8 @@ class _ResidentDetailScreenState extends State<ResidentDetailScreen> {
                   icon: Icons.medical_information,
                   children: [
                     if (resident.primaryDiagnosis != null)
-                      _buildInfoRow('Primary Diagnosis', resident.primaryDiagnosis!),
+                      _buildInfoRow(
+                          'Primary Diagnosis', resident.primaryDiagnosis!),
                     if (resident.allergies != null)
                       _buildInfoRow('Allergies', resident.allergies!),
                     if (resident.medicalNotes != null)
@@ -293,10 +301,10 @@ class _ResidentDetailScreenState extends State<ResidentDetailScreen> {
                   ],
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Recent Forms Section
                 _buildRecentFormsSection(context, resident),
-                
+
                 const SizedBox(height: 80), // Space for FAB
               ]),
             ),
@@ -318,12 +326,12 @@ class _ResidentDetailScreenState extends State<ResidentDetailScreen> {
   ) {
     final screenWidth = MediaQuery.of(context).size.width;
     final buttonSpacing = screenWidth < 360 ? 8.0 : 12.0;
-    
+
     // Check if user can manage residents (transfer wards)
     final authState = context.read<AuthBloc>().state;
     final user = authState is AuthAuthenticated ? authState.user : null;
     final canManage = AppConstants.canManageResidents(user?.role, user?.unit);
-    
+
     // Check if user is from psych unit (can do MoCA assessments)
     final isPsychUnit = userUnit == 'psych';
 
@@ -383,7 +391,8 @@ class _ResidentDetailScreenState extends State<ResidentDetailScreen> {
                   label: 'Timeline',
                   color: AppColors.info,
                   compact: screenWidth < 360,
-                  onTap: () => context.push('/residents/${resident.id}/timeline'),
+                  onTap: () =>
+                      context.push('/residents/${resident.id}/timeline'),
                 ),
               ),
             ],
@@ -410,7 +419,8 @@ class _ResidentDetailScreenState extends State<ResidentDetailScreen> {
                     label: 'Timeline',
                     color: AppColors.info,
                     compact: screenWidth < 360,
-                    onTap: () => context.push('/residents/${resident.id}/timeline'),
+                    onTap: () =>
+                        context.push('/residents/${resident.id}/timeline'),
                   ),
                 ),
               ],
@@ -420,34 +430,34 @@ class _ResidentDetailScreenState extends State<ResidentDetailScreen> {
       ],
     );
   }
-  
+
   /// Start MoCA-P assessment with auto-filled resident data
   void _startMocaAssessment(BuildContext context, ResidentModel resident) {
     final authState = context.read<AuthBloc>().state;
     final user = authState is AuthAuthenticated ? authState.user : null;
-    
+
     // Default education years to 0 (will trigger adjustment if < 12 years)
     // In real implementation, this would be fetched from resident data
     const educationYears = 0;
-    
+
     // Start assessment with resident data auto-filled
     context.read<MocaAssessmentBloc>().add(
-      MocaStartAssessment(
-        residentId: resident.id,
-        clinicianId: user?.id,
-        residentName: resident.fullName,
-        residentSex: resident.gender,
-        residentBirthday: resident.dateOfBirth,
-        educationYears: educationYears,
-        educationAdjustment: educationYears < 12,
-      ),
-    );
-    
+          MocaStartAssessment(
+            residentId: resident.id,
+            clinicianId: user?.id,
+            residentName: resident.fullName,
+            residentSex: resident.gender,
+            residentBirthday: resident.dateOfBirth,
+            educationYears: educationYears,
+            educationAdjustment: educationYears < 12,
+          ),
+        );
+
     // Navigate to MoCA home screen with resident info
     // Use go() instead of push() since both are in the same ShellRoute
     context.go('/moca');
   }
-  
+
   void _showResidentForms(BuildContext context, ResidentModel resident) {
     // Show a bottom sheet with all forms for this resident
     showModalBottomSheet(
@@ -457,18 +467,19 @@ class _ResidentDetailScreenState extends State<ResidentDetailScreen> {
       builder: (context) => _ResidentFormsSheet(resident: resident),
     );
   }
-  
-  Future<void> _exportResidentProfile(BuildContext context, ResidentModel resident) async {
+
+  Future<void> _exportResidentProfile(
+      BuildContext context, ResidentModel resident) async {
     // Show loading
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Generating PDF export...')),
     );
-    
+
     try {
       // Import printing and pdf packages
       final formRepo = FormRepository();
       final forms = await formRepo.getFormsByResident(resident.id);
-      
+
       // For now, show a dialog with export options
       if (context.mounted) {
         showDialog(
@@ -515,7 +526,7 @@ class _ResidentDetailScreenState extends State<ResidentDetailScreen> {
       }
     }
   }
-  
+
   Future<void> _generateProfilePdf(
     ResidentModel resident,
     List<FormSubmissionModel> forms,
@@ -523,7 +534,7 @@ class _ResidentDetailScreenState extends State<ResidentDetailScreen> {
     try {
       // Use the printing package to generate PDF
       final pdf = await _buildProfilePdf(resident, forms);
-      
+
       // Import printing functionality
       await Printing.layoutPdf(
         onLayout: (format) async => pdf,
@@ -540,13 +551,13 @@ class _ResidentDetailScreenState extends State<ResidentDetailScreen> {
       }
     }
   }
-  
+
   Future<Uint8List> _buildProfilePdf(
     ResidentModel resident,
     List<FormSubmissionModel> forms,
   ) async {
     final pdf = pw.Document();
-    
+
     pdf.addPage(
       pw.MultiPage(
         pageFormat: PdfPageFormat.letter,
@@ -564,7 +575,7 @@ class _ResidentDetailScreenState extends State<ResidentDetailScreen> {
             ),
           ),
           pw.SizedBox(height: 20),
-          
+
           // Resident Name
           pw.Text(
             resident.fullName,
@@ -574,15 +585,17 @@ class _ResidentDetailScreenState extends State<ResidentDetailScreen> {
             ),
           ),
           pw.SizedBox(height: 20),
-          
+
           // Basic Information
           pw.Header(level: 1, child: pw.Text('Basic Information')),
-          _pdfInfoRow('Date of Birth', DateFormat('MMMM d, yyyy').format(resident.dateOfBirth)),
+          _pdfInfoRow('Date of Birth',
+              DateFormat('MMMM d, yyyy').format(resident.dateOfBirth)),
           _pdfInfoRow('Age', '${resident.age} years'),
           _pdfInfoRow('Gender', resident.gender),
-          _pdfInfoRow('Admission Date', DateFormat('MMMM d, yyyy').format(resident.admissionDate)),
+          _pdfInfoRow('Admission Date',
+              DateFormat('MMMM d, yyyy').format(resident.admissionDate)),
           pw.SizedBox(height: 20),
-          
+
           // Emergency Contact
           if (resident.emergencyContactName != null) ...[
             pw.Header(level: 1, child: pw.Text('Emergency Contact')),
@@ -593,7 +606,7 @@ class _ResidentDetailScreenState extends State<ResidentDetailScreen> {
               _pdfInfoRow('Relationship', resident.emergencyContactRelation!),
             pw.SizedBox(height: 20),
           ],
-          
+
           // Medical Information
           pw.Header(level: 1, child: pw.Text('Medical Information')),
           if (resident.primaryDiagnosis != null)
@@ -603,7 +616,7 @@ class _ResidentDetailScreenState extends State<ResidentDetailScreen> {
           if (resident.medicalNotes != null)
             _pdfInfoRow('Notes', resident.medicalNotes!),
           pw.SizedBox(height: 20),
-          
+
           // Forms Summary
           pw.Header(level: 1, child: pw.Text('Forms History')),
           pw.Text('Total Forms: ${forms.length}'),
@@ -611,20 +624,22 @@ class _ResidentDetailScreenState extends State<ResidentDetailScreen> {
           if (forms.isNotEmpty) ...[
             pw.Table.fromTextArray(
               headers: ['Form Type', 'Date', 'Status'],
-              data: forms.map((f) => [
-                _getFormDisplayName(f.templateType),
-                DateFormat('MMM d, yyyy').format(f.createdAt),
-                f.status.toUpperCase(),
-              ]).toList(),
+              data: forms
+                  .map((f) => [
+                        _getFormDisplayName(f.templateType),
+                        DateFormat('MMM d, yyyy').format(f.createdAt),
+                        f.status.toUpperCase(),
+                      ])
+                  .toList(),
             ),
           ],
         ],
       ),
     );
-    
+
     return pdf.save();
   }
-  
+
   pw.Widget _pdfInfoRow(String label, String value) {
     return pw.Padding(
       padding: const pw.EdgeInsets.symmetric(vertical: 4),
@@ -643,10 +658,10 @@ class _ResidentDetailScreenState extends State<ResidentDetailScreen> {
       ),
     );
   }
-  
+
   void _showWardTransferDialog(BuildContext context, ResidentModel resident) {
     String? selectedWardId = resident.currentWardId;
-    
+
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -701,7 +716,8 @@ class _ResidentDetailScreenState extends State<ResidentDetailScreen> {
           ),
           ElevatedButton(
             onPressed: () async {
-              if (selectedWardId != null && selectedWardId != resident.currentWardId) {
+              if (selectedWardId != null &&
+                  selectedWardId != resident.currentWardId) {
                 Navigator.pop(dialogContext);
                 await _transferResident(resident, selectedWardId!);
               }
@@ -712,15 +728,16 @@ class _ResidentDetailScreenState extends State<ResidentDetailScreen> {
       ),
     );
   }
-  
-  Future<void> _transferResident(ResidentModel resident, String newWardId) async {
+
+  Future<void> _transferResident(
+      ResidentModel resident, String newWardId) async {
     try {
       final repository = context.read<ResidentRepository>();
       await repository.updateResident(
         id: resident.id,
         wardId: newWardId,
       );
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -772,7 +789,8 @@ class _ResidentDetailScreenState extends State<ResidentDetailScreen> {
           return Container(
             decoration: BoxDecoration(
               color: AppColors.surface,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(20)),
             ),
             child: Column(
               children: [
@@ -809,14 +827,20 @@ class _ResidentDetailScreenState extends State<ResidentDetailScreen> {
                           children: [
                             Text(
                               'Select Form Type',
-                              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleLarge
+                                  ?.copyWith(
                                     fontWeight: FontWeight.bold,
                                   ),
                             ),
                             const SizedBox(height: 4),
                             Text(
                               '${formTypes.length} templates available',
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.copyWith(
                                     color: AppColors.textSecondary,
                                   ),
                             ),
@@ -871,8 +895,9 @@ class _ResidentDetailScreenState extends State<ResidentDetailScreen> {
         .map((w) => w.isNotEmpty ? w[0].toUpperCase() + w.substring(1) : w)
         .join(' ');
   }
-  
-  Widget _buildRecentFormsSection(BuildContext context, ResidentModel resident) {
+
+  Widget _buildRecentFormsSection(
+      BuildContext context, ResidentModel resident) {
     return FutureBuilder<List<FormSubmissionModel>>(
       future: FormRepository().getFormsByResident(resident.id),
       builder: (context, snapshot) {
@@ -887,9 +912,9 @@ class _ResidentDetailScreenState extends State<ResidentDetailScreen> {
             ),
           );
         }
-        
+
         final forms = snapshot.data ?? [];
-        
+
         return Card(
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
@@ -901,14 +926,16 @@ class _ResidentDetailScreenState extends State<ResidentDetailScreen> {
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.folder_open, color: AppColors.primary, size: 20),
+                    const Icon(Icons.folder_open,
+                        color: AppColors.primary, size: 20),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         'Recent Forms',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
+                        style:
+                            Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
                       ),
                     ),
                     if (forms.isNotEmpty)
@@ -937,10 +964,10 @@ class _ResidentDetailScreenState extends State<ResidentDetailScreen> {
       },
     );
   }
-  
+
   Widget _buildFormTile(BuildContext context, FormSubmissionModel form) {
     final statusColor = _getStatusColor(form.status);
-    
+
     return ListTile(
       contentPadding: EdgeInsets.zero,
       leading: Container(
@@ -989,7 +1016,7 @@ class _ResidentDetailScreenState extends State<ResidentDetailScreen> {
       },
     );
   }
-  
+
   Color _getStatusColor(String status) {
     switch (status) {
       case 'approved':
@@ -1215,23 +1242,51 @@ class _FormTypeCard extends StatelessWidget {
   (IconData, Color, String) _getFormTypeInfo(String templateId) {
     final template = FormTemplatesRegistry.getById(templateId);
     if (template != null) {
-      return (template.icon, AppColors.getServiceUnitColor(template.serviceUnit.name), template.name);
+      return (
+        template.icon,
+        AppColors.getServiceUnitColor(template.serviceUnit.name),
+        template.name
+      );
     }
 
     // Fallback with smart defaults based on template ID prefix
     if (templateId.startsWith('ss_')) {
-      return (Icons.social_distance, AppColors.unitSocial, _formatTemplateId(templateId));
+      return (
+        Icons.social_distance,
+        AppColors.unitSocial,
+        _formatTemplateId(templateId)
+      );
     } else if (templateId.startsWith('hl_')) {
-      return (Icons.home, AppColors.unitHomelife, _formatTemplateId(templateId));
+      return (
+        Icons.home,
+        AppColors.unitHomelife,
+        _formatTemplateId(templateId)
+      );
     } else if (templateId.startsWith('ps_')) {
-      return (Icons.psychology, AppColors.unitPsych, _formatTemplateId(templateId));
+      return (
+        Icons.psychology,
+        AppColors.unitPsych,
+        _formatTemplateId(templateId)
+      );
     } else if (templateId.startsWith('med_')) {
-      return (Icons.medical_services, AppColors.unitMedical, _formatTemplateId(templateId));
+      return (
+        Icons.medical_services,
+        AppColors.unitMedical,
+        _formatTemplateId(templateId)
+      );
     } else if (templateId.startsWith('rehab_')) {
-      return (Icons.accessibility_new, AppColors.unitRehab, _formatTemplateId(templateId));
+      return (
+        Icons.accessibility_new,
+        AppColors.unitRehab,
+        _formatTemplateId(templateId)
+      );
     }
 
-    return (Icons.description, AppColors.primary, _formatTemplateId(templateId));
+    return (
+      Icons.description,
+      AppColors.primary,
+      _formatTemplateId(templateId)
+    );
   }
 
   String _formatTemplateId(String templateId) {
@@ -1247,9 +1302,9 @@ class _FormTypeCard extends StatelessWidget {
 /// Bottom sheet showing all forms for a resident
 class _ResidentFormsSheet extends StatelessWidget {
   final ResidentModel resident;
-  
+
   const _ResidentFormsSheet({required this.resident});
-  
+
   @override
   Widget build(BuildContext context) {
     return DraggableScrollableSheet(
@@ -1300,16 +1355,20 @@ class _ResidentFormsSheet extends StatelessWidget {
                         children: [
                           Text(
                             'Forms for ${resident.firstName}',
-                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleLarge
+                                ?.copyWith(
                                   fontWeight: FontWeight.bold,
                                 ),
                           ),
                           const SizedBox(height: 2),
                           Text(
                             'All submitted and draft forms',
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: AppColors.textSecondary,
-                                ),
+                            style:
+                                Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: AppColors.textSecondary,
+                                    ),
                           ),
                         ],
                       ),
@@ -1326,9 +1385,9 @@ class _ResidentFormsSheet extends StatelessWidget {
                     if (snapshot.connectionState == ConnectionState.waiting) {
                       return const Center(child: CircularProgressIndicator());
                     }
-                    
+
                     final forms = snapshot.data ?? [];
-                    
+
                     if (forms.isEmpty) {
                       return Center(
                         child: Column(
@@ -1342,14 +1401,20 @@ class _ResidentFormsSheet extends StatelessWidget {
                             const SizedBox(height: 16),
                             Text(
                               'No forms yet',
-                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleMedium
+                                  ?.copyWith(
                                     color: AppColors.textSecondary,
                                   ),
                             ),
                             const SizedBox(height: 8),
                             Text(
                               'Forms created for this resident will appear here',
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.copyWith(
                                     color: AppColors.textTertiary,
                                   ),
                             ),
@@ -1357,7 +1422,7 @@ class _ResidentFormsSheet extends StatelessWidget {
                         ),
                       );
                     }
-                    
+
                     return ListView.separated(
                       controller: scrollController,
                       padding: const EdgeInsets.all(16),
@@ -1381,9 +1446,9 @@ class _ResidentFormsSheet extends StatelessWidget {
 
 class _FormListItem extends StatelessWidget {
   final FormSubmissionModel form;
-  
+
   const _FormListItem({required this.form});
-  
+
   Color _getStatusColor(String status) {
     switch (status) {
       case 'approved':
@@ -1398,7 +1463,7 @@ class _FormListItem extends StatelessWidget {
         return AppColors.textSecondary;
     }
   }
-  
+
   String _getFormDisplayName(String templateType) {
     final template = FormTemplatesRegistry.getById(templateType);
     if (template != null) {
@@ -1411,11 +1476,11 @@ class _FormListItem extends StatelessWidget {
         .map((w) => w.isNotEmpty ? w[0].toUpperCase() + w.substring(1) : w)
         .join(' ');
   }
-  
+
   @override
   Widget build(BuildContext context) {
     final statusColor = _getStatusColor(form.status);
-    
+
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 8),
       leading: Container(
