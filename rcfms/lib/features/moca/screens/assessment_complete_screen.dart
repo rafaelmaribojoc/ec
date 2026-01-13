@@ -9,12 +9,55 @@ import '../constants/moca_colors.dart';
 import '../services/dementia_probability_calculator.dart';
 import '../widgets/score_indicator.dart';
 
-class AssessmentCompleteScreen extends StatelessWidget {
+class AssessmentCompleteScreen extends StatefulWidget {
   const AssessmentCompleteScreen({super.key});
 
   @override
+  State<AssessmentCompleteScreen> createState() => _AssessmentCompleteScreenState();
+}
+
+class _AssessmentCompleteScreenState extends State<AssessmentCompleteScreen> {
+  bool _hasSaved = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Trigger save when screen loads
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _saveAssessment();
+    });
+  }
+
+  void _saveAssessment() {
+    if (!_hasSaved) {
+      _hasSaved = true;
+      // Complete and save the assessment
+      context.read<MocaAssessmentBloc>().add(MocaCompleteAssessment());
+      context.read<MocaAssessmentBloc>().add(MocaSaveAssessment());
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return BlocBuilder<MocaAssessmentBloc, MocaAssessmentState>(
+    return BlocConsumer<MocaAssessmentBloc, MocaAssessmentState>(
+      listener: (context, state) {
+        if (state.error != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(state.error!),
+              backgroundColor: MocaColors.error,
+            ),
+          );
+        }
+        if (state.isSaved) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Assessment saved successfully'),
+              backgroundColor: MocaColors.success,
+            ),
+          );
+        }
+      },
       builder: (context, state) {
         final assessment = state.assessment;
 
@@ -374,12 +417,55 @@ class AssessmentCompleteScreen extends StatelessWidget {
 
                     const SizedBox(height: 32),
 
+                    // Saving indicator
+                    if (state.isSaving)
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: MocaColors.primaryLight,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                            SizedBox(width: 12),
+                            Text('Saving assessment...'),
+                          ],
+                        ),
+                      )
+                    else if (state.isSaved)
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: MocaColors.successLight,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.check_circle, color: MocaColors.success),
+                            const SizedBox(width: 12),
+                            const Text(
+                              'Assessment saved successfully',
+                              style: TextStyle(color: MocaColors.success),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                    const SizedBox(height: 16),
+
                     // Action buttons
                     Row(
                       children: [
                         Expanded(
                           child: OutlinedButton.icon(
-                            onPressed: () {
+                            onPressed: state.isSaving ? null : () {
                               context.read<MocaAssessmentBloc>().add(
                                 MocaResetAssessment(),
                               );
@@ -397,7 +483,7 @@ class AssessmentCompleteScreen extends StatelessWidget {
                         const SizedBox(width: 12),
                         Expanded(
                           child: ElevatedButton.icon(
-                            onPressed: () {
+                            onPressed: state.isSaving ? null : () {
                               context.read<MocaAssessmentBloc>().add(
                                 MocaResetAssessment(),
                               );

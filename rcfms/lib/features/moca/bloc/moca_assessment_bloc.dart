@@ -2,6 +2,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../../data/repositories/moca_repository.dart';
 import '../models/moca_assessment_model.dart';
 
 // Events
@@ -75,11 +76,15 @@ class MocaSetMemoryWords extends MocaAssessmentEvent {
 
 class MocaCompleteAssessment extends MocaAssessmentEvent {}
 
+class MocaSaveAssessment extends MocaAssessmentEvent {}
+
 class MocaResetAssessment extends MocaAssessmentEvent {}
 
 // States
 class MocaAssessmentState extends Equatable {
   final bool isLoading;
+  final bool isSaving;
+  final bool isSaved;
   final String? error;
   final MocaAssessmentModel? assessment;
   final int currentSectionIndex;
@@ -87,6 +92,8 @@ class MocaAssessmentState extends Equatable {
 
   const MocaAssessmentState({
     this.isLoading = false,
+    this.isSaving = false,
+    this.isSaved = false,
     this.error,
     this.assessment,
     this.currentSectionIndex = 0,
@@ -110,6 +117,8 @@ class MocaAssessmentState extends Equatable {
 
   MocaAssessmentState copyWith({
     bool? isLoading,
+    bool? isSaving,
+    bool? isSaved,
     String? error,
     MocaAssessmentModel? assessment,
     int? currentSectionIndex,
@@ -117,6 +126,8 @@ class MocaAssessmentState extends Equatable {
   }) {
     return MocaAssessmentState(
       isLoading: isLoading ?? this.isLoading,
+      isSaving: isSaving ?? this.isSaving,
+      isSaved: isSaved ?? this.isSaved,
       error: error,
       assessment: assessment ?? this.assessment,
       currentSectionIndex: currentSectionIndex ?? this.currentSectionIndex,
@@ -127,6 +138,8 @@ class MocaAssessmentState extends Equatable {
   @override
   List<Object?> get props => [
         isLoading,
+        isSaving,
+        isSaved,
         error,
         assessment,
         currentSectionIndex,
@@ -138,14 +151,18 @@ class MocaAssessmentState extends Equatable {
 class MocaAssessmentBloc
     extends Bloc<MocaAssessmentEvent, MocaAssessmentState> {
   final _uuid = const Uuid();
+  final MocaRepository _repository;
 
-  MocaAssessmentBloc() : super(const MocaAssessmentState()) {
+  MocaAssessmentBloc({MocaRepository? repository})
+      : _repository = repository ?? MocaRepository(),
+        super(const MocaAssessmentState()) {
     on<MocaStartAssessment>(_onStartAssessment);
     on<MocaSaveSectionResult>(_onSaveSectionResult);
     on<MocaNextSection>(_onNextSection);
     on<MocaPreviousSection>(_onPreviousSection);
     on<MocaSetMemoryWords>(_onSetMemoryWords);
     on<MocaCompleteAssessment>(_onCompleteAssessment);
+    on<MocaSaveAssessment>(_onSaveAssessment);
     on<MocaResetAssessment>(_onResetAssessment);
   }
 
@@ -153,7 +170,7 @@ class MocaAssessmentBloc
     MocaStartAssessment event,
     Emitter<MocaAssessmentState> emit,
   ) {
-    emit(state.copyWith(isLoading: true, error: null));
+    emit(state.copyWith(isLoading: true, error: null, isSaved: false));
 
     try {
       // Determine education adjustment based on years of education
@@ -255,6 +272,36 @@ class MocaAssessmentBloc
     );
 
     emit(state.copyWith(assessment: completedAssessment));
+  }
+
+  Future<void> _onSaveAssessment(
+    MocaSaveAssessment event,
+    Emitter<MocaAssessmentState> emit,
+  ) async {
+    if (state.assessment == null) return;
+
+    emit(state.copyWith(isSaving: true, error: null));
+
+    try {
+      // Ensure assessment is marked as completed
+      final assessmentToSave = state.assessment!.completedAt != null
+          ? state.assessment!
+          : state.assessment!.copyWith(completedAt: DateTime.now());
+
+      // Save to database
+      final savedAssessment = await _repository.saveAssessment(assessmentToSave);
+
+      emit(state.copyWith(
+        isSaving: false,
+        isSaved: true,
+        assessment: savedAssessment,
+      ));
+    } catch (e) {
+      emit(state.copyWith(
+        isSaving: false,
+        error: 'Failed to save assessment: ${e.toString()}',
+      ));
+    }
   }
 
   void _onResetAssessment(

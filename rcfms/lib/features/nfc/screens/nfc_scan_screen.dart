@@ -470,8 +470,8 @@ class _NFCScanScreenState extends State<NFCScanScreen>
         );
 
     // Navigate to MoCA assessment
-    // Use go() instead of push() since both are in the same ShellRoute
-    context.go('/moca');
+    // Use push() to allow back navigation
+    context.push('/moca');
   }
 }
 

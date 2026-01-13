@@ -302,9 +302,8 @@ class RouterService {
           GoRoute(
             path: '/moca',
             name: 'moca',
-            pageBuilder: (context, state) => const NoTransitionPage(
-              child: MocaHomeScreen(),
-            ),
+            parentNavigatorKey: _rootNavigatorKey,
+            builder: (context, state) => const MocaHomeScreen(),
             routes: [
               GoRoute(
                 path: 'visuospatial',

@@ -454,8 +454,8 @@ class _ResidentDetailScreenState extends State<ResidentDetailScreen> {
         );
 
     // Navigate to MoCA home screen with resident info
-    // Use go() instead of push() since both are in the same ShellRoute
-    context.go('/moca');
+    // Use push() to allow back navigation to resident detail
+    context.push('/moca');
   }
 
   void _showResidentForms(BuildContext context, ResidentModel resident) {

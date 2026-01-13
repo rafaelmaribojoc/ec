@@ -142,7 +142,7 @@ class _FormListScreenState extends State<FormListScreen>
                 context
                     .push('/forms/fill/${form.templateId}?formId=${form.id}');
               } else {
-                context.push('/forms/${form.id}');
+                context.push('/forms/view/${form.id}');
               }
             },
           );
