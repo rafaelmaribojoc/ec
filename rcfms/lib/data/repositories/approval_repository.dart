@@ -638,25 +638,25 @@ class ApprovalRepository {
 
     final formId = approval['form_submission_id'] as String;
     final signatureFieldName = approval['signature_field_name'] as String?;
+    final now = DateTime.now();
 
-    // Update approval
+    // Update approval - use 'approved' status (database constraint doesn't allow 'noted')
     await _supabase.from('form_approvals').update({
-      'status': 'noted',
-      'action_at': DateTime.now().toIso8601String(),
+      'status': 'approved',
+      'action_at': now.toIso8601String(),
       'signature_url': signatureUrl,
       'signature_applied': true,
       'comment': comment,
-      'updated_at': DateTime.now().toIso8601String(),
+      'updated_at': now.toIso8601String(),
     }).eq('id', approvalId);
 
     // Update form submission
-    // Note: reviewer_name and reviewer_signature_url are retrieved via JOIN, not stored directly
     await _supabase.from('form_submissions').update({
-      'status': 'approved', // Noted is considered approved
+      'status': 'approved',
       'reviewed_by': userId,
-      'reviewed_at': DateTime.now().toIso8601String(),
+      'reviewed_at': now.toIso8601String(),
       'review_comment': comment,
-      'updated_at': DateTime.now().toIso8601String(),
+      'updated_at': now.toIso8601String(),
     }).eq('id', formId);
 
     // Add to form_signatures table

@@ -135,7 +135,9 @@ class _FormViewScreenState extends State<FormViewScreen> {
                 isReadOnly: true,
                 residentName: form.residentName,
                 existingSubmission: form,
-                showSignatures: true,
+                // Hide signatures when approver is viewing pending form
+                // Only show signatures after form is approved/reviewed
+                showSignatures: !_canAct && form.isApproved,
               )
             else ...[
               // Fallback to original layout if template not found
@@ -155,9 +157,11 @@ class _FormViewScreenState extends State<FormViewScreen> {
               ),
               const SizedBox(height: 16),
 
-              // Signatures - only show if form has signature data
-              // (fallback when template not found - check if signatures exist)
-              if (_formHasSignatureData(form)) _buildSignaturesSection(form),
+              // Signatures - only show after form is approved (not for pending approver view)
+              if (!_canAct &&
+                  form.isApproved &&
+                  _formHasSignatureData(form))
+                _buildSignaturesSection(form),
             ],
 
             const SizedBox(height: 16),
