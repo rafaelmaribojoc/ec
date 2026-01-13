@@ -158,9 +158,11 @@ class _FormViewScreenState extends State<FormViewScreen> {
               const SizedBox(height: 16),
 
               // Signatures - only show after form is approved (not for pending approver view)
+              // and only if the form type requires signatures
               if (!_canAct &&
                   form.isApproved &&
-                  _formHasSignatureData(form))
+                  _formHasSignatureData(form) &&
+                  _formTypeRequiresSignatures(form.templateType))
                 _buildSignaturesSection(form),
             ],
 
@@ -623,6 +625,16 @@ class _FormViewScreenState extends State<FormViewScreen> {
         data.containsKey('approved_by') ||
         form.submitterSignatureUrl != null ||
         form.reviewerSignatureUrl != null;
+  }
+
+  /// Check if form type requires signatures (Prepared By, Noted By, etc.)
+  bool _formTypeRequiresSignatures(String templateType) {
+    // Templates that don't require signatures
+    const noSignatureTypes = [
+      'pre_admission_checklist',
+      'requirements_checklist',
+    ];
+    return !noSignatureTypes.contains(templateType);
   }
 
   Widget _buildSignaturesSection(FormSubmissionModel form) {

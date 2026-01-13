@@ -76,19 +76,12 @@ class FormContentWidget extends StatelessWidget {
                   ..._buildFormFields(context, screen),
 
                   // Signatures section (only if template requires signatures and in view mode)
+                  // Forms without signatures (requiresSignature: false) don't show any signatures section
                   if (showSignatures &&
                       existingSubmission != null &&
                       template.requiresSignature) ...[
                     const SizedBox(height: 24),
                     _buildSignaturesSection(context, screen),
-                  ],
-
-                  // Acknowledgement info for forms without signatures
-                  if (showSignatures &&
-                      existingSubmission != null &&
-                      !template.requiresSignature) ...[
-                    const SizedBox(height: 24),
-                    _buildAcknowledgementSection(context, screen),
                   ],
 
                   SizedBox(
