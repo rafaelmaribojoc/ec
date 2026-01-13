@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../data/models/resident_model.dart';
@@ -18,6 +19,8 @@ class MocaHomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final authState = context.watch<AuthBloc>().state;
     final user = authState is AuthAuthenticated ? authState.user : null;
+    final mocaState = context.watch<MocaAssessmentBloc>().state;
+    final assessment = mocaState.assessment;
 
     return Scaffold(
       appBar: AppBar(
@@ -41,8 +44,11 @@ class MocaHomeScreen extends StatelessWidget {
                     children: [
                       const SizedBox(height: 8),
 
-                      // Resident info if available
-                      if (resident != null) ...[
+                      // Resident info from assessment (auto-filled)
+                      if (assessment?.residentName != null) ...[
+                        const SizedBox(height: 24),
+                        _buildResidentInfoCard(context, assessment!),
+                      ] else if (resident != null) ...[
                         const SizedBox(height: 24),
                         Container(
                           padding: const EdgeInsets.all(16),
@@ -290,6 +296,159 @@ class MocaHomeScreen extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+  
+  /// Build resident info card with auto-filled details
+  Widget _buildResidentInfoCard(BuildContext context, assessment) {
+    final birthday = assessment.residentBirthday;
+    final age = birthday != null
+        ? DateTime.now().difference(birthday).inDays ~/ 365
+        : null;
+    
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: MocaColors.primaryLight,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: MocaColors.primary.withValues(alpha: 0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.person, color: MocaColors.primary),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Resident',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: MocaColors.textSecondary,
+                      ),
+                    ),
+                    Text(
+                      assessment.residentName ?? 'Unknown',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: MocaColors.primary,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (assessment.educationAdjustment)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: MocaColors.primary.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Text(
+                    '+1 pt',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: MocaColors.primary,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          const Divider(height: 1),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _buildInfoItem(
+                  'Sex',
+                  assessment.residentSex ?? 'N/A',
+                  Icons.wc,
+                ),
+              ),
+              Expanded(
+                child: _buildInfoItem(
+                  'Age',
+                  age != null ? '$age years' : 'N/A',
+                  Icons.cake,
+                ),
+              ),
+              Expanded(
+                child: _buildInfoItem(
+                  'Date',
+                  DateFormat('MMM d, y').format(DateTime.now()),
+                  Icons.calendar_today,
+                ),
+              ),
+            ],
+          ),
+          if (assessment.educationYears > 0) ...[
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                const Icon(Icons.school, size: 16, color: MocaColors.textSecondary),
+                const SizedBox(width: 8),
+                Text(
+                  'Education: ${assessment.educationYears} years',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: MocaColors.textSecondary,
+                  ),
+                ),
+                if (assessment.educationYears < 12) ...[
+                  const SizedBox(width: 8),
+                  const Text(
+                    '(+1 point adjustment)',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: MocaColors.primary,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+  
+  Widget _buildInfoItem(String label, String value, IconData icon) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 14, color: MocaColors.textSecondary),
+        const SizedBox(width: 4),
+        Flexible(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 10,
+                  color: MocaColors.textSecondary,
+                ),
+              ),
+              Text(
+                value,
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

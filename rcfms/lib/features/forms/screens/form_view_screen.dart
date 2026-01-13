@@ -679,6 +679,12 @@ class _FormViewScreenState extends State<FormViewScreen> {
     String? signatureUrl,
     DateTime? timestamp,
   ) {
+    // Check if we have a valid signature URL
+    final hasValidUrl = signatureUrl != null &&
+        signatureUrl.isNotEmpty &&
+        (signatureUrl.startsWith('http://') ||
+            signatureUrl.startsWith('https://'));
+    
     return Row(
       children: [
         Expanded(
@@ -710,7 +716,8 @@ class _FormViewScreenState extends State<FormViewScreen> {
             ],
           ),
         ),
-        if (signatureUrl != null)
+        // Show signature image or pending placeholder
+        if (hasValidUrl)
           Container(
             width: 120,
             height: 50,
@@ -718,19 +725,54 @@ class _FormViewScreenState extends State<FormViewScreen> {
               color: Colors.grey[100],
               borderRadius: BorderRadius.circular(8),
             ),
-            child: CachedNetworkImage(
-              imageUrl: signatureUrl,
-              fit: BoxFit.contain,
-              placeholder: (_, __) => const Center(
-                child: SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: CachedNetworkImage(
+                imageUrl: signatureUrl,
+                fit: BoxFit.contain,
+                placeholder: (_, __) => const Center(
+                  child: SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
                 ),
+                errorWidget: (_, url, error) {
+                  debugPrint('Signature load error: $error for URL: $url');
+                  return const Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.broken_image,
+                            size: 20, color: AppColors.textSecondaryLight),
+                        Text('Load failed',
+                            style: TextStyle(
+                                fontSize: 8, color: AppColors.textSecondaryLight)),
+                      ],
+                    ),
+                  );
+                },
               ),
-              errorWidget: (_, __, ___) => const Icon(
-                Icons.draw,
-                color: AppColors.textSecondaryLight,
+            ),
+          )
+        else
+          // No signature URL - show pending placeholder
+          Container(
+            width: 120,
+            height: 50,
+            decoration: BoxDecoration(
+              color: Colors.grey[100],
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.grey[300]!),
+            ),
+            child: const Center(
+              child: Text(
+                'Pending',
+                style: TextStyle(
+                  color: AppColors.textSecondaryLight,
+                  fontSize: 12,
+                  fontStyle: FontStyle.italic,
+                ),
               ),
             ),
           ),

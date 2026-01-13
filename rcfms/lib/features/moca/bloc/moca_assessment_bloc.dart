@@ -16,15 +16,31 @@ class MocaStartAssessment extends MocaAssessmentEvent {
   final String? residentId;
   final String? clinicianId;
   final bool educationAdjustment;
+  final String? residentName;
+  final String? residentSex;
+  final DateTime? residentBirthday;
+  final int educationYears;
 
   const MocaStartAssessment({
     this.residentId,
     this.clinicianId,
     this.educationAdjustment = false,
+    this.residentName,
+    this.residentSex,
+    this.residentBirthday,
+    this.educationYears = 0,
   });
 
   @override
-  List<Object?> get props => [residentId, clinicianId, educationAdjustment];
+  List<Object?> get props => [
+        residentId,
+        clinicianId,
+        educationAdjustment,
+        residentName,
+        residentSex,
+        residentBirthday,
+        educationYears,
+      ];
 }
 
 class MocaSaveSectionResult extends MocaAssessmentEvent {
@@ -140,11 +156,19 @@ class MocaAssessmentBloc
     emit(state.copyWith(isLoading: true, error: null));
 
     try {
+      // Determine education adjustment based on years of education
+      // MoCA scoring: +1 point if education < 12 years
+      final shouldAdjust = event.educationYears > 0 && event.educationYears < 12;
+      
       final assessment = MocaAssessmentModel.empty(
         id: _uuid.v4(),
         clinicianId: event.clinicianId,
         residentId: event.residentId,
-        educationAdjustment: event.educationAdjustment,
+        educationAdjustment: event.educationAdjustment || shouldAdjust,
+        residentName: event.residentName,
+        residentSex: event.residentSex,
+        residentBirthday: event.residentBirthday,
+        educationYears: event.educationYears,
       );
 
       emit(state.copyWith(

@@ -22,6 +22,12 @@ class MocaAssessmentModel {
   final bool educationAdjustment;
   final Map<String, SectionResult> sectionResults;
   final DateTime createdAt;
+  
+  // Resident details for auto-fill
+  final String? residentName;
+  final String? residentSex;
+  final DateTime? residentBirthday;
+  final int educationYears; // Years of formal education
 
   const MocaAssessmentModel({
     required this.id,
@@ -34,6 +40,10 @@ class MocaAssessmentModel {
     required this.educationAdjustment,
     required this.sectionResults,
     required this.createdAt,
+    this.residentName,
+    this.residentSex,
+    this.residentBirthday,
+    this.educationYears = 0,
   });
 
   /// Create empty assessment
@@ -42,6 +52,10 @@ class MocaAssessmentModel {
     String? clinicianId,
     String? residentId,
     bool educationAdjustment = false,
+    String? residentName,
+    String? residentSex,
+    DateTime? residentBirthday,
+    int educationYears = 0,
   }) {
     return MocaAssessmentModel(
       id: id,
@@ -52,6 +66,10 @@ class MocaAssessmentModel {
       educationAdjustment: educationAdjustment,
       sectionResults: {},
       createdAt: DateTime.now(),
+      residentName: residentName,
+      residentSex: residentSex,
+      residentBirthday: residentBirthday,
+      educationYears: educationYears,
     );
   }
 
@@ -79,6 +97,12 @@ class MocaAssessmentModel {
       educationAdjustment: json['education_adjustment'] as bool? ?? false,
       sectionResults: sectionResults,
       createdAt: DateTime.parse(json['created_at']),
+      residentName: json['resident_name'] as String?,
+      residentSex: json['resident_sex'] as String?,
+      residentBirthday: json['resident_birthday'] != null
+          ? DateTime.parse(json['resident_birthday'])
+          : null,
+      educationYears: json['education_years'] as int? ?? 0,
     );
   }
 
@@ -100,6 +124,10 @@ class MocaAssessmentModel {
       'education_adjustment': educationAdjustment,
       'section_results': sectionResultsJson,
       'created_at': createdAt.toIso8601String(),
+      'resident_name': residentName,
+      'resident_sex': residentSex,
+      'resident_birthday': residentBirthday?.toIso8601String(),
+      'education_years': educationYears,
     };
   }
 
@@ -115,6 +143,10 @@ class MocaAssessmentModel {
     bool? educationAdjustment,
     Map<String, SectionResult>? sectionResults,
     DateTime? createdAt,
+    String? residentName,
+    String? residentSex,
+    DateTime? residentBirthday,
+    int? educationYears,
   }) {
     return MocaAssessmentModel(
       id: id ?? this.id,
@@ -127,6 +159,10 @@ class MocaAssessmentModel {
       educationAdjustment: educationAdjustment ?? this.educationAdjustment,
       sectionResults: sectionResults ?? this.sectionResults,
       createdAt: createdAt ?? this.createdAt,
+      residentName: residentName ?? this.residentName,
+      residentSex: residentSex ?? this.residentSex,
+      residentBirthday: residentBirthday ?? this.residentBirthday,
+      educationYears: educationYears ?? this.educationYears,
     );
   }
 

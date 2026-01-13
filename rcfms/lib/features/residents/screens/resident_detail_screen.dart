@@ -18,6 +18,8 @@ import '../../../data/repositories/resident_repository.dart';
 import '../../../data/repositories/form_repository.dart';
 import '../../auth/bloc/auth_bloc.dart';
 import '../../forms/templates/form_templates.dart';
+import '../../moca/bloc/moca_assessment_bloc.dart';
+import '../../moca/constants/moca_colors.dart';
 
 class ResidentDetailScreen extends StatefulWidget {
   final String residentId;
@@ -321,6 +323,9 @@ class _ResidentDetailScreenState extends State<ResidentDetailScreen> {
     final authState = context.read<AuthBloc>().state;
     final user = authState is AuthAuthenticated ? authState.user : null;
     final canManage = AppConstants.canManageResidents(user?.role, user?.unit);
+    
+    // Check if user is from psych unit (can do MoCA assessments)
+    final isPsychUnit = userUnit == 'psych';
 
     return Column(
       children: [
@@ -357,17 +362,18 @@ class _ResidentDetailScreenState extends State<ResidentDetailScreen> {
             ),
           ],
         ),
-        if (canManage) ...[
+        // Assessment button for psych unit
+        if (isPsychUnit) ...[
           SizedBox(height: buttonSpacing),
           Row(
             children: [
               Expanded(
                 child: _QuickActionButton(
-                  icon: Icons.swap_horiz,
-                  label: 'Transfer Ward',
-                  color: AppColors.warning,
+                  icon: Icons.psychology,
+                  label: 'New Assessment',
+                  color: MocaColors.primary,
                   compact: screenWidth < 360,
-                  onTap: () => _showWardTransferDialog(context, resident),
+                  onTap: () => _startMocaAssessment(context, resident),
                 ),
               ),
               SizedBox(width: buttonSpacing),
@@ -383,8 +389,62 @@ class _ResidentDetailScreenState extends State<ResidentDetailScreen> {
             ],
           ),
         ],
+        if (canManage) ...[
+          SizedBox(height: buttonSpacing),
+          Row(
+            children: [
+              Expanded(
+                child: _QuickActionButton(
+                  icon: Icons.swap_horiz,
+                  label: 'Transfer Ward',
+                  color: AppColors.warning,
+                  compact: screenWidth < 360,
+                  onTap: () => _showWardTransferDialog(context, resident),
+                ),
+              ),
+              if (!isPsychUnit) ...[
+                SizedBox(width: buttonSpacing),
+                Expanded(
+                  child: _QuickActionButton(
+                    icon: Icons.history,
+                    label: 'Timeline',
+                    color: AppColors.info,
+                    compact: screenWidth < 360,
+                    onTap: () => context.push('/residents/${resident.id}/timeline'),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ],
       ],
     );
+  }
+  
+  /// Start MoCA-P assessment with auto-filled resident data
+  void _startMocaAssessment(BuildContext context, ResidentModel resident) {
+    final authState = context.read<AuthBloc>().state;
+    final user = authState is AuthAuthenticated ? authState.user : null;
+    
+    // Default education years to 0 (will trigger adjustment if < 12 years)
+    // In real implementation, this would be fetched from resident data
+    const educationYears = 0;
+    
+    // Start assessment with resident data auto-filled
+    context.read<MocaAssessmentBloc>().add(
+      MocaStartAssessment(
+        residentId: resident.id,
+        clinicianId: user?.id,
+        residentName: resident.fullName,
+        residentSex: resident.gender,
+        residentBirthday: resident.dateOfBirth,
+        educationYears: educationYears,
+        educationAdjustment: educationYears < 12,
+      ),
+    );
+    
+    // Navigate to MoCA home screen with resident info
+    context.push('/moca');
   }
   
   void _showResidentForms(BuildContext context, ResidentModel resident) {

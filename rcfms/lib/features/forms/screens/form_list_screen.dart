@@ -442,6 +442,7 @@ class _FormCard extends StatelessWidget {
                       _formatTemplateName(form.templateType),
                       style: Theme.of(context).textTheme.titleSmall,
                       overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
                     ),
                     const SizedBox(height: 4),
                     Row(
@@ -452,6 +453,7 @@ class _FormCard extends StatelessWidget {
                                 'Resident: ${form.residentId.substring(0, 8)}...',
                             style: Theme.of(context).textTheme.bodySmall,
                             overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
                           ),
                         ),
                         const SizedBox(width: 8),
@@ -460,9 +462,12 @@ class _FormCard extends StatelessWidget {
                           style: TextStyle(color: AppColors.textTertiary),
                         ),
                         const SizedBox(width: 8),
-                        Text(
-                          DateFormat('MMM d, y').format(form.createdAt),
-                          style: Theme.of(context).textTheme.bodySmall,
+                        Flexible(
+                          child: Text(
+                            DateFormat('MMM d, y').format(form.createdAt),
+                            style: Theme.of(context).textTheme.bodySmall,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
                       ],
                     ),

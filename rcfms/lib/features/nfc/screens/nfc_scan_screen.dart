@@ -7,6 +7,9 @@ import '../../../core/theme/app_colors.dart';
 import '../../../data/models/resident_model.dart';
 import '../../../data/models/ward_model.dart';
 import '../../../data/repositories/resident_repository.dart';
+import '../../auth/bloc/auth_bloc.dart';
+import '../../moca/bloc/moca_assessment_bloc.dart';
+import '../../moca/constants/moca_colors.dart';
 
 class NFCScanScreen extends StatefulWidget {
   const NFCScanScreen({super.key});
@@ -427,6 +430,8 @@ class _NFCScanScreenState extends State<NFCScanScreen>
                     return _ResidentTile(
                       resident: resident,
                       onTap: () => context.push('/residents/${resident.id}'),
+                      onNewForm: () => _showFormOptions(context, resident),
+                      onNewAssessment: () => _startMocaAssessment(context, resident),
                     );
                   },
                 ),
@@ -434,19 +439,57 @@ class _NFCScanScreenState extends State<NFCScanScreen>
       ],
     );
   }
+  
+  void _showFormOptions(BuildContext context, ResidentModel resident) {
+    context.push('/residents/${resident.id}');
+  }
+  
+  /// Start MoCA-P assessment with auto-filled resident data
+  void _startMocaAssessment(BuildContext context, ResidentModel resident) {
+    final authState = context.read<AuthBloc>().state;
+    final user = authState is AuthAuthenticated ? authState.user : null;
+    
+    // Default education years to 0 (will trigger adjustment if < 12 years)
+    const educationYears = 0;
+    
+    // Start assessment with resident data auto-filled
+    context.read<MocaAssessmentBloc>().add(
+      MocaStartAssessment(
+        residentId: resident.id,
+        clinicianId: user?.id,
+        residentName: resident.fullName,
+        residentSex: resident.gender,
+        residentBirthday: resident.dateOfBirth,
+        educationYears: educationYears,
+        educationAdjustment: educationYears < 12,
+      ),
+    );
+    
+    // Navigate to MoCA assessment
+    context.push('/moca');
+  }
 }
 
 class _ResidentTile extends StatelessWidget {
   final ResidentModel resident;
   final VoidCallback onTap;
+  final VoidCallback? onNewForm;
+  final VoidCallback? onNewAssessment;
 
   const _ResidentTile({
     required this.resident,
     required this.onTap,
+    this.onNewForm,
+    this.onNewAssessment,
   });
 
   @override
   Widget build(BuildContext context) {
+    // Check if user is from psych unit
+    final authState = context.read<AuthBloc>().state;
+    final userUnit = authState is AuthAuthenticated ? authState.user.unit : null;
+    final isPsychUnit = userUnit == 'psych';
+    
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       shape: RoundedRectangleBorder(
@@ -457,69 +500,112 @@ class _ResidentTile extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         child: Padding(
           padding: const EdgeInsets.all(16),
-          child: Row(
+          child: Column(
             children: [
-              CircleAvatar(
-                radius: 28,
-                backgroundColor: AppColors.primaryLight.withValues(alpha: 0.2),
-                child: Text(
-                  resident.firstName[0] + resident.lastName[0],
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.primary,
-                    fontSize: 18,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      resident.fullName,
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
+              Row(
+                children: [
+                  CircleAvatar(
+                    radius: 28,
+                    backgroundColor: AppColors.primaryLight.withValues(alpha: 0.2),
+                    child: Text(
+                      resident.firstName[0] + resident.lastName[0],
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.primary,
+                        fontSize: 18,
+                      ),
                     ),
-                    const SizedBox(height: 4),
-                    Row(
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(
-                          Icons.cake,
-                          size: 14,
-                          color: AppColors.textSecondaryLight,
-                        ),
-                        const SizedBox(width: 4),
                         Text(
-                          '${resident.age} years',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: AppColors.textSecondaryLight,
+                          resident.fullName,
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.w600,
                               ),
                         ),
-                        const SizedBox(width: 12),
-                        if (resident.roomNumber != null) ...[
-                          Icon(
-                            Icons.meeting_room,
-                            size: 14,
-                            color: AppColors.textSecondaryLight,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            'Room ${resident.roomNumber}',
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: AppColors.textSecondaryLight,
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.cake,
+                              size: 14,
+                              color: AppColors.textSecondaryLight,
+                            ),
+                            const SizedBox(width: 4),
+                            Flexible(
+                              child: Text(
+                                '${resident.age} years',
+                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: AppColors.textSecondaryLight,
+                                    ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            if (resident.roomNumber != null) ...[
+                              const SizedBox(width: 8),
+                              Icon(
+                                Icons.meeting_room,
+                                size: 14,
+                                color: AppColors.textSecondaryLight,
+                              ),
+                              const SizedBox(width: 4),
+                              Flexible(
+                                child: Text(
+                                  'Room ${resident.roomNumber}',
+                                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                        color: AppColors.textSecondaryLight,
+                                      ),
+                                  overflow: TextOverflow.ellipsis,
                                 ),
-                          ),
-                        ],
+                              ),
+                            ],
+                          ],
+                        ),
                       ],
                     ),
-                  ],
-                ),
+                  ),
+                  const Icon(
+                    Icons.chevron_right,
+                    color: AppColors.textSecondaryLight,
+                  ),
+                ],
               ),
-              const Icon(
-                Icons.chevron_right,
-                color: AppColors.textSecondaryLight,
+              // Quick action buttons
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: onNewForm,
+                      icon: const Icon(Icons.description, size: 16),
+                      label: const Text('New Form'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.primary,
+                        side: BorderSide(color: AppColors.primary.withValues(alpha: 0.5)),
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                      ),
+                    ),
+                  ),
+                  if (isPsychUnit) ...[
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: onNewAssessment,
+                        icon: const Icon(Icons.psychology, size: 16),
+                        label: const Text('Assessment'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: MocaColors.primary,
+                          side: BorderSide(color: MocaColors.primary.withValues(alpha: 0.5)),
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
               ),
             ],
           ),
