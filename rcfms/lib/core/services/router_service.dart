@@ -538,7 +538,7 @@ class _FormEditScreenState extends State<_FormEditScreen> {
 
       // Get the correct template based on form's unit
       FormTemplate? template = FormTemplatesRegistry.getByTypeAndUnit(
-        form.templateType, 
+        form.templateType,
         form.unit,
       );
       template ??= FormTemplatesRegistry.getByType(form.templateType);
@@ -590,8 +590,8 @@ class _FormEditScreenState extends State<_FormEditScreen> {
             children: [
               const Icon(Icons.error_outline, size: 64, color: Colors.red),
               const SizedBox(height: 16),
-              Text(_error != null 
-                  ? 'Failed to load form: $_error' 
+              Text(_error != null
+                  ? 'Failed to load form: $_error'
                   : 'Template not found'),
               const SizedBox(height: 8),
               ElevatedButton(

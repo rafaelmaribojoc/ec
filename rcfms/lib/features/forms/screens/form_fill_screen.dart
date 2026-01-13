@@ -9,6 +9,7 @@ import '../../../core/utils/responsive.dart';
 import '../../../data/repositories/form_repository.dart';
 import '../../../data/repositories/approval_repository.dart';
 import '../../../data/models/form_submission_model.dart';
+import '../../../data/models/user_model.dart';
 import '../../auth/bloc/auth_bloc.dart';
 import 'form_pdf_preview_screen.dart';
 
@@ -58,7 +59,7 @@ class _FormFillScreenState extends State<FormFillScreen> {
             residentData: widget.residentData,
           );
     _submissionId = widget.existingSubmissionId;
-    
+
     // Auto-populate Prepared By with current user
     _autoPopulateSignatures();
   }
@@ -68,28 +69,31 @@ class _FormFillScreenState extends State<FormFillScreen> {
     final authState = context.read<AuthBloc>().state;
     if (authState is AuthAuthenticated) {
       final currentUser = authState.user;
-      
+
       // Only set if not already set (don't override existing data when editing)
-      if (_formData['prepared_by'] == null || _formData['prepared_by'].toString().isEmpty) {
+      if (_formData['prepared_by'] == null ||
+          _formData['prepared_by'].toString().isEmpty) {
         setState(() {
           _formData['prepared_by'] = currentUser.fullName;
-          _formData['prepared_by_position'] = currentUser.title ?? currentUser.role;
+          // Use job title based on unit (not license suffix like RPm)
+          _formData['prepared_by_position'] = _getJobTitle(currentUser);
           _formData['prepared_by_id'] = currentUser.id;
         });
       }
     }
-    
+
     // Fetch Center Head for "Noted By"
     try {
       final approvalRepo = ApprovalRepository();
       final recipients = await approvalRepo.getApprovalRecipients();
-      final centerHead = recipients.where((u) => 
-        u.role == 'center_head' || u.role == 'super_admin'
-      ).firstOrNull;
-      
+      final centerHead = recipients
+          .where((u) => u.role == 'center_head' || u.role == 'super_admin')
+          .firstOrNull;
+
       if (centerHead != null && mounted) {
         // Only set if not already set
-        if (_formData['noted_by'] == null || _formData['noted_by'].toString().isEmpty) {
+        if (_formData['noted_by'] == null ||
+            _formData['noted_by'].toString().isEmpty) {
           setState(() {
             _formData['noted_by'] = centerHead.fullName;
             _formData['noted_by_position'] = 'Center Head';
@@ -467,8 +471,8 @@ class _FormFillScreenState extends State<FormFillScreen> {
                       strokeWidth: 2, color: Colors.white),
                 )
               : Icon(widget.isEditing ? Icons.refresh : Icons.check),
-          label: Text(_isSaving 
-              ? 'Submitting...' 
+          label: Text(_isSaving
+              ? 'Submitting...'
               : (widget.isEditing ? 'Update & Resubmit' : 'Submit Form')),
         ),
       ],
@@ -696,6 +700,28 @@ class _FormFillScreenState extends State<FormFillScreen> {
           ),
         ) ??
         false;
+  }
+
+  /// Get job title based on user's unit
+  /// Returns the human-readable job title (not license suffix)
+  String _getJobTitle(UserModel user) {
+    // Derive job title from unit
+    switch (user.unit?.toLowerCase()) {
+      case 'psych':
+        return 'Psychometrician';
+      case 'social':
+        return 'Social Worker';
+      case 'homelife':
+        return 'Housekeeper';
+      case 'medical':
+        return 'Nurse';
+      default:
+        // Fall back to role-based title
+        if (user.isCenterHead) return 'Center Head';
+        if (user.isSuperAdmin) return 'Administrator';
+        if (user.isUnitHead) return 'Unit Head';
+        return user.role.replaceAll('_', ' ');
+    }
   }
 }
 

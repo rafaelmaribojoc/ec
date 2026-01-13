@@ -6,11 +6,13 @@ class HomeLifeServiceForms {
   HomeLifeServiceForms._();
 
   /// Get form fields for home life service templates
+  /// [readOnly] - If true, all fields will be disabled (for approval view)
   static List<Widget> getFormFields(
     String templateType,
     Map<String, dynamic> data,
-    void Function(String, dynamic) onChanged,
-  ) {
+    void Function(String, dynamic) onChanged, {
+    bool readOnly = false,
+  }) {
     switch (templateType) {
       case 'inventory_admission':
         return _inventoryUponAdmission(data, onChanged);
@@ -36,7 +38,8 @@ class HomeLifeServiceForms {
   ) {
     return [
       FormFieldBuilders.sectionHeader('INVENTORY OF BELONGINGS'),
-      FormFieldBuilders.infoText('Record all belongings of the client upon admission'),
+      FormFieldBuilders.infoText(
+          'Record all belongings of the client upon admission'),
       FormFieldBuilders.textField(
         label: 'Name of Client',
         value: data['client_name'] ?? '',
@@ -101,7 +104,8 @@ class HomeLifeServiceForms {
   ) {
     return [
       FormFieldBuilders.sectionHeader('INVENTORY OF BELONGINGS'),
-      FormFieldBuilders.infoText('Record all belongings being released to the client upon discharge'),
+      FormFieldBuilders.infoText(
+          'Record all belongings being released to the client upon discharge'),
       FormFieldBuilders.textField(
         label: 'Name of Client',
         value: data['client_name'] ?? '',
@@ -173,9 +177,18 @@ class HomeLifeServiceForms {
               label: 'Month',
               value: data['month'] ?? 'January',
               items: const [
-                'January', 'February', 'March', 'April',
-                'May', 'June', 'July', 'August',
-                'September', 'October', 'November', 'December'
+                'January',
+                'February',
+                'March',
+                'April',
+                'May',
+                'June',
+                'July',
+                'August',
+                'September',
+                'October',
+                'November',
+                'December'
               ],
               onChanged: (v) => onChanged('month', v),
             ),
@@ -379,7 +392,8 @@ class HomeLifeServiceForms {
             cells: [
               TextFormField(
                 initialValue: item['particulars'] ?? '',
-                decoration: const InputDecoration(isDense: true, border: InputBorder.none),
+                decoration: const InputDecoration(
+                    isDense: true, border: InputBorder.none),
                 onChanged: (v) {
                   final newItems = List<Map<String, dynamic>>.from(items);
                   newItems[index]['particulars'] = v;
@@ -388,7 +402,8 @@ class HomeLifeServiceForms {
               ),
               TextFormField(
                 initialValue: item['qty']?.toString() ?? '',
-                decoration: const InputDecoration(isDense: true, border: InputBorder.none),
+                decoration: const InputDecoration(
+                    isDense: true, border: InputBorder.none),
                 keyboardType: TextInputType.number,
                 textAlign: TextAlign.center,
                 onChanged: (v) {
@@ -399,7 +414,8 @@ class HomeLifeServiceForms {
               ),
               TextFormField(
                 initialValue: item['unit'] ?? '',
-                decoration: const InputDecoration(isDense: true, border: InputBorder.none),
+                decoration: const InputDecoration(
+                    isDense: true, border: InputBorder.none),
                 textAlign: TextAlign.center,
                 onChanged: (v) {
                   final newItems = List<Map<String, dynamic>>.from(items);
@@ -409,7 +425,8 @@ class HomeLifeServiceForms {
               ),
               TextFormField(
                 initialValue: item['description'] ?? '',
-                decoration: const InputDecoration(isDense: true, border: InputBorder.none),
+                decoration: const InputDecoration(
+                    isDense: true, border: InputBorder.none),
                 onChanged: (v) {
                   final newItems = List<Map<String, dynamic>>.from(items);
                   newItems[index]['description'] = v;
@@ -418,7 +435,8 @@ class HomeLifeServiceForms {
               ),
               TextFormField(
                 initialValue: item['unit_cost']?.toString() ?? '',
-                decoration: const InputDecoration(isDense: true, border: InputBorder.none),
+                decoration: const InputDecoration(
+                    isDense: true, border: InputBorder.none),
                 keyboardType: TextInputType.number,
                 textAlign: TextAlign.right,
                 onChanged: (v) {
@@ -429,7 +447,8 @@ class HomeLifeServiceForms {
               ),
               TextFormField(
                 initialValue: item['balance']?.toString() ?? '',
-                decoration: const InputDecoration(isDense: true, border: InputBorder.none),
+                decoration: const InputDecoration(
+                    isDense: true, border: InputBorder.none),
                 keyboardType: TextInputType.number,
                 textAlign: TextAlign.right,
                 onChanged: (v) {
@@ -508,9 +527,7 @@ class HomeLifeServiceForms {
                 child: Container(
                   padding: const EdgeInsets.symmetric(vertical: 8),
                   child: Text(
-                    item['date'] != null
-                        ? _formatDate(item['date'])
-                        : 'Select',
+                    item['date'] != null ? _formatDate(item['date']) : 'Select',
                     style: TextStyle(
                       color: item['date'] != null ? null : Colors.grey,
                       fontSize: 12,
@@ -896,7 +913,8 @@ class HomeLifeServiceForms {
       ),
       FormFieldBuilders.textArea(
         label: 'Notice/Reminders',
-        value: data['notices'] ?? 'The Home for the Aged will not be held liable for any untoward incident affecting the client outside the center.',
+        value: data['notices'] ??
+            'The Home for the Aged will not be held liable for any untoward incident affecting the client outside the center.',
         onChanged: (v) => onChanged('notices', v),
       ),
       const SizedBox(height: 16),

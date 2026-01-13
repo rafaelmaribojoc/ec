@@ -6,11 +6,15 @@ class PsychologicalServiceForms {
   PsychologicalServiceForms._();
 
   /// Get form fields for psychological service templates
+  /// [readOnly] - If true, all fields will be disabled (for approval view)
+  /// Note: The readOnly parameter is handled by the caller (FormContentWidget)
+  /// using IgnorePointer wrapper, so we don't need to pass it to each method
   static List<Widget> getFormFields(
     String templateType,
     Map<String, dynamic> data,
-    void Function(String, dynamic) onChanged,
-  ) {
+    void Function(String, dynamic) onChanged, {
+    bool readOnly = false,
+  }) {
     switch (templateType) {
       case 'progress_notes':
         return _progressNotes(data, onChanged);
@@ -36,7 +40,8 @@ class PsychologicalServiceForms {
   ) {
     return [
       FormFieldBuilders.sectionHeader('PROGRESS NOTES'),
-      FormFieldBuilders.infoText('Monthly progress report for psychological services'),
+      FormFieldBuilders.infoText(
+          'Monthly progress report for psychological services'),
       FormFieldBuilders.textField(
         label: 'Name of Client',
         value: data['client_name'] ?? '',
@@ -50,9 +55,18 @@ class PsychologicalServiceForms {
               label: 'Coverage Month',
               value: data['coverage_month'] ?? 'January',
               items: const [
-                'January', 'February', 'March', 'April',
-                'May', 'June', 'July', 'August',
-                'September', 'October', 'November', 'December'
+                'January',
+                'February',
+                'March',
+                'April',
+                'May',
+                'June',
+                'July',
+                'August',
+                'September',
+                'October',
+                'November',
+                'December'
               ],
               onChanged: (v) => onChanged('coverage_month', v),
             ),
@@ -61,7 +75,8 @@ class PsychologicalServiceForms {
           Expanded(
             child: FormFieldBuilders.textField(
               label: 'Year',
-              value: data['coverage_year']?.toString() ?? DateTime.now().year.toString(),
+              value: data['coverage_year']?.toString() ??
+                  DateTime.now().year.toString(),
               keyboardType: TextInputType.number,
               onChanged: (v) => onChanged('coverage_year', v),
             ),
@@ -264,10 +279,12 @@ class PsychologicalServiceForms {
         onChanged: (v) => onChanged('session_narrative', v),
         required: true,
         maxLines: 6,
-        hint: 'Describe how the session happened, behavioral observations (FIDS format if possible)',
+        hint:
+            'Describe how the session happened, behavioral observations (FIDS format if possible)',
       ),
       const SizedBox(height: 16),
-      FormFieldBuilders.sectionHeader('Participant-Specific Agreements (Optional)'),
+      FormFieldBuilders.sectionHeader(
+          'Participant-Specific Agreements (Optional)'),
       FormFieldBuilders.infoText(
         'Use this table if participants have unique needs requiring individual agreements or lessons.',
       ),
@@ -288,7 +305,8 @@ class PsychologicalServiceForms {
                 hintText: 'Name...',
               ),
               onChanged: (v) {
-                final newParticipants = List<Map<String, dynamic>>.from(participants);
+                final newParticipants =
+                    List<Map<String, dynamic>>.from(participants);
                 newParticipants[index]['name'] = v;
                 onChanged('participant_details', newParticipants);
               },
@@ -302,7 +320,8 @@ class PsychologicalServiceForms {
               ),
               maxLines: 2,
               onChanged: (v) {
-                final newParticipants = List<Map<String, dynamic>>.from(participants);
+                final newParticipants =
+                    List<Map<String, dynamic>>.from(participants);
                 newParticipants[index]['challenges'] = v;
                 onChanged('participant_details', newParticipants);
               },
@@ -316,7 +335,8 @@ class PsychologicalServiceForms {
               ),
               maxLines: 2,
               onChanged: (v) {
-                final newParticipants = List<Map<String, dynamic>>.from(participants);
+                final newParticipants =
+                    List<Map<String, dynamic>>.from(participants);
                 newParticipants[index]['agreements'] = v;
                 onChanged('participant_details', newParticipants);
               },
@@ -324,7 +344,8 @@ class PsychologicalServiceForms {
           ],
           flexValues: [2, 3, 3],
           onDelete: () {
-            final newParticipants = List<Map<String, dynamic>>.from(participants);
+            final newParticipants =
+                List<Map<String, dynamic>>.from(participants);
             newParticipants.removeAt(index);
             onChanged('participant_details', newParticipants);
           },
@@ -343,7 +364,8 @@ class PsychologicalServiceForms {
         label: 'General Agreements/Lessons Imparted',
         value: data['general_agreements'] ?? '',
         onChanged: (v) => onChanged('general_agreements', v),
-        hint: 'Common agreements/lessons for all. Provide concluding statement(s).',
+        hint:
+            'Common agreements/lessons for all. Provide concluding statement(s).',
       ),
       FormFieldBuilders.textArea(
         label: 'Recommendations',
@@ -438,7 +460,8 @@ class PsychologicalServiceForms {
             Expanded(
               child: Text(
                 'Strictly Confidential / Not for Legal Use',
-                style: TextStyle(fontWeight: FontWeight.bold, color: Colors.amber),
+                style:
+                    TextStyle(fontWeight: FontWeight.bold, color: Colors.amber),
               ),
             ),
           ],
@@ -641,7 +664,8 @@ class PsychologicalServiceForms {
             child: FormFieldBuilders.datePicker(
               label: 'Date of Birth',
               value: data['date_of_birth'],
-              onChanged: (v) => onChanged('date_of_birth', v?.toIso8601String()),
+              onChanged: (v) =>
+                  onChanged('date_of_birth', v?.toIso8601String()),
             ),
           ),
           const SizedBox(width: 16),
@@ -719,7 +743,8 @@ class PsychologicalServiceForms {
             Expanded(
               child: Text(
                 'Strictly Confidential / Not for Legal Use',
-                style: TextStyle(fontWeight: FontWeight.bold, color: Colors.amber),
+                style:
+                    TextStyle(fontWeight: FontWeight.bold, color: Colors.amber),
               ),
             ),
           ],
@@ -754,7 +779,8 @@ class PsychologicalServiceForms {
             child: FormFieldBuilders.datePicker(
               label: 'Date of Birth',
               value: data['date_of_birth'],
-              onChanged: (v) => onChanged('date_of_birth', v?.toIso8601String()),
+              onChanged: (v) =>
+                  onChanged('date_of_birth', v?.toIso8601String()),
             ),
           ),
           const SizedBox(width: 16),
@@ -807,7 +833,8 @@ class PsychologicalServiceForms {
             child: FormFieldBuilders.datePicker(
               label: 'Date of Admission',
               value: data['date_of_admission'],
-              onChanged: (v) => onChanged('date_of_admission', v?.toIso8601String()),
+              onChanged: (v) =>
+                  onChanged('date_of_admission', v?.toIso8601String()),
             ),
           ),
           const SizedBox(width: 16),
@@ -815,7 +842,8 @@ class PsychologicalServiceForms {
             child: FormFieldBuilders.datePicker(
               label: 'Date of Assessment',
               value: data['date_of_assessment'],
-              onChanged: (v) => onChanged('date_of_assessment', v?.toIso8601String()),
+              onChanged: (v) =>
+                  onChanged('date_of_assessment', v?.toIso8601String()),
             ),
           ),
         ],
@@ -835,7 +863,8 @@ class PsychologicalServiceForms {
         maxLines: 4,
       ),
       const SizedBox(height: 16),
-      FormFieldBuilders.sectionHeader('III. Assessment Tools and Other Procedures'),
+      FormFieldBuilders.sectionHeader(
+          'III. Assessment Tools and Other Procedures'),
       FormFieldBuilders.textArea(
         label: 'Assessment Tools Used',
         value: data['assessment_tools'] ?? '',
@@ -854,7 +883,13 @@ class PsychologicalServiceForms {
       const SizedBox(height: 16),
       FormFieldBuilders.sectionHeader('V. Recommendations / Intervention Plan'),
       FormFieldBuilders.tableHeader(
-        ['Objectives', 'Activity', 'Responsible Person', 'Time Frame', 'Outcome'],
+        [
+          'Objectives',
+          'Activity',
+          'Responsible Person',
+          'Time Frame',
+          'Outcome'
+        ],
         flexValues: [2, 2, 2, 1, 1],
       ),
       ...interventions.asMap().entries.map((entry) {
@@ -864,7 +899,8 @@ class PsychologicalServiceForms {
           cells: [
             TextFormField(
               initialValue: item['objectives'] ?? '',
-              decoration: const InputDecoration(isDense: true, border: InputBorder.none),
+              decoration: const InputDecoration(
+                  isDense: true, border: InputBorder.none),
               maxLines: 2,
               onChanged: (v) {
                 final newItems = List<Map<String, dynamic>>.from(interventions);
@@ -874,7 +910,8 @@ class PsychologicalServiceForms {
             ),
             TextFormField(
               initialValue: item['activity'] ?? '',
-              decoration: const InputDecoration(isDense: true, border: InputBorder.none),
+              decoration: const InputDecoration(
+                  isDense: true, border: InputBorder.none),
               maxLines: 2,
               onChanged: (v) {
                 final newItems = List<Map<String, dynamic>>.from(interventions);
@@ -884,7 +921,8 @@ class PsychologicalServiceForms {
             ),
             TextFormField(
               initialValue: item['responsible_person'] ?? '',
-              decoration: const InputDecoration(isDense: true, border: InputBorder.none),
+              decoration: const InputDecoration(
+                  isDense: true, border: InputBorder.none),
               onChanged: (v) {
                 final newItems = List<Map<String, dynamic>>.from(interventions);
                 newItems[index]['responsible_person'] = v;
@@ -893,7 +931,8 @@ class PsychologicalServiceForms {
             ),
             TextFormField(
               initialValue: item['time_frame'] ?? '',
-              decoration: const InputDecoration(isDense: true, border: InputBorder.none),
+              decoration: const InputDecoration(
+                  isDense: true, border: InputBorder.none),
               onChanged: (v) {
                 final newItems = List<Map<String, dynamic>>.from(interventions);
                 newItems[index]['time_frame'] = v;
@@ -902,7 +941,8 @@ class PsychologicalServiceForms {
             ),
             TextFormField(
               initialValue: item['outcome'] ?? '',
-              decoration: const InputDecoration(isDense: true, border: InputBorder.none),
+              decoration: const InputDecoration(
+                  isDense: true, border: InputBorder.none),
               onChanged: (v) {
                 final newItems = List<Map<String, dynamic>>.from(interventions);
                 newItems[index]['outcome'] = v;
@@ -999,7 +1039,8 @@ class PsychologicalServiceForms {
             Expanded(
               child: Text(
                 'Strictly Confidential / Not for Legal Use',
-                style: TextStyle(fontWeight: FontWeight.bold, color: Colors.amber),
+                style:
+                    TextStyle(fontWeight: FontWeight.bold, color: Colors.amber),
               ),
             ),
           ],
@@ -1034,7 +1075,8 @@ class PsychologicalServiceForms {
             child: FormFieldBuilders.datePicker(
               label: 'Date of Birth',
               value: data['date_of_birth'],
-              onChanged: (v) => onChanged('date_of_birth', v?.toIso8601String()),
+              onChanged: (v) =>
+                  onChanged('date_of_birth', v?.toIso8601String()),
             ),
           ),
           const SizedBox(width: 16),
@@ -1093,7 +1135,8 @@ class PsychologicalServiceForms {
             child: FormFieldBuilders.datePicker(
               label: 'Date of Admission',
               value: data['date_of_admission'],
-              onChanged: (v) => onChanged('date_of_admission', v?.toIso8601String()),
+              onChanged: (v) =>
+                  onChanged('date_of_admission', v?.toIso8601String()),
             ),
           ),
           const SizedBox(width: 16),
@@ -1101,7 +1144,8 @@ class PsychologicalServiceForms {
             child: FormFieldBuilders.datePicker(
               label: 'Date of Assessment',
               value: data['date_of_assessment'],
-              onChanged: (v) => onChanged('date_of_assessment', v?.toIso8601String()),
+              onChanged: (v) =>
+                  onChanged('date_of_assessment', v?.toIso8601String()),
             ),
           ),
         ],
@@ -1137,7 +1181,8 @@ class PsychologicalServiceForms {
         maxLines: 6,
       ),
       const SizedBox(height: 16),
-      FormFieldBuilders.sectionHeader('III. Assessment Tools and Other Procedures'),
+      FormFieldBuilders.sectionHeader(
+          'III. Assessment Tools and Other Procedures'),
       FormFieldBuilders.textArea(
         label: 'Assessment Tools Used',
         value: data['assessment_tools'] ?? '',
@@ -1164,7 +1209,13 @@ class PsychologicalServiceForms {
       const SizedBox(height: 16),
       FormFieldBuilders.sectionHeader('V. Recommendations / Intervention Plan'),
       FormFieldBuilders.tableHeader(
-        ['Objectives', 'Activity', 'Responsible Person', 'Time Frame', 'Outcome'],
+        [
+          'Objectives',
+          'Activity',
+          'Responsible Person',
+          'Time Frame',
+          'Outcome'
+        ],
         flexValues: [2, 2, 2, 1, 1],
       ),
       ...interventions.asMap().entries.map((entry) {
@@ -1174,7 +1225,8 @@ class PsychologicalServiceForms {
           cells: [
             TextFormField(
               initialValue: item['objectives'] ?? '',
-              decoration: const InputDecoration(isDense: true, border: InputBorder.none),
+              decoration: const InputDecoration(
+                  isDense: true, border: InputBorder.none),
               maxLines: 2,
               onChanged: (v) {
                 final newItems = List<Map<String, dynamic>>.from(interventions);
@@ -1184,7 +1236,8 @@ class PsychologicalServiceForms {
             ),
             TextFormField(
               initialValue: item['activity'] ?? '',
-              decoration: const InputDecoration(isDense: true, border: InputBorder.none),
+              decoration: const InputDecoration(
+                  isDense: true, border: InputBorder.none),
               maxLines: 2,
               onChanged: (v) {
                 final newItems = List<Map<String, dynamic>>.from(interventions);
@@ -1194,7 +1247,8 @@ class PsychologicalServiceForms {
             ),
             TextFormField(
               initialValue: item['responsible_person'] ?? '',
-              decoration: const InputDecoration(isDense: true, border: InputBorder.none),
+              decoration: const InputDecoration(
+                  isDense: true, border: InputBorder.none),
               onChanged: (v) {
                 final newItems = List<Map<String, dynamic>>.from(interventions);
                 newItems[index]['responsible_person'] = v;
@@ -1203,7 +1257,8 @@ class PsychologicalServiceForms {
             ),
             TextFormField(
               initialValue: item['time_frame'] ?? '',
-              decoration: const InputDecoration(isDense: true, border: InputBorder.none),
+              decoration: const InputDecoration(
+                  isDense: true, border: InputBorder.none),
               onChanged: (v) {
                 final newItems = List<Map<String, dynamic>>.from(interventions);
                 newItems[index]['time_frame'] = v;
@@ -1212,7 +1267,8 @@ class PsychologicalServiceForms {
             ),
             TextFormField(
               initialValue: item['outcome'] ?? '',
-              decoration: const InputDecoration(isDense: true, border: InputBorder.none),
+              decoration: const InputDecoration(
+                  isDense: true, border: InputBorder.none),
               onChanged: (v) {
                 final newItems = List<Map<String, dynamic>>.from(interventions);
                 newItems[index]['outcome'] = v;

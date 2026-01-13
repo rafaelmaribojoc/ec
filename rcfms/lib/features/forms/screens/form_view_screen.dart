@@ -9,6 +9,7 @@ import '../../../data/models/form_submission_model.dart';
 import '../../../data/models/form_approval_model.dart';
 import '../../../data/repositories/form_repository.dart';
 import '../../../data/repositories/approval_repository.dart';
+import '../../../features/auth/bloc/auth_bloc.dart';
 import '../templates/form_templates.dart';
 import '../widgets/form_content_widget.dart';
 
@@ -90,8 +91,9 @@ class _FormViewScreenState extends State<FormViewScreen> {
     final form = _form!;
 
     // Try to get the template for consistent UI - use unit to get correct template
-    final template = FormTemplatesRegistry.getByTypeAndUnit(form.templateType, form.unit) 
-        ?? FormTemplatesRegistry.getByType(form.templateType);
+    final template =
+        FormTemplatesRegistry.getByTypeAndUnit(form.templateType, form.unit) ??
+            FormTemplatesRegistry.getByType(form.templateType);
 
     return Scaffold(
       appBar: AppBar(
@@ -100,7 +102,7 @@ class _FormViewScreenState extends State<FormViewScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(form.templateDisplayName),
-        backgroundColor: template != null 
+        backgroundColor: template != null
             ? AppColors.getServiceUnitColor(template.serviceUnit.name)
             : null,
         foregroundColor: template != null ? Colors.white : null,
@@ -293,7 +295,8 @@ class _FormViewScreenState extends State<FormViewScreen> {
             approvalId: _pendingApproval!.id,
           );
         } else {
-          signatureInfo = await _approvalRepository.approveFormWithAutoSignature(
+          signatureInfo =
+              await _approvalRepository.approveFormWithAutoSignature(
             approvalId: _pendingApproval!.id,
           );
         }
@@ -691,6 +694,12 @@ class _FormViewScreenState extends State<FormViewScreen> {
   }
 
   Widget _buildReturnedSection(FormSubmissionModel form) {
+    // Check if current user is the original author
+    final authState = context.read<AuthBloc>().state;
+    final currentUserId =
+        authState is AuthAuthenticated ? authState.user.id : null;
+    final isAuthor = currentUserId != null && form.submittedBy == currentUserId;
+
     return Card(
       color: AppColors.error.withValues(alpha: 0.1),
       child: Padding(
@@ -716,19 +725,22 @@ class _FormViewScreenState extends State<FormViewScreen> {
               form.reviewComment!,
               style: const TextStyle(color: AppColors.textPrimaryLight),
             ),
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () => context.push(
-                  '/forms/fill/${form.templateType}?formId=${form.id}',
+            // Only show Edit & Resubmit button for the original author
+            if (isAuthor) ...[
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => context.push(
+                    '/forms/fill/${form.templateType}?formId=${form.id}',
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.error,
+                  ),
+                  child: const Text('Edit & Resubmit'),
                 ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.error,
-                ),
-                child: const Text('Edit & Resubmit'),
               ),
-            ),
+            ],
           ],
         ),
       ),

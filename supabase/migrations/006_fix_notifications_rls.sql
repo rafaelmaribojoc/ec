@@ -59,6 +59,6 @@ CREATE POLICY "Recipients can update forms they are reviewing"
 
 -- =============================================================================
 -- COMMENTS
--- =============================================================================
+-- ======================================a=======================================
 COMMENT ON POLICY "Authenticated users can create notifications" ON notifications 
     IS 'Allows any authenticated user to create notifications for other users (e.g., when submitting forms for approval)';

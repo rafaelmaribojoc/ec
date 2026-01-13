@@ -152,7 +152,12 @@ class FormTemplatesRegistry {
       description: 'Case termination documentation',
       serviceUnit: ServiceUnit.socialService,
       templateType: 'termination_report',
-      requiredSignatories: ['Social Worker', 'Center Head', 'Division Chief', 'Regional Director'],
+      requiredSignatories: [
+        'Social Worker',
+        'Center Head',
+        'Division Chief',
+        'Regional Director'
+      ],
       icon: Icons.exit_to_app,
     ),
     FormTemplate(
@@ -181,7 +186,12 @@ class FormTemplatesRegistry {
       description: 'Client belongings inventory at admission',
       serviceUnit: ServiceUnit.homeLifeService,
       templateType: 'inventory_admission',
-      requiredSignatories: ['Referring Party', 'HP on Duty', 'Supervising HP', 'Center Head'],
+      requiredSignatories: [
+        'Referring Party',
+        'HP on Duty',
+        'Supervising HP',
+        'Center Head'
+      ],
       icon: Icons.inventory,
     ),
     FormTemplate(
@@ -190,7 +200,12 @@ class FormTemplatesRegistry {
       description: 'Client belongings inventory at discharge',
       serviceUnit: ServiceUnit.homeLifeService,
       templateType: 'inventory_discharge',
-      requiredSignatories: ['Receiving Party', 'HP on Duty', 'Supervising HP', 'Center Head'],
+      requiredSignatories: [
+        'Receiving Party',
+        'HP on Duty',
+        'Supervising HP',
+        'Center Head'
+      ],
       icon: Icons.inventory_2,
     ),
     FormTemplate(
@@ -226,7 +241,12 @@ class FormTemplatesRegistry {
       description: 'Client out-pass request and approval',
       serviceUnit: ServiceUnit.homeLifeService,
       templateType: 'out_on_pass',
-      requiredSignatories: ['Supervising HP', 'Social Worker', 'Client', 'Center Head'],
+      requiredSignatories: [
+        'Supervising HP',
+        'Social Worker',
+        'Client',
+        'Center Head'
+      ],
       icon: Icons.door_front_door,
     ),
 
@@ -304,10 +324,8 @@ class FormTemplatesRegistry {
   /// Get template by templateType and unit
   static FormTemplate? getByTypeAndUnit(String templateType, String unit) {
     try {
-      return templates.firstWhere((t) => 
-        t.templateType == templateType && 
-        _unitMatches(t.serviceUnit, unit)
-      );
+      return templates.firstWhere((t) =>
+          t.templateType == templateType && _unitMatches(t.serviceUnit, unit));
     } catch (e) {
       return null;
     }
@@ -336,29 +354,34 @@ class FormTemplatesRegistry {
   }
 
   /// Get form fields for a template
+  /// [readOnly] - If true, all fields will be disabled (for approval view)
   static List<Widget> getFormFields(
     FormTemplate template,
     Map<String, dynamic> data,
-    void Function(String, dynamic) onChanged,
-  ) {
+    void Function(String, dynamic) onChanged, {
+    bool readOnly = false,
+  }) {
     switch (template.serviceUnit) {
       case ServiceUnit.socialService:
         return SocialServiceForms.getFormFields(
           template.templateType,
           data,
           onChanged,
+          readOnly: readOnly,
         );
       case ServiceUnit.homeLifeService:
         return HomeLifeServiceForms.getFormFields(
           template.templateType,
           data,
           onChanged,
+          readOnly: readOnly,
         );
       case ServiceUnit.psychologicalService:
         return PsychologicalServiceForms.getFormFields(
           template.templateType,
           data,
           onChanged,
+          readOnly: readOnly,
         );
       case ServiceUnit.medicalService:
         // TODO: Add medical service forms
@@ -385,7 +408,7 @@ class FormTemplatesRegistry {
     Map<String, dynamic>? residentData,
   }) {
     final now = DateTime.now();
-    
+
     // Common default data with current date/time
     final defaults = <String, dynamic>{
       'created_at': now.toIso8601String(),
@@ -393,34 +416,58 @@ class FormTemplatesRegistry {
       'service_unit': template.serviceUnit.name,
       // Pre-fill current date and time fields (editable)
       'date': now.toIso8601String().split('T')[0],
-      'time': '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}',
+      'time':
+          '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}',
       'date_prepared': now.toIso8601String().split('T')[0],
       'date_accomplished': now.toIso8601String().split('T')[0],
     };
 
     // Smart defaults from resident data
     if (residentData != null) {
-      defaults['client_name'] = residentData['full_name'] ?? residentData['fullName'] ?? '';
-      defaults['resident_name'] = residentData['full_name'] ?? residentData['fullName'] ?? '';
-      defaults['name'] = residentData['full_name'] ?? residentData['fullName'] ?? '';
-      defaults['resident_code'] = residentData['resident_code'] ?? residentData['residentCode'] ?? '';
-      defaults['case_no'] = residentData['resident_code'] ?? residentData['residentCode'] ?? '';
+      defaults['client_name'] =
+          residentData['full_name'] ?? residentData['fullName'] ?? '';
+      defaults['resident_name'] =
+          residentData['full_name'] ?? residentData['fullName'] ?? '';
+      defaults['name'] =
+          residentData['full_name'] ?? residentData['fullName'] ?? '';
+      defaults['resident_code'] =
+          residentData['resident_code'] ?? residentData['residentCode'] ?? '';
+      defaults['case_no'] =
+          residentData['resident_code'] ?? residentData['residentCode'] ?? '';
       defaults['age'] = residentData['age']?.toString() ?? '';
       defaults['gender'] = residentData['gender'] ?? '';
       defaults['sex'] = residentData['gender'] ?? '';
-      defaults['date_of_birth'] = residentData['date_of_birth'] ?? residentData['dateOfBirth'] ?? '';
-      defaults['dob'] = residentData['date_of_birth'] ?? residentData['dateOfBirth'] ?? '';
-      defaults['admission_date'] = residentData['admission_date'] ?? residentData['admissionDate'] ?? '';
-      defaults['date_admitted'] = residentData['admission_date'] ?? residentData['admissionDate'] ?? '';
-      defaults['ward'] = residentData['ward_name'] ?? residentData['wardName'] ?? '';
-      defaults['current_ward'] = residentData['ward_name'] ?? residentData['wardName'] ?? '';
-      defaults['room_no'] = residentData['room_number'] ?? residentData['roomNumber'] ?? '';
-      defaults['bed_no'] = residentData['bed_number'] ?? residentData['bedNumber'] ?? '';
-      defaults['diagnosis'] = residentData['primary_diagnosis'] ?? residentData['primaryDiagnosis'] ?? '';
-      defaults['primary_diagnosis'] = residentData['primary_diagnosis'] ?? residentData['primaryDiagnosis'] ?? '';
-      defaults['contact_person'] = residentData['emergency_contact_name'] ?? residentData['emergencyContactName'] ?? '';
-      defaults['contact_number'] = residentData['emergency_contact_phone'] ?? residentData['emergencyContactPhone'] ?? '';
-      defaults['relationship'] = residentData['emergency_contact_relation'] ?? residentData['emergencyContactRelation'] ?? '';
+      defaults['date_of_birth'] =
+          residentData['date_of_birth'] ?? residentData['dateOfBirth'] ?? '';
+      defaults['dob'] =
+          residentData['date_of_birth'] ?? residentData['dateOfBirth'] ?? '';
+      defaults['admission_date'] =
+          residentData['admission_date'] ?? residentData['admissionDate'] ?? '';
+      defaults['date_admitted'] =
+          residentData['admission_date'] ?? residentData['admissionDate'] ?? '';
+      defaults['ward'] =
+          residentData['ward_name'] ?? residentData['wardName'] ?? '';
+      defaults['current_ward'] =
+          residentData['ward_name'] ?? residentData['wardName'] ?? '';
+      defaults['room_no'] =
+          residentData['room_number'] ?? residentData['roomNumber'] ?? '';
+      defaults['bed_no'] =
+          residentData['bed_number'] ?? residentData['bedNumber'] ?? '';
+      defaults['diagnosis'] = residentData['primary_diagnosis'] ??
+          residentData['primaryDiagnosis'] ??
+          '';
+      defaults['primary_diagnosis'] = residentData['primary_diagnosis'] ??
+          residentData['primaryDiagnosis'] ??
+          '';
+      defaults['contact_person'] = residentData['emergency_contact_name'] ??
+          residentData['emergencyContactName'] ??
+          '';
+      defaults['contact_number'] = residentData['emergency_contact_phone'] ??
+          residentData['emergencyContactPhone'] ??
+          '';
+      defaults['relationship'] = residentData['emergency_contact_relation'] ??
+          residentData['emergencyContactRelation'] ??
+          '';
     }
 
     // Template-specific defaults
@@ -464,9 +511,18 @@ class FormTemplatesRegistry {
 
   static String _getMonthName(int month) {
     const months = [
-      'January', 'February', 'March', 'April',
-      'May', 'June', 'July', 'August',
-      'September', 'October', 'November', 'December'
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December'
     ];
     return months[month - 1];
   }

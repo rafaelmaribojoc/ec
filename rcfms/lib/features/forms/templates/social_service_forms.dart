@@ -6,11 +6,13 @@ class SocialServiceForms {
   SocialServiceForms._();
 
   /// Get form fields for social service templates
+  /// [readOnly] - If true, all fields will be disabled (for approval view)
   static List<Widget> getFormFields(
     String templateType,
     Map<String, dynamic> data,
-    void Function(String, dynamic) onChanged,
-  ) {
+    void Function(String, dynamic) onChanged, {
+    bool readOnly = false,
+  }) {
     switch (templateType) {
       case 'pre_admission_checklist':
         return _preAdmissionChecklist(data, onChanged);
@@ -129,7 +131,8 @@ class SocialServiceForms {
       'chest_xray': 'Chest X-Ray',
       'medical_certificate': 'Medical Certificate',
       'laboratory_latest': 'Laboratory (Latest)',
-      'blood_chemistry': 'Blood Chemistry (FBS, SGPT, SGOT, Uric, Creatinine, Cholesterol, BUN, Electrolytes)',
+      'blood_chemistry':
+          'Blood Chemistry (FBS, SGPT, SGOT, Uric, Creatinine, Cholesterol, BUN, Electrolytes)',
       'urinalysis': 'Urinalysis',
       'stool_exam': 'Stool Exam',
       'ultrasound': 'Ultrasound (if needed)',
@@ -161,7 +164,8 @@ class SocialServiceForms {
             child: FormFieldBuilders.datePicker(
               label: 'Date',
               value: data['checklist_date'],
-              onChanged: (v) => onChanged('checklist_date', v?.toIso8601String()),
+              onChanged: (v) =>
+                  onChanged('checklist_date', v?.toIso8601String()),
             ),
           ),
         ],
@@ -190,12 +194,12 @@ class SocialServiceForms {
       const SizedBox(height: 16),
       FormFieldBuilders.sectionHeader('Requirements Status'),
       ...requirements.map((req) => FormFieldBuilders.checkboxWithRemarks(
-        label: labels[req]!,
-        checked: data['req_${req}_yes'] ?? false,
-        remarks: data['req_${req}_remarks'] ?? '',
-        onCheckedChanged: (v) => onChanged('req_${req}_yes', v),
-        onRemarksChanged: (v) => onChanged('req_${req}_remarks', v),
-      )),
+            label: labels[req]!,
+            checked: data['req_${req}_yes'] ?? false,
+            remarks: data['req_${req}_remarks'] ?? '',
+            onCheckedChanged: (v) => onChanged('req_${req}_yes', v),
+            onRemarksChanged: (v) => onChanged('req_${req}_remarks', v),
+          )),
       const SizedBox(height: 16),
       FormFieldBuilders.textField(
         label: 'Endorsed by',
@@ -303,7 +307,8 @@ class SocialServiceForms {
         required: true,
       ),
       FormFieldBuilders.textArea(
-        label: 'Initial Assessment (Worker\'s impression about the problem and its causes)',
+        label:
+            'Initial Assessment (Worker\'s impression about the problem and its causes)',
         value: data['initial_assessment'] ?? '',
         onChanged: (v) => onChanged('initial_assessment', v),
       ),
@@ -375,7 +380,8 @@ class SocialServiceForms {
             child: FormFieldBuilders.datePicker(
               label: 'Date of Conference',
               value: data['conference_date'],
-              onChanged: (v) => onChanged('conference_date', v?.toIso8601String()),
+              onChanged: (v) =>
+                  onChanged('conference_date', v?.toIso8601String()),
             ),
           ),
           const SizedBox(width: 16),
@@ -483,7 +489,8 @@ class SocialServiceForms {
             child: FormFieldBuilders.datePicker(
               label: 'Date',
               value: data['admission_date'],
-              onChanged: (v) => onChanged('admission_date', v?.toIso8601String()),
+              onChanged: (v) =>
+                  onChanged('admission_date', v?.toIso8601String()),
             ),
           ),
           const SizedBox(width: 16),
@@ -661,7 +668,8 @@ class SocialServiceForms {
         onChanged: (v) => onChanged('case_control_no', v),
       ),
       FormFieldBuilders.textArea(
-        label: 'Goal (In 3 months time, client\'s social functioning will be...)',
+        label:
+            'Goal (In 3 months time, client\'s social functioning will be...)',
         value: data['goal'] ?? '',
         onChanged: (v) => onChanged('goal', v),
       ),

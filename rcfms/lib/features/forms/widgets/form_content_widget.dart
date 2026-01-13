@@ -82,7 +82,8 @@ class FormContentWidget extends StatelessWidget {
                   ],
 
                   SizedBox(
-                    height: screen.value(mobile: 16.0, tablet: 20.0, desktop: 24.0),
+                    height:
+                        screen.value(mobile: 16.0, tablet: 20.0, desktop: 24.0),
                   ),
                 ],
               ),
@@ -124,8 +125,8 @@ class FormContentWidget extends StatelessWidget {
                   Text(
                     template.name,
                     style: TextStyle(
-                      fontSize:
-                          screen.value(mobile: 18.0, tablet: 20.0, desktop: 22.0),
+                      fontSize: screen.value(
+                          mobile: 18.0, tablet: 20.0, desktop: 22.0),
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -133,8 +134,8 @@ class FormContentWidget extends StatelessWidget {
                   Text(
                     template.serviceUnit.displayName,
                     style: TextStyle(
-                      fontSize:
-                          screen.value(mobile: 13.0, tablet: 14.0, desktop: 15.0),
+                      fontSize: screen.value(
+                          mobile: 13.0, tablet: 14.0, desktop: 15.0),
                       color: AppColors.textSecondary,
                     ),
                   ),
@@ -149,7 +150,8 @@ class FormContentWidget extends StatelessWidget {
           ),
           Row(
             children: [
-              const Icon(Icons.person, size: 16, color: AppColors.textSecondary),
+              const Icon(Icons.person,
+                  size: 16, color: AppColors.textSecondary),
               const SizedBox(width: 8),
               Text(
                 residentName!,
@@ -161,7 +163,8 @@ class FormContentWidget extends StatelessWidget {
               ),
               if (caseNumber != null) ...[
                 const SizedBox(width: 16),
-                const Icon(Icons.folder, size: 16, color: AppColors.textSecondary),
+                const Icon(Icons.folder,
+                    size: 16, color: AppColors.textSecondary),
                 const SizedBox(width: 8),
                 Text(
                   'Case #: $caseNumber',
@@ -192,140 +195,53 @@ class FormContentWidget extends StatelessWidget {
   }
 
   List<Widget> _buildFormFields(BuildContext context, ScreenInfo screen) {
+    // Get form fields from template
+    final formFields = FormTemplatesRegistry.getFormFields(
+      template,
+      formData,
+      onFieldChanged ?? (_, __) {},
+      readOnly: isReadOnly,
+    );
+
     if (isReadOnly) {
-      // View mode: Display form data as read-only fields
-      return _buildReadOnlyFields(context, screen);
-    } else {
-      // Edit mode: Use form template's field builders
-      return FormTemplatesRegistry.getFormFields(
-        template,
-        formData,
-        onFieldChanged ?? (_, __) {},
-      );
-    }
-  }
-
-  List<Widget> _buildReadOnlyFields(BuildContext context, ScreenInfo screen) {
-    final fields = <Widget>[];
-
-    // Fields to hide from approver view (internal/auto-populated data)
-    final hiddenFields = {
-      'created_at',
-      'template_id',
-      'service_unit',
-      'prepared_by_id',
-      'noted_by_id',
-      'submitted_to_id',
-      'submitted_to_name',
-      // Hide auto-populated fields that are shown in signatures section
-      'prepared_by',
-      'prepared_by_position',
-      'noted_by',
-      'noted_by_position',
-      'license_no',
-      // Hide fields not directly related to the form content
-      'contact_person',
-      'contact_number',
-      'relationship',
-      'emergency_contact_name',
-      'emergency_contact_phone',
-      'emergency_contact_relation',
-      'primary_diagnosis',
-      'diagnosis',
-      // Hide resident metadata (shown in header)
-      'resident_code',
-      'case_no',
-      'dob',
-      'date_of_birth',
-      'age',
-      'gender',
-      'sex',
-      'ward',
-      'current_ward',
-      'room_no',
-      'bed_no',
-      'admission_date',
-      'date_admitted',
-    };
-
-    formData.forEach((key, value) {
-      if (value == null || key.startsWith('_')) return;
-      if (hiddenFields.contains(key)) return;
-      
-      // Skip empty values
-      final strValue = value.toString();
-      if (strValue.isEmpty || strValue == 'null') return;
-
-      // Format the key to be more readable
-      final label = key
-          .replaceAll('_', ' ')
-          .split(' ')
-          .map((word) => word.isNotEmpty
-              ? '${word[0].toUpperCase()}${word.substring(1)}'
-              : '')
-          .join(' ');
-
-      // Format the value based on type
-      String displayValue;
-      if (value is List) {
-        if (value.isEmpty) {
-          return; // Skip empty lists
-        } else if (value.first is Map) {
-          // Complex list (e.g., checklist items)
-          displayValue = '${value.length} items';
-        } else {
-          displayValue = value.join(', ');
-        }
-      } else if (value is Map) {
-        return; // Skip complex maps
-      } else if (value is bool) {
-        displayValue = value ? 'Yes' : 'No';
-      } else if (value is DateTime) {
-        displayValue = DateFormat('MMM d, yyyy').format(value);
-      } else {
-        displayValue = strValue;
-      }
-
-      fields.add(
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SizedBox(
-                width: 140,
-                child: Text(
-                  label,
-                  style: const TextStyle(
-                    color: AppColors.textSecondaryLight,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-              Expanded(
-                child: Text(
-                  displayValue,
-                  style: const TextStyle(fontWeight: FontWeight.w500),
-                ),
-              ),
-            ],
+      // View mode: Use actual form template but wrap in IgnorePointer
+      // This provides UI parity with create form view while disabling all interactions
+      return [
+        IgnorePointer(
+          ignoring: true,
+          child: Opacity(
+            opacity: 0.9, // Slightly dimmed to indicate read-only
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: formFields,
+            ),
           ),
         ),
-      );
-    });
-
-    return fields.isEmpty
-        ? [const Text('No data available')]
-        : fields;
+      ];
+    } else {
+      // Edit mode: Use form template's field builders
+      return formFields;
+    }
   }
 
   Widget _buildSignaturesSection(BuildContext context, ScreenInfo screen) {
     final form = existingSubmission!;
 
-    // Get Prepared By and Noted By from form data
+    // Get Prepared By info from form data
     final preparedByName = formData['prepared_by']?.toString();
-    final preparedByPosition = formData['prepared_by_position']?.toString();
+    final preparedByTitle =
+        formData['prepared_by_title']?.toString(); // e.g., "RPm"
+    final preparedByPosition =
+        formData['prepared_by_position']?.toString(); // e.g., "Psychometrician"
     final notedByName = formData['noted_by']?.toString();
+    final notedByPosition = formData['noted_by_position']?.toString();
+
+    // Format Prepared By name with title: "John Doe, RPm"
+    String formattedPreparedByName =
+        preparedByName ?? form.submitterName ?? 'Unknown';
+    if (preparedByTitle != null && preparedByTitle.isNotEmpty) {
+      formattedPreparedByName = '$formattedPreparedByName, $preparedByTitle';
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -337,49 +253,45 @@ class FormContentWidget extends StatelessWidget {
               ),
         ),
         const Divider(height: 24),
-        
-        // Prepared By signature (from form data)
-        if (preparedByName != null && preparedByName.isNotEmpty) ...[
-          _buildFormDataSignatureBlock(
-            context,
-            'Prepared By',
-            preparedByName,
-            preparedByPosition,
-            form.submitterSignatureUrl, // Use submitter's signature
-          ),
-          const SizedBox(height: 16),
-        ],
-        
-        // Submitter signature
-        _buildSignatureBlock(
+
+        // Prepared By signature (from form data) - with timestamp
+        _buildPreparedBySignatureBlock(
           context,
-          'Submitted by',
-          form.submitterName ?? 'Unknown',
+          'Prepared By',
+          formattedPreparedByName,
+          preparedByPosition,
           form.submitterSignatureUrl,
-          form.submittedAt,
+          form.submittedAt, // Use submission timestamp
         ),
-        
+
         // Noted By / Reviewer signature
-        if (form.reviewedBy != null || (notedByName != null && notedByName.isNotEmpty)) ...[
+        if (form.reviewedBy != null ||
+            (notedByName != null && notedByName.isNotEmpty)) ...[
           const SizedBox(height: 16),
           _buildSignatureBlock(
             context,
-            notedByName != null ? 'Noted By' : (form.isApproved ? 'Approved by' : 'Reviewed by'),
+            notedByName != null
+                ? 'Noted By'
+                : (form.isApproved ? 'Approved by' : 'Reviewed by'),
             form.reviewerName ?? notedByName ?? 'Unknown',
             form.reviewerSignatureUrl,
             form.reviewedAt,
+            subtitle: notedByPosition ??
+                (form.reviewedBy != null ? null : notedByPosition),
           ),
         ],
       ],
     );
   }
 
-  Widget _buildFormDataSignatureBlock(
+  /// Build signature block for Prepared By with timestamp
+  Widget _buildPreparedBySignatureBlock(
     BuildContext context,
     String label,
     String name,
     String? position,
     String? signatureUrl,
+    DateTime? timestamp,
   ) {
     return Row(
       children: [
@@ -409,53 +321,20 @@ class FormContentWidget extends StatelessWidget {
                   ),
                 ),
               ],
+              if (timestamp != null) ...[
+                const SizedBox(height: 2),
+                Text(
+                  DateFormat('MMM d, yyyy • h:mm a').format(timestamp),
+                  style: const TextStyle(
+                    color: AppColors.textSecondaryLight,
+                    fontSize: 12,
+                  ),
+                ),
+              ],
             ],
           ),
         ),
-        if (signatureUrl != null && signatureUrl.isNotEmpty)
-          Container(
-            width: 120,
-            height: 50,
-            decoration: BoxDecoration(
-              color: Colors.grey[100],
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: CachedNetworkImage(
-              imageUrl: signatureUrl,
-              fit: BoxFit.contain,
-              placeholder: (_, __) => const Center(
-                child: SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                ),
-              ),
-              errorWidget: (_, __, ___) => const Icon(
-                Icons.draw,
-                color: AppColors.textSecondaryLight,
-              ),
-            ),
-          )
-        else
-          Container(
-            width: 120,
-            height: 50,
-            decoration: BoxDecoration(
-              color: Colors.grey[100],
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.grey[300]!),
-            ),
-            child: const Center(
-              child: Text(
-                'Pending',
-                style: TextStyle(
-                  color: AppColors.textSecondaryLight,
-                  fontSize: 12,
-                  fontStyle: FontStyle.italic,
-                ),
-              ),
-            ),
-          ),
+        _buildSignatureImage(signatureUrl),
       ],
     );
   }
@@ -465,8 +344,9 @@ class FormContentWidget extends StatelessWidget {
     String label,
     String name,
     String? signatureUrl,
-    DateTime? timestamp,
-  ) {
+    DateTime? timestamp, {
+    String? subtitle,
+  }) {
     return Row(
       children: [
         Expanded(
@@ -485,6 +365,16 @@ class FormContentWidget extends StatelessWidget {
                 name,
                 style: const TextStyle(fontWeight: FontWeight.w600),
               ),
+              if (subtitle != null && subtitle.isNotEmpty) ...[
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: const TextStyle(
+                    color: AppColors.textSecondaryLight,
+                    fontSize: 12,
+                  ),
+                ),
+              ],
               if (timestamp != null) ...[
                 const SizedBox(height: 2),
                 Text(
@@ -498,31 +388,79 @@ class FormContentWidget extends StatelessWidget {
             ],
           ),
         ),
-        if (signatureUrl != null)
-          Container(
-            width: 120,
-            height: 50,
-            decoration: BoxDecoration(
-              color: Colors.grey[100],
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: CachedNetworkImage(
-              imageUrl: signatureUrl,
-              fit: BoxFit.contain,
-              placeholder: (_, __) => const Center(
-                child: SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                ),
-              ),
-              errorWidget: (_, __, ___) => const Icon(
-                Icons.draw,
-                color: AppColors.textSecondaryLight,
-              ),
-            ),
-          ),
+        _buildSignatureImage(signatureUrl),
       ],
     );
+  }
+
+  /// Build signature image widget with proper error handling
+  /// Shows the actual signature image, or a pending placeholder if no URL
+  Widget _buildSignatureImage(String? signatureUrl) {
+    // Check if we have a valid signature URL
+    final hasValidUrl = signatureUrl != null &&
+        signatureUrl.isNotEmpty &&
+        (signatureUrl.startsWith('http://') ||
+            signatureUrl.startsWith('https://'));
+
+    if (hasValidUrl) {
+      return Container(
+        width: 120,
+        height: 50,
+        decoration: BoxDecoration(
+          color: Colors.grey[100],
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: CachedNetworkImage(
+            imageUrl: signatureUrl,
+            fit: BoxFit.contain,
+            placeholder: (_, __) => const Center(
+              child: SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            ),
+            errorWidget: (_, url, error) {
+              debugPrint('Signature load error: $error for URL: $url');
+              return const Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.broken_image,
+                        size: 20, color: AppColors.textSecondaryLight),
+                    Text('Load failed',
+                        style: TextStyle(
+                            fontSize: 8, color: AppColors.textSecondaryLight)),
+                  ],
+                ),
+              );
+            },
+          ),
+        ),
+      );
+    } else {
+      // No signature URL - show pending placeholder
+      return Container(
+        width: 120,
+        height: 50,
+        decoration: BoxDecoration(
+          color: Colors.grey[100],
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.grey[300]!),
+        ),
+        child: const Center(
+          child: Text(
+            'Pending',
+            style: TextStyle(
+              color: AppColors.textSecondaryLight,
+              fontSize: 12,
+              fontStyle: FontStyle.italic,
+            ),
+          ),
+        ),
+      );
+    }
   }
 }
