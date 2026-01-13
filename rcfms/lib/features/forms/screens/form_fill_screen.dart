@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../templates/form_templates.dart';
@@ -57,6 +58,48 @@ class _FormFillScreenState extends State<FormFillScreen> {
             residentData: widget.residentData,
           );
     _submissionId = widget.existingSubmissionId;
+    
+    // Auto-populate Prepared By with current user
+    _autoPopulateSignatures();
+  }
+
+  /// Auto-populate Prepared By and Noted By fields
+  Future<void> _autoPopulateSignatures() async {
+    final authState = context.read<AuthBloc>().state;
+    if (authState is AuthAuthenticated) {
+      final currentUser = authState.user;
+      
+      // Only set if not already set (don't override existing data when editing)
+      if (_formData['prepared_by'] == null || _formData['prepared_by'].toString().isEmpty) {
+        setState(() {
+          _formData['prepared_by'] = currentUser.fullName;
+          _formData['prepared_by_position'] = currentUser.title ?? currentUser.role;
+          _formData['prepared_by_id'] = currentUser.id;
+        });
+      }
+    }
+    
+    // Fetch Center Head for "Noted By"
+    try {
+      final approvalRepo = ApprovalRepository();
+      final recipients = await approvalRepo.getApprovalRecipients();
+      final centerHead = recipients.where((u) => 
+        u.role == 'center_head' || u.role == 'super_admin'
+      ).firstOrNull;
+      
+      if (centerHead != null && mounted) {
+        // Only set if not already set
+        if (_formData['noted_by'] == null || _formData['noted_by'].toString().isEmpty) {
+          setState(() {
+            _formData['noted_by'] = centerHead.fullName;
+            _formData['noted_by_position'] = 'Center Head';
+            _formData['noted_by_id'] = centerHead.id;
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint('Error fetching center head: $e');
+    }
   }
 
   /// Get the database unit from the service unit

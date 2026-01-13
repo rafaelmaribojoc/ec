@@ -217,7 +217,7 @@ class RouterService {
                   // If formId is provided, this is an edit of existing form (e.g., returned form)
                   if (formId != null && formId.isNotEmpty) {
                     return _FormEditScreen(
-                      template: template,
+                      templateId: templateId,
                       formId: formId,
                     );
                   }
@@ -505,11 +505,11 @@ class _FormFillScreenWithResidentDataState
 
 /// Helper widget to fetch existing form data for editing (e.g., returned forms)
 class _FormEditScreen extends StatefulWidget {
-  final FormTemplate template;
+  final String templateId;
   final String formId;
 
   const _FormEditScreen({
-    required this.template,
+    required this.templateId,
     required this.formId,
   });
 
@@ -521,6 +521,7 @@ class _FormEditScreenState extends State<_FormEditScreen> {
   Map<String, dynamic>? _formData;
   String? _residentId;
   String? _residentName;
+  FormTemplate? _template;
   bool _isLoading = true;
   String? _error;
 
@@ -535,11 +536,19 @@ class _FormEditScreenState extends State<_FormEditScreen> {
       final formRepo = context.read<FormRepository>();
       final form = await formRepo.getFormById(widget.formId);
 
+      // Get the correct template based on form's unit
+      FormTemplate? template = FormTemplatesRegistry.getByTypeAndUnit(
+        form.templateType, 
+        form.unit,
+      );
+      template ??= FormTemplatesRegistry.getByType(form.templateType);
+
       if (mounted) {
         setState(() {
           _formData = form.formData;
           _residentId = form.residentId;
           _residentName = form.residentName ?? 'Unknown Resident';
+          _template = template;
           _isLoading = false;
         });
       }
@@ -572,7 +581,7 @@ class _FormEditScreenState extends State<_FormEditScreen> {
       );
     }
 
-    if (_error != null) {
+    if (_error != null || _template == null) {
       return Scaffold(
         appBar: AppBar(title: const Text('Error')),
         body: Center(
@@ -581,7 +590,9 @@ class _FormEditScreenState extends State<_FormEditScreen> {
             children: [
               const Icon(Icons.error_outline, size: 64, color: Colors.red),
               const SizedBox(height: 16),
-              Text('Failed to load form: $_error'),
+              Text(_error != null 
+                  ? 'Failed to load form: $_error' 
+                  : 'Template not found'),
               const SizedBox(height: 8),
               ElevatedButton(
                 onPressed: () => context.go('/forms'),
@@ -594,7 +605,7 @@ class _FormEditScreenState extends State<_FormEditScreen> {
     }
 
     return FormFillScreen(
-      template: widget.template,
+      template: _template!,
       residentId: _residentId ?? '',
       residentName: _residentName ?? 'Unknown Resident',
       initialData: _formData,

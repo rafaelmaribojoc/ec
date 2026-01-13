@@ -208,8 +208,53 @@ class FormContentWidget extends StatelessWidget {
   List<Widget> _buildReadOnlyFields(BuildContext context, ScreenInfo screen) {
     final fields = <Widget>[];
 
+    // Fields to hide from approver view (internal/auto-populated data)
+    final hiddenFields = {
+      'created_at',
+      'template_id',
+      'service_unit',
+      'prepared_by_id',
+      'noted_by_id',
+      'submitted_to_id',
+      'submitted_to_name',
+      // Hide auto-populated fields that are shown in signatures section
+      'prepared_by',
+      'prepared_by_position',
+      'noted_by',
+      'noted_by_position',
+      'license_no',
+      // Hide fields not directly related to the form content
+      'contact_person',
+      'contact_number',
+      'relationship',
+      'emergency_contact_name',
+      'emergency_contact_phone',
+      'emergency_contact_relation',
+      'primary_diagnosis',
+      'diagnosis',
+      // Hide resident metadata (shown in header)
+      'resident_code',
+      'case_no',
+      'dob',
+      'date_of_birth',
+      'age',
+      'gender',
+      'sex',
+      'ward',
+      'current_ward',
+      'room_no',
+      'bed_no',
+      'admission_date',
+      'date_admitted',
+    };
+
     formData.forEach((key, value) {
       if (value == null || key.startsWith('_')) return;
+      if (hiddenFields.contains(key)) return;
+      
+      // Skip empty values
+      final strValue = value.toString();
+      if (strValue.isEmpty || strValue == 'null') return;
 
       // Format the key to be more readable
       final label = key
@@ -224,7 +269,7 @@ class FormContentWidget extends StatelessWidget {
       String displayValue;
       if (value is List) {
         if (value.isEmpty) {
-          displayValue = '-';
+          return; // Skip empty lists
         } else if (value.first is Map) {
           // Complex list (e.g., checklist items)
           displayValue = '${value.length} items';
@@ -232,13 +277,13 @@ class FormContentWidget extends StatelessWidget {
           displayValue = value.join(', ');
         }
       } else if (value is Map) {
-        displayValue = 'Complex data';
+        return; // Skip complex maps
       } else if (value is bool) {
         displayValue = value ? 'Yes' : 'No';
       } else if (value is DateTime) {
         displayValue = DateFormat('MMM d, yyyy').format(value);
       } else {
-        displayValue = value?.toString() ?? '-';
+        displayValue = strValue;
       }
 
       fields.add(
@@ -277,6 +322,11 @@ class FormContentWidget extends StatelessWidget {
   Widget _buildSignaturesSection(BuildContext context, ScreenInfo screen) {
     final form = existingSubmission!;
 
+    // Get Prepared By and Noted By from form data
+    final preparedByName = formData['prepared_by']?.toString();
+    final preparedByPosition = formData['prepared_by_position']?.toString();
+    final notedByName = formData['noted_by']?.toString();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -287,6 +337,19 @@ class FormContentWidget extends StatelessWidget {
               ),
         ),
         const Divider(height: 24),
+        
+        // Prepared By signature (from form data)
+        if (preparedByName != null && preparedByName.isNotEmpty) ...[
+          _buildFormDataSignatureBlock(
+            context,
+            'Prepared By',
+            preparedByName,
+            preparedByPosition,
+            form.submitterSignatureUrl, // Use submitter's signature
+          ),
+          const SizedBox(height: 16),
+        ],
+        
         // Submitter signature
         _buildSignatureBlock(
           context,
@@ -295,17 +358,104 @@ class FormContentWidget extends StatelessWidget {
           form.submitterSignatureUrl,
           form.submittedAt,
         ),
-        // Reviewer signature
-        if (form.reviewedBy != null) ...[
+        
+        // Noted By / Reviewer signature
+        if (form.reviewedBy != null || (notedByName != null && notedByName.isNotEmpty)) ...[
           const SizedBox(height: 16),
           _buildSignatureBlock(
             context,
-            form.isApproved ? 'Approved by' : 'Reviewed by',
-            form.reviewerName ?? 'Unknown',
+            notedByName != null ? 'Noted By' : (form.isApproved ? 'Approved by' : 'Reviewed by'),
+            form.reviewerName ?? notedByName ?? 'Unknown',
             form.reviewerSignatureUrl,
             form.reviewedAt,
           ),
         ],
+      ],
+    );
+  }
+
+  Widget _buildFormDataSignatureBlock(
+    BuildContext context,
+    String label,
+    String name,
+    String? position,
+    String? signatureUrl,
+  ) {
+    return Row(
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: const TextStyle(
+                  color: AppColors.textSecondaryLight,
+                  fontSize: 12,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                name,
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
+              if (position != null && position.isNotEmpty) ...[
+                const SizedBox(height: 2),
+                Text(
+                  position,
+                  style: const TextStyle(
+                    color: AppColors.textSecondaryLight,
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+        if (signatureUrl != null && signatureUrl.isNotEmpty)
+          Container(
+            width: 120,
+            height: 50,
+            decoration: BoxDecoration(
+              color: Colors.grey[100],
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: CachedNetworkImage(
+              imageUrl: signatureUrl,
+              fit: BoxFit.contain,
+              placeholder: (_, __) => const Center(
+                child: SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              ),
+              errorWidget: (_, __, ___) => const Icon(
+                Icons.draw,
+                color: AppColors.textSecondaryLight,
+              ),
+            ),
+          )
+        else
+          Container(
+            width: 120,
+            height: 50,
+            decoration: BoxDecoration(
+              color: Colors.grey[100],
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.grey[300]!),
+            ),
+            child: const Center(
+              child: Text(
+                'Pending',
+                style: TextStyle(
+                  color: AppColors.textSecondaryLight,
+                  fontSize: 12,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ),
+          ),
       ],
     );
   }

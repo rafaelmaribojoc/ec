@@ -89,8 +89,9 @@ class _FormViewScreenState extends State<FormViewScreen> {
 
     final form = _form!;
 
-    // Try to get the template for consistent UI
-    final template = FormTemplatesRegistry.getByType(form.templateType);
+    // Try to get the template for consistent UI - use unit to get correct template
+    final template = FormTemplatesRegistry.getByTypeAndUnit(form.templateType, form.unit) 
+        ?? FormTemplatesRegistry.getByType(form.templateType);
 
     return Scaffold(
       appBar: AppBar(
