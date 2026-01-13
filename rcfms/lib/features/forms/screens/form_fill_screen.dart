@@ -377,7 +377,7 @@ class _FormFillScreenState extends State<FormFillScreen> {
                         height: 20,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : const Text('Submit'),
+                    : Text(widget.isEditing ? 'Update & Resubmit' : 'Submit'),
               ),
             ),
           ],
@@ -423,8 +423,10 @@ class _FormFillScreenState extends State<FormFillScreen> {
                   child: CircularProgressIndicator(
                       strokeWidth: 2, color: Colors.white),
                 )
-              : const Icon(Icons.check),
-          label: Text(_isSaving ? 'Submitting...' : 'Submit Form'),
+              : Icon(widget.isEditing ? Icons.refresh : Icons.check),
+          label: Text(_isSaving 
+              ? 'Submitting...' 
+              : (widget.isEditing ? 'Update & Resubmit' : 'Submit Form')),
         ),
       ],
     );

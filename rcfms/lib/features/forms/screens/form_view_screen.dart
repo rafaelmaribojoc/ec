@@ -9,6 +9,8 @@ import '../../../data/models/form_submission_model.dart';
 import '../../../data/models/form_approval_model.dart';
 import '../../../data/repositories/form_repository.dart';
 import '../../../data/repositories/approval_repository.dart';
+import '../templates/form_templates.dart';
+import '../widgets/form_content_widget.dart';
 
 class FormViewScreen extends StatefulWidget {
   final String formId;
@@ -87,6 +89,9 @@ class _FormViewScreenState extends State<FormViewScreen> {
 
     final form = _form!;
 
+    // Try to get the template for consistent UI
+    final template = FormTemplatesRegistry.getByType(form.templateType);
+
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -94,6 +99,10 @@ class _FormViewScreenState extends State<FormViewScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(form.templateDisplayName),
+        backgroundColor: template != null 
+            ? AppColors.getServiceUnitColor(template.serviceUnit.name)
+            : null,
+        foregroundColor: template != null ? Colors.white : null,
         actions: [
           IconButton(
             icon: const Icon(Icons.picture_as_pdf),
@@ -115,24 +124,38 @@ class _FormViewScreenState extends State<FormViewScreen> {
             _buildStatusCard(form),
             const SizedBox(height: 20),
 
-            // Resident info
-            _buildSection(
-              'Resident',
-              [
-                _buildInfoRow('Name', form.residentName ?? 'Unknown'),
-              ],
-            ),
-            const SizedBox(height: 16),
+            // Use shared form content widget if template is available
+            if (template != null)
+              FormContentWidget(
+                template: template,
+                formData: form.formData,
+                isReadOnly: true,
+                residentName: form.residentName,
+                existingSubmission: form,
+                showSignatures: true,
+              )
+            else ...[
+              // Fallback to original layout if template not found
+              // Resident info
+              _buildSection(
+                'Resident',
+                [
+                  _buildInfoRow('Name', form.residentName ?? 'Unknown'),
+                ],
+              ),
+              const SizedBox(height: 16),
 
-            // Form data
-            _buildSection(
-              'Form Details',
-              _buildFormDataFields(form.formData),
-            ),
-            const SizedBox(height: 16),
+              // Form data
+              _buildSection(
+                'Form Details',
+                _buildFormDataFields(form.formData),
+              ),
+              const SizedBox(height: 16),
 
-            // Signatures
-            _buildSignaturesSection(form),
+              // Signatures
+              _buildSignaturesSection(form),
+            ],
+
             const SizedBox(height: 16),
 
             // Review comment (if returned)
@@ -259,20 +282,22 @@ class _FormViewScreenState extends State<FormViewScreen> {
     setState(() => _isActioning = true);
 
     try {
+      Map<String, dynamic>? signatureInfo;
+
       if (_signatureFieldName != null) {
         // Requires signature - determine action type from field name
         final fieldLower = _signatureFieldName!.toLowerCase();
         if (fieldLower.contains('noted') || fieldLower.contains('note')) {
-          await _approvalRepository.noteFormWithAutoSignature(
+          signatureInfo = await _approvalRepository.noteFormWithAutoSignature(
             approvalId: _pendingApproval!.id,
           );
         } else {
-          await _approvalRepository.approveFormWithAutoSignature(
+          signatureInfo = await _approvalRepository.approveFormWithAutoSignature(
             approvalId: _pendingApproval!.id,
           );
         }
       } else if (_actionType == 'approve') {
-        await _approvalRepository.approveFormWithAutoSignature(
+        signatureInfo = await _approvalRepository.approveFormWithAutoSignature(
           approvalId: _pendingApproval!.id,
         );
       } else {
@@ -283,6 +308,22 @@ class _FormViewScreenState extends State<FormViewScreen> {
       }
 
       if (mounted) {
+        // Immediately update the local form state with the new signature
+        if (signatureInfo != null && _form != null) {
+          setState(() {
+            _form = _form!.copyWith(
+              status: 'approved',
+              reviewedBy: signatureInfo!['signerId'] as String?,
+              reviewerName: signatureInfo['signerName'] as String?,
+              reviewerSignatureUrl: signatureInfo['signatureUrl'] as String?,
+              reviewedAt: signatureInfo['signedAt'] as DateTime?,
+            );
+            // User has acted, so they can no longer act
+            _canAct = false;
+            _pendingApproval = null;
+          });
+        }
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
@@ -290,8 +331,6 @@ class _FormViewScreenState extends State<FormViewScreen> {
             backgroundColor: AppColors.success,
           ),
         );
-        // Reload form to show updated signatures
-        await _loadForm();
       }
     } catch (e) {
       if (mounted) {

@@ -348,15 +348,23 @@ class ApprovalRepository {
       return;
     }
 
-    await _supabase.from('notifications').insert({
-      'user_id': safeUserId,
-      'type': type,
-      'title': title,
-      'message': message,
-      'form_submission_id': safeFormSubmissionId,
-      'form_approval_id': safeFormApprovalId,
-      'metadata': metadata ?? {},
-    });
+    try {
+      debugPrint('Creating notification for user: $safeUserId, type: $type');
+      await _supabase.from('notifications').insert({
+        'user_id': safeUserId,
+        'type': type,
+        'title': title,
+        'message': message,
+        'form_submission_id': safeFormSubmissionId,
+        'form_approval_id': safeFormApprovalId,
+        'metadata': metadata ?? {},
+      });
+      debugPrint('Notification created successfully for user: $safeUserId');
+    } catch (e) {
+      debugPrint('ERROR creating notification: $e');
+      // Re-throw so caller can handle if needed
+      rethrow;
+    }
   }
 
   // ============================================================================
@@ -494,7 +502,8 @@ class ApprovalRepository {
   }
 
   /// Approve form with auto-signature
-  Future<void> approveFormWithAutoSignature({
+  /// Returns a map with the signature info for immediate UI update
+  Future<Map<String, dynamic>> approveFormWithAutoSignature({
     required String approvalId,
     String? comment,
   }) async {
@@ -539,11 +548,10 @@ class ApprovalRepository {
     }).eq('id', approvalId);
 
     // Update form submission with reviewer info
+    // Note: reviewer_name and reviewer_signature_url are retrieved via JOIN, not stored directly
     await _supabase.from('form_submissions').update({
       'status': 'approved',
       'reviewed_by': userId,
-      'reviewer_name': userName,
-      'reviewer_signature_url': signatureUrl,
       'reviewed_at': DateTime.now().toIso8601String(),
       'review_comment': comment,
       'updated_at': DateTime.now().toIso8601String(),
@@ -583,10 +591,21 @@ class ApprovalRepository {
       formSubmissionId: formId,
       formApprovalId: approvalId,
     );
+
+    // Return signature info for immediate UI update
+    return {
+      'signerId': userId,
+      'signerName': userName,
+      'signatureUrl': signatureUrl,
+      'signedAt': DateTime.now(),
+      'fieldName': fieldName,
+      'fieldLabel': fieldLabel,
+    };
   }
 
   /// Note/Acknowledge form with auto-signature (for forms that need "Noted By")
-  Future<void> noteFormWithAutoSignature({
+  /// Returns a map with the signature info for immediate UI update
+  Future<Map<String, dynamic>> noteFormWithAutoSignature({
     required String approvalId,
     String? comment,
   }) async {
@@ -631,11 +650,10 @@ class ApprovalRepository {
     }).eq('id', approvalId);
 
     // Update form submission
+    // Note: reviewer_name and reviewer_signature_url are retrieved via JOIN, not stored directly
     await _supabase.from('form_submissions').update({
       'status': 'approved', // Noted is considered approved
       'reviewed_by': userId,
-      'reviewer_name': userName,
-      'reviewer_signature_url': signatureUrl,
       'reviewed_at': DateTime.now().toIso8601String(),
       'review_comment': comment,
       'updated_at': DateTime.now().toIso8601String(),
@@ -675,6 +693,16 @@ class ApprovalRepository {
       formSubmissionId: formId,
       formApprovalId: approvalId,
     );
+
+    // Return signature info for immediate UI update
+    return {
+      'signerId': userId,
+      'signerName': userName,
+      'signatureUrl': signatureUrl,
+      'signedAt': DateTime.now(),
+      'fieldName': fieldName,
+      'fieldLabel': fieldLabel,
+    };
   }
 
   /// Acknowledge form without signature
@@ -712,10 +740,10 @@ class ApprovalRepository {
     }).eq('id', approvalId);
 
     // Update form status
+    // Note: reviewer_name is retrieved via JOIN, not stored directly
     await _supabase.from('form_submissions').update({
       'status': 'approved',
       'reviewed_by': userId,
-      'reviewer_name': userName,
       'reviewed_at': DateTime.now().toIso8601String(),
       'review_comment': comment,
       'updated_at': DateTime.now().toIso8601String(),

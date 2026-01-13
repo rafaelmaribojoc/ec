@@ -24,6 +24,7 @@ import '../../features/settings/screens/settings_screen.dart';
 import '../../features/settings/screens/profile_screen.dart';
 import '../../core/widgets/shell_scaffold.dart';
 import '../../data/repositories/resident_repository.dart';
+import '../../data/repositories/form_repository.dart';
 
 // MoCA-P Assessment imports
 import '../../features/moca/screens/moca_home_screen.dart';
@@ -180,6 +181,7 @@ class RouterService {
                       state.uri.queryParameters['residentName'] ??
                           'Unknown Resident';
                   final unit = state.uri.queryParameters['unit'];
+                  final formId = state.uri.queryParameters['formId'];
 
                   // Try to find template by ID first, then by templateType
                   FormTemplate? template =
@@ -209,6 +211,14 @@ class RouterService {
                           ],
                         ),
                       ),
+                    );
+                  }
+
+                  // If formId is provided, this is an edit of existing form (e.g., returned form)
+                  if (formId != null && formId.isNotEmpty) {
+                    return _FormEditScreen(
+                      template: template,
+                      formId: formId,
                     );
                   }
 
@@ -404,6 +414,7 @@ class _FormFillScreenWithResidentDataState
     extends State<_FormFillScreenWithResidentData> {
   Map<String, dynamic>? _residentData;
   bool _isLoading = true;
+  // ignore: unused_field
   String? _error;
 
   @override
@@ -488,6 +499,107 @@ class _FormFillScreenWithResidentDataState
       residentId: widget.residentId,
       residentName: widget.residentName,
       residentData: _residentData,
+    );
+  }
+}
+
+/// Helper widget to fetch existing form data for editing (e.g., returned forms)
+class _FormEditScreen extends StatefulWidget {
+  final FormTemplate template;
+  final String formId;
+
+  const _FormEditScreen({
+    required this.template,
+    required this.formId,
+  });
+
+  @override
+  State<_FormEditScreen> createState() => _FormEditScreenState();
+}
+
+class _FormEditScreenState extends State<_FormEditScreen> {
+  Map<String, dynamic>? _formData;
+  String? _residentId;
+  String? _residentName;
+  bool _isLoading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchFormData();
+  }
+
+  Future<void> _fetchFormData() async {
+    try {
+      final formRepo = context.read<FormRepository>();
+      final form = await formRepo.getFormById(widget.formId);
+
+      if (mounted) {
+        setState(() {
+          _formData = form.formData;
+          _residentId = form.residentId;
+          _residentName = form.residentName ?? 'Unknown Resident';
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      _log('Error fetching form data for edit: $e');
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_isLoading) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Loading Form...')),
+        body: const Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(height: 16),
+              Text('Loading form data...'),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (_error != null) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Error')),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error_outline, size: 64, color: Colors.red),
+              const SizedBox(height: 16),
+              Text('Failed to load form: $_error'),
+              const SizedBox(height: 8),
+              ElevatedButton(
+                onPressed: () => context.go('/forms'),
+                child: const Text('Go Back'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return FormFillScreen(
+      template: widget.template,
+      residentId: _residentId ?? '',
+      residentName: _residentName ?? 'Unknown Resident',
+      initialData: _formData,
+      existingSubmissionId: widget.formId,
+      isEditing: true,
     );
   }
 }
