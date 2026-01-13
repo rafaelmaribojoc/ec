@@ -373,7 +373,7 @@ class _AddResidentScreenState extends State<AddResidentScreen> {
         const SizedBox(height: 16),
         // Gender
         DropdownButtonFormField<String>(
-          value: _gender,
+          initialValue: _gender,
           decoration: const InputDecoration(
             labelText: 'Gender *',
             prefixIcon: Icon(Icons.wc),
@@ -400,7 +400,7 @@ class _AddResidentScreenState extends State<AddResidentScreen> {
       children: [
         // Ward selection
         DropdownButtonFormField<WardModel>(
-          value: _selectedWard,
+          initialValue: _selectedWard,
           decoration: const InputDecoration(
             labelText: 'Ward *',
             prefixIcon: Icon(Icons.room),

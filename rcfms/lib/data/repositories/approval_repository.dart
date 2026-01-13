@@ -1,8 +1,12 @@
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/form_approval_model.dart';
 import '../models/notification_model.dart';
 import '../models/user_model.dart';
+
+/// Helper function to convert empty strings to null for UUID fields
+String? _nullIfEmpty(String? value) => (value?.isEmpty ?? true) ? null : value;
 
 /// Repository for managing form approvals and notifications
 class ApprovalRepository {
@@ -68,39 +72,47 @@ class ApprovalRepository {
     final userId = _supabase.auth.currentUser?.id;
     if (userId == null) throw Exception('User not authenticated');
 
+    // Validate required UUID fields - convert empty strings to null and check
+    final safeFormId = _nullIfEmpty(formId);
+    final safeRecipientId = _nullIfEmpty(recipientId);
+    
+    if (safeFormId == null) {
+      throw Exception('Invalid form ID: cannot be empty');
+    }
+    if (safeRecipientId == null) {
+      throw Exception('Invalid recipient ID: cannot be empty');
+    }
+
     // Get sender's name
     final senderProfile = await _supabase
         .from('profiles')
         .select('full_name')
         .eq('id', userId)
         .single();
-    
+
     final senderName = senderProfile['full_name'] as String;
 
     // Create approval request
     final response = await _supabase
         .from('form_approvals')
         .insert({
-          'form_submission_id': formId,
+          'form_submission_id': safeFormId,
           'sender_id': userId,
           'sender_name': senderName,
-          'recipient_id': recipientId,
+          'recipient_id': safeRecipientId,
           'recipient_name': recipientName,
-          'signature_field_name': signatureFieldName,
+          'signature_field_name': _nullIfEmpty(signatureFieldName),
           'status': 'pending',
         })
         .select()
         .single();
 
     // Update form status to pending_review
-    await _supabase
-        .from('form_submissions')
-        .update({
-          'status': 'pending_review',
-          'submitted_at': DateTime.now().toIso8601String(),
-          'updated_at': DateTime.now().toIso8601String(),
-        })
-        .eq('id', formId);
+    await _supabase.from('form_submissions').update({
+      'status': 'pending_review',
+      'submitted_at': DateTime.now().toIso8601String(),
+      'updated_at': DateTime.now().toIso8601String(),
+    }).eq('id', formId);
 
     // Create notification for recipient
     await createNotification(
@@ -132,7 +144,8 @@ class ApprovalRepository {
       'status': 'approved',
       'action_at': DateTime.now().toIso8601String(),
       'signature_url': signatureUrl,
-      'signature_applied': signatureUrl != null || approval['signature_field_name'] != null,
+      'signature_applied':
+          signatureUrl != null || approval['signature_field_name'] != null,
       'comment': comment,
       'updated_at': DateTime.now().toIso8601String(),
     }).eq('id', approvalId);
@@ -141,7 +154,7 @@ class ApprovalRepository {
     final formId = approval['form_submission_id'] as String;
     final recipientId = approval['recipient_id'] as String;
     final recipientName = approval['recipient_name'] as String;
-    
+
     await _supabase.from('form_submissions').update({
       'status': 'approved',
       'reviewed_by': recipientId,
@@ -199,7 +212,7 @@ class ApprovalRepository {
     final senderId = approval['sender_id'] as String;
     final recipientName = approval['recipient_name'] as String;
     final formId = approval['form_submission_id'] as String;
-    
+
     await createNotification(
       userId: senderId,
       type: 'form_acknowledged',
@@ -232,7 +245,7 @@ class ApprovalRepository {
     // Update form status
     final formId = approval['form_submission_id'] as String;
     final recipientId = approval['recipient_id'] as String;
-    
+
     await _supabase.from('form_submissions').update({
       'status': 'returned',
       'reviewed_by': recipientId,
@@ -244,7 +257,7 @@ class ApprovalRepository {
     // Notify sender
     final senderId = approval['sender_id'] as String;
     final recipientName = approval['recipient_name'] as String;
-    
+
     await createNotification(
       userId: senderId,
       type: 'form_returned',
@@ -303,10 +316,14 @@ class ApprovalRepository {
     final userId = _supabase.auth.currentUser?.id;
     if (userId == null) return;
 
-    await _supabase.from('notifications').update({
-      'is_read': true,
-      'read_at': DateTime.now().toIso8601String(),
-    }).eq('user_id', userId).eq('is_read', false);
+    await _supabase
+        .from('notifications')
+        .update({
+          'is_read': true,
+          'read_at': DateTime.now().toIso8601String(),
+        })
+        .eq('user_id', userId)
+        .eq('is_read', false);
   }
 
   /// Create a notification
@@ -319,13 +336,23 @@ class ApprovalRepository {
     String? formApprovalId,
     Map<String, dynamic>? metadata,
   }) async {
+    // Convert empty strings to null for UUID fields
+    final safeFormSubmissionId = (formSubmissionId?.isEmpty ?? true) ? null : formSubmissionId;
+    final safeFormApprovalId = (formApprovalId?.isEmpty ?? true) ? null : formApprovalId;
+    final safeUserId = userId.isEmpty ? null : userId;
+    
+    if (safeUserId == null) {
+      debugPrint('Cannot create notification: userId is empty');
+      return;
+    }
+    
     await _supabase.from('notifications').insert({
-      'user_id': userId,
+      'user_id': safeUserId,
       'type': type,
       'title': title,
       'message': message,
-      'form_submission_id': formSubmissionId,
-      'form_approval_id': formApprovalId,
+      'form_submission_id': safeFormSubmissionId,
+      'form_approval_id': safeFormApprovalId,
       'metadata': metadata ?? {},
     });
   }
@@ -340,10 +367,17 @@ class ApprovalRepository {
         .from('profiles')
         .select()
         .eq('is_active', true)
-        .inFilter('role', ['head', 'center_head', 'super_admin', 
-                          'social_head', 'medical_head', 'psych_head', 
-                          'rehab_head', 'homelife_head']);
-    
+        .inFilter('role', [
+      'head',
+      'center_head',
+      'super_admin',
+      'social_head',
+      'medical_head',
+      'psych_head',
+      'rehab_head',
+      'homelife_head'
+    ]);
+
     final response = await query.order('full_name');
 
     return (response as List)
@@ -361,9 +395,7 @@ class ApprovalRepository {
         .eq('unit', unit)
         .order('full_name');
 
-    return (response as List)
-        .map((json) => UserModel.fromJson(json))
-        .toList();
+    return (response as List).map((json) => UserModel.fromJson(json)).toList();
   }
 
   // ============================================================================

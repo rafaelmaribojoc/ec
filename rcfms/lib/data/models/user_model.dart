@@ -13,10 +13,10 @@ class UserModel extends Equatable {
   final bool isActive;
   final DateTime createdAt;
   final DateTime? updatedAt;
-  
+
   /// Professional title (e.g., RSW, RPm, RN, MD)
   final String? title;
-  
+
   /// Auto-generated employee ID (e.g., EMP-001)
   final String? employeeId;
 
@@ -43,22 +43,27 @@ class UserModel extends Equatable {
   bool get isCenterHead => role == 'center_head';
 
   /// Check if user is a unit head
-  bool get isUnitHead => role == 'head' || (role.endsWith('_head') && !isCenterHead);
+  bool get isUnitHead =>
+      role == 'head' || (role.endsWith('_head') && !isCenterHead);
 
   /// Check if user is staff
   bool get isStaff => role == 'staff' || role.endsWith('_staff');
 
   /// Check if user can add residents (Social Head only)
-  bool get canAddResidents => (role == 'head' && unit == 'social') || role == 'social_head';
+  bool get canAddResidents =>
+      (role == 'head' && unit == 'social') || role == 'social_head';
 
   /// Check if user can administer MOCA-P (Psych Head only)
-  bool get canAdministerMocaP => (role == 'head' && unit == 'psych') || role == 'psych_head';
-  
+  bool get canAdministerMocaP =>
+      (role == 'head' && unit == 'psych') || role == 'psych_head';
+
   /// Display name with title (e.g., "Juan Dela Cruz, RSW")
-  String get displayNameWithTitle => title != null ? '$fullName, $title' : fullName;
-  
+  String get displayNameWithTitle =>
+      title != null ? '$fullName, $title' : fullName;
+
   /// Display employee ID with name (e.g., "EMP-001 - Juan Dela Cruz")
-  String get displayWithEmployeeId => employeeId != null ? '$employeeId - $fullName' : fullName;
+  String get displayWithEmployeeId =>
+      employeeId != null ? '$employeeId - $fullName' : fullName;
 
   /// Check if user can provision users (Super Admin only)
   bool get canProvisionUsers => isSuperAdmin;
@@ -77,7 +82,7 @@ class UserModel extends Equatable {
       unit: json['unit'] as String?,
       signatureUrl: json['signature_url'] as String?,
       isActive: json['is_active'] as bool? ?? true,
-      createdAt: json['created_at'] != null 
+      createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'] as String)
           : DateTime.now(),
       updatedAt: json['updated_at'] != null

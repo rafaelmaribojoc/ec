@@ -4,25 +4,26 @@ import 'package:equatable/equatable.dart';
 class NotificationModel extends Equatable {
   final String id;
   final String userId;
-  
+
   /// Type of notification
-  final String type; // approval_request, form_approved, form_returned, form_acknowledged, system_alert, reminder
-  
+  final String
+      type; // approval_request, form_approved, form_returned, form_acknowledged, system_alert, reminder
+
   /// Content
   final String title;
   final String message;
-  
+
   /// Related entities
   final String? formSubmissionId;
   final String? formApprovalId;
-  
+
   /// Status
   final bool isRead;
   final DateTime? readAt;
-  
+
   /// Additional data
   final Map<String, dynamic>? metadata;
-  
+
   final DateTime createdAt;
 
   const NotificationModel({

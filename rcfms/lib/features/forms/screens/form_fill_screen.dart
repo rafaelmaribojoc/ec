@@ -5,7 +5,6 @@ import '../templates/form_templates.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/responsive.dart';
-import '../../../core/widgets/shell_scaffold.dart';
 import '../../../data/repositories/form_repository.dart';
 import '../../../data/repositories/approval_repository.dart';
 import '../../../data/models/form_submission_model.dart';
@@ -522,6 +521,9 @@ class _FormFillScreenState extends State<FormFillScreen> {
     );
   }
 
+  /// Helper to convert empty strings to null for UUID fields
+  String? _nullIfEmpty(String? value) => (value?.isEmpty ?? true) ? null : value;
+
   Future<void> _doSubmit(String? recipientId, String? recipientName) async {
     setState(() => _isSaving = true);
 
@@ -533,6 +535,10 @@ class _FormFillScreenState extends State<FormFillScreen> {
       final authState = context.read<AuthBloc>().state;
       final currentUser =
           authState is AuthAuthenticated ? authState.user : null;
+
+      // Validate recipient - ensure we have valid data or null
+      final safeRecipientId = _nullIfEmpty(recipientId);
+      final safeRecipientName = _nullIfEmpty(recipientName);
 
       // If no submission exists yet, create a draft first
       if (_submissionId == null) {
@@ -547,18 +553,19 @@ class _FormFillScreenState extends State<FormFillScreen> {
       }
 
       // Add recipient info and prepared by info to form data
+      // Only add if they have actual values (not empty strings)
       final submissionData = Map<String, dynamic>.from(_formData);
-      if (recipientId != null) {
-        submissionData['submitted_to_id'] = recipientId;
-        submissionData['submitted_to_name'] = recipientName;
+      if (safeRecipientId != null) {
+        submissionData['submitted_to_id'] = safeRecipientId;
+        submissionData['submitted_to_name'] = safeRecipientName;
       }
 
       // Auto-populate "Prepared By" with current user info
       if (currentUser != null) {
-        submissionData['prepared_by_id'] = currentUser.id;
-        submissionData['prepared_by_name'] = currentUser.fullName;
-        submissionData['prepared_by_title'] = currentUser.title;
-        submissionData['prepared_by_employee_id'] = currentUser.employeeId;
+        submissionData['prepared_by_id'] = _nullIfEmpty(currentUser.id);
+        submissionData['prepared_by_name'] = _nullIfEmpty(currentUser.fullName);
+        submissionData['prepared_by_title'] = _nullIfEmpty(currentUser.title);
+        submissionData['prepared_by_employee_id'] = _nullIfEmpty(currentUser.employeeId);
       }
 
       // Submit the form for review
@@ -568,12 +575,12 @@ class _FormFillScreenState extends State<FormFillScreen> {
       );
 
       // Create an approval request if recipient is specified
-      if (recipientId != null && recipientName != null && currentUser != null) {
+      if (safeRecipientId != null && safeRecipientName != null && currentUser != null) {
         try {
           await approvalRepository.createApprovalRequest(
             formId: _submissionId!,
-            recipientId: recipientId,
-            recipientName: recipientName,
+            recipientId: safeRecipientId,
+            recipientName: safeRecipientName,
             signatureFieldName: 'approved_by', // Default signature field
           );
         } catch (e) {
@@ -585,8 +592,8 @@ class _FormFillScreenState extends State<FormFillScreen> {
       setState(() => _isSaving = false);
 
       if (mounted) {
-        final message = recipientName != null
-            ? 'Form submitted to $recipientName'
+        final message = safeRecipientName != null
+            ? 'Form submitted to $safeRecipientName'
             : 'Form submitted successfully';
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

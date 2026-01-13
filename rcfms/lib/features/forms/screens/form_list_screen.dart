@@ -139,7 +139,8 @@ class _FormListScreenState extends State<FormListScreen>
             form: form,
             onTap: () {
               if (form.status == 'draft') {
-                context.push('/forms/fill/${form.templateId}?formId=${form.id}');
+                context
+                    .push('/forms/fill/${form.templateId}?formId=${form.id}');
               } else {
                 context.push('/forms/${form.id}');
               }
@@ -253,7 +254,8 @@ class _FormListScreenState extends State<FormListScreen>
           return Container(
             decoration: BoxDecoration(
               color: AppColors.surface,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(20)),
             ),
             child: Column(
               children: [
@@ -290,14 +292,20 @@ class _FormListScreenState extends State<FormListScreen>
                           children: [
                             Text(
                               'Create New Form',
-                              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleLarge
+                                  ?.copyWith(
                                     fontWeight: FontWeight.bold,
                                   ),
                             ),
                             const SizedBox(height: 4),
                             Text(
                               '${formTypes.length} templates available',
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.copyWith(
                                     color: AppColors.textSecondary,
                                   ),
                             ),
@@ -380,9 +388,8 @@ String _formatTemplateName(String templateType) {
   // Fallback: Convert snake_case to Title Case
   return templateType
       .split('_')
-      .map((word) => word.isNotEmpty
-          ? '${word[0].toUpperCase()}${word.substring(1)}'
-          : '')
+      .map((word) =>
+          word.isNotEmpty ? '${word[0].toUpperCase()}${word.substring(1)}' : '')
       .join(' ');
 }
 
@@ -441,7 +448,8 @@ class _FormCard extends StatelessWidget {
                       children: [
                         Flexible(
                           child: Text(
-                            form.residentName ?? 'Resident: ${form.residentId.substring(0, 8)}...',
+                            form.residentName ??
+                                'Resident: ${form.residentId.substring(0, 8)}...',
                             style: Theme.of(context).textTheme.bodySmall,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -639,7 +647,7 @@ class _FormTypeCard extends StatelessWidget {
     // Fallback with smart defaults based on template ID prefix
     Color color;
     IconData icon;
-    
+
     if (templateId.startsWith('ss_')) {
       color = AppColors.unitSocial;
       icon = Icons.people;
@@ -668,13 +676,13 @@ class _FormTypeCard extends StatelessWidget {
   /// Formats template ID to a clean display name
   String _formatTemplateIdToName(String templateId) {
     // Remove known prefixes
-    String name = templateId
-        .replaceFirst(RegExp(r'^(ss_|hl_|ps_|med_|rehab_)'), '');
-    
+    String name =
+        templateId.replaceFirst(RegExp(r'^(ss_|hl_|ps_|med_|rehab_)'), '');
+
     // Convert underscores to spaces and capitalize each word
     return name
         .split('_')
-        .map((word) => word.isNotEmpty 
+        .map((word) => word.isNotEmpty
             ? '${word[0].toUpperCase()}${word.substring(1).toLowerCase()}'
             : '')
         .join(' ');

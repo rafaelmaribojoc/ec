@@ -612,7 +612,7 @@ class _ResidentDetailScreenState extends State<ResidentDetailScreen> {
                 return StatefulBuilder(
                   builder: (context, setDialogState) {
                     return DropdownButtonFormField<String>(
-                      value: selectedWardId,
+                      initialValue: selectedWardId,
                       decoration: const InputDecoration(
                         labelText: 'Select Ward',
                         prefixIcon: Icon(Icons.location_on),

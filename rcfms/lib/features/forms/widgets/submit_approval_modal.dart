@@ -9,8 +9,11 @@ import '../../../data/repositories/approval_repository.dart';
 class SubmitApprovalModal extends StatefulWidget {
   final String formId;
   final String? currentUserUnit;
-  final List<String>? signatureFields; // Fields that can have signatures applied
-  final Function(String recipientId, String recipientName, String? signatureField) onSubmit;
+  final List<String>?
+      signatureFields; // Fields that can have signatures applied
+  final Function(
+          String recipientId, String recipientName, String? signatureField)
+      onSubmit;
 
   const SubmitApprovalModal({
     super.key,
@@ -26,14 +29,14 @@ class SubmitApprovalModal extends StatefulWidget {
 
 class _SubmitApprovalModalState extends State<SubmitApprovalModal> {
   final ApprovalRepository _approvalRepo = ApprovalRepository();
-  
+
   List<UserModel> _recipients = [];
   bool _isLoading = true;
   String? _error;
-  
+
   UserModel? _selectedRecipient;
   String? _selectedSignatureField;
-  
+
   final _signatureFieldLabels = {
     'noted_by': 'Noted By',
     'approved_by': 'Approved By',
@@ -56,7 +59,7 @@ class _SubmitApprovalModalState extends State<SubmitApprovalModal> {
       });
 
       final recipients = await _approvalRepo.getApprovalRecipients();
-      
+
       setState(() {
         _recipients = recipients;
         _isLoading = false;
@@ -111,16 +114,18 @@ class _SubmitApprovalModalState extends State<SubmitApprovalModal> {
                       children: [
                         Text(
                           'Submit for Approval',
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
+                          style:
+                              Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
                         ),
                         const SizedBox(height: 2),
                         Text(
                           'Select who should review this form',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: AppColors.textSecondary,
-                          ),
+                          style:
+                              Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: AppColors.textSecondary,
+                                  ),
                         ),
                       ],
                     ),
@@ -133,12 +138,12 @@ class _SubmitApprovalModalState extends State<SubmitApprovalModal> {
                 ],
               ),
             ),
-            
+
             // Content
             Flexible(
               child: _buildContent(),
             ),
-            
+
             // Actions
             Container(
               padding: const EdgeInsets.all(16),
@@ -158,7 +163,8 @@ class _SubmitApprovalModalState extends State<SubmitApprovalModal> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: _selectedRecipient != null ? _handleSubmit : null,
+                      onPressed:
+                          _selectedRecipient != null ? _handleSubmit : null,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,
                         foregroundColor: Colors.white,
@@ -240,31 +246,31 @@ class _SubmitApprovalModalState extends State<SubmitApprovalModal> {
           Text(
             'Select Recipient',
             style: Theme.of(context).textTheme.labelLarge?.copyWith(
-              color: AppColors.textSecondary,
-            ),
+                  color: AppColors.textSecondary,
+                ),
           ),
           const SizedBox(height: 12),
-          
+
           // Recipient list
           ...(_recipients.map((user) => _buildRecipientTile(user))),
-          
+
           // Signature field selection (if applicable)
-          if (widget.signatureFields != null && 
+          if (widget.signatureFields != null &&
               widget.signatureFields!.isNotEmpty &&
               _selectedRecipient != null) ...[
             const SizedBox(height: 24),
             Text(
               'Signature Field (Optional)',
               style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                color: AppColors.textSecondary,
-              ),
+                    color: AppColors.textSecondary,
+                  ),
             ),
             const SizedBox(height: 8),
             Text(
               'If selected, the recipient\'s signature will overlay this field upon approval.',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: AppColors.textTertiary,
-              ),
+                    color: AppColors.textTertiary,
+                  ),
             ),
             const SizedBox(height: 12),
             Wrap(
@@ -272,9 +278,9 @@ class _SubmitApprovalModalState extends State<SubmitApprovalModal> {
               runSpacing: 8,
               children: [
                 _buildSignatureFieldChip(null, 'None'),
-                ...widget.signatureFields!.map((field) => 
-                  _buildSignatureFieldChip(field, _signatureFieldLabels[field] ?? field)
-                ),
+                ...widget.signatureFields!.map((field) =>
+                    _buildSignatureFieldChip(
+                        field, _signatureFieldLabels[field] ?? field)),
               ],
             ),
           ],
@@ -285,11 +291,12 @@ class _SubmitApprovalModalState extends State<SubmitApprovalModal> {
 
   Widget _buildRecipientTile(UserModel user) {
     final isSelected = _selectedRecipient?.id == user.id;
-    
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Material(
-        color: isSelected ? AppColors.primary.withOpacity(0.1) : AppColors.surface,
+        color:
+            isSelected ? AppColors.primary.withOpacity(0.1) : AppColors.surface,
         borderRadius: BorderRadius.circular(AppTheme.radiusMd),
         child: InkWell(
           onTap: () {
@@ -311,10 +318,13 @@ class _SubmitApprovalModalState extends State<SubmitApprovalModal> {
               children: [
                 // Avatar
                 CircleAvatar(
-                  backgroundColor: AppColors.getServiceUnitColor(user.unit ?? 'social'),
+                  backgroundColor:
+                      AppColors.getServiceUnitColor(user.unit ?? 'social'),
                   radius: 20,
                   child: Text(
-                    user.fullName.isNotEmpty ? user.fullName[0].toUpperCase() : '?',
+                    user.fullName.isNotEmpty
+                        ? user.fullName[0].toUpperCase()
+                        : '?',
                     style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
@@ -330,8 +340,10 @@ class _SubmitApprovalModalState extends State<SubmitApprovalModal> {
                       Text(
                         user.displayNameWithTitle,
                         style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                        ),
+                              fontWeight: isSelected
+                                  ? FontWeight.bold
+                                  : FontWeight.w500,
+                            ),
                       ),
                       const SizedBox(height: 2),
                       Row(
@@ -339,19 +351,25 @@ class _SubmitApprovalModalState extends State<SubmitApprovalModal> {
                           if (user.employeeId != null) ...[
                             Text(
                               user.employeeId!,
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: AppColors.textSecondary,
-                              ),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.copyWith(
+                                    color: AppColors.textSecondary,
+                                  ),
                             ),
                             const SizedBox(width: 8),
-                            Text('•', style: TextStyle(color: AppColors.textTertiary)),
+                            Text('•',
+                                style:
+                                    TextStyle(color: AppColors.textTertiary)),
                             const SizedBox(width: 8),
                           ],
                           Text(
                             _getRoleLabel(user.role),
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: AppColors.textSecondary,
-                            ),
+                            style:
+                                Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: AppColors.textSecondary,
+                                    ),
                           ),
                         ],
                       ),
@@ -374,7 +392,7 @@ class _SubmitApprovalModalState extends State<SubmitApprovalModal> {
 
   Widget _buildSignatureFieldChip(String? field, String label) {
     final isSelected = _selectedSignatureField == field;
-    
+
     return FilterChip(
       label: Text(label),
       selected: isSelected,
@@ -415,7 +433,7 @@ class _SubmitApprovalModalState extends State<SubmitApprovalModal> {
 
   void _handleSubmit() {
     if (_selectedRecipient == null) return;
-    
+
     widget.onSubmit(
       _selectedRecipient!.id,
       _selectedRecipient!.fullName,
@@ -431,7 +449,9 @@ Future<void> showSubmitApprovalModal({
   required String formId,
   String? currentUserUnit,
   List<String>? signatureFields,
-  required Function(String recipientId, String recipientName, String? signatureField) onSubmit,
+  required Function(
+          String recipientId, String recipientName, String? signatureField)
+      onSubmit,
 }) {
   return showDialog(
     context: context,

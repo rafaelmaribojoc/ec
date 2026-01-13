@@ -188,9 +188,7 @@ class RouterService {
                     template = FormTemplatesRegistry.getByTypeAndUnit(
                         templateId, unit);
                   }
-                  if (template == null) {
-                    template = FormTemplatesRegistry.getByType(templateId);
-                  }
+                  template ??= FormTemplatesRegistry.getByType(templateId);
 
                   if (template == null) {
                     return Scaffold(
@@ -419,7 +417,7 @@ class _FormFillScreenWithResidentDataState
       final residentRepo = context.read<ResidentRepository>();
       final resident = await residentRepo.getResidentById(widget.residentId);
 
-      if (resident != null && mounted) {
+      if (mounted) {
         setState(() {
           _residentData = {
             'full_name': resident.fullName,

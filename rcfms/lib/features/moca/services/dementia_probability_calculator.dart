@@ -7,6 +7,7 @@
 /// - Normal: ≥26 (low risk)
 /// - MCI (Mild Cognitive Impairment): 18-25 (moderate risk)
 /// - Dementia: <18 (high risk)
+library;
 
 class DementiaProbabilityResult {
   final double normalProbability;

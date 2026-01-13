@@ -4,27 +4,27 @@ import 'package:equatable/equatable.dart';
 class FormApprovalModel extends Equatable {
   final String id;
   final String formSubmissionId;
-  
+
   // Sender info
   final String senderId;
   final String senderName;
-  
+
   // Recipient info
   final String recipientId;
   final String recipientName;
-  
+
   // Status
   final String status; // pending, acknowledged, approved, returned, cancelled
-  
+
   // Signature field matching
   final String? signatureFieldName;
   final bool signatureApplied;
   final String? signatureUrl;
-  
+
   // Action details
   final DateTime? actionAt;
   final String? comment;
-  
+
   // Metadata
   final DateTime createdAt;
   final DateTime? updatedAt;
@@ -51,7 +51,7 @@ class FormApprovalModel extends Equatable {
   bool get isApproved => status == 'approved';
   bool get isReturned => status == 'returned';
   bool get isCancelled => status == 'cancelled';
-  
+
   /// Whether this approval requires a signature overlay
   bool get requiresSignature => signatureFieldName != null;
 

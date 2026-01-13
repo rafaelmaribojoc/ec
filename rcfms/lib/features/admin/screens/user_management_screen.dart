@@ -292,7 +292,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                       Text('Role', style: Theme.of(context).textTheme.labelLarge),
                       const SizedBox(height: 8),
                       DropdownButtonFormField<String>(
-                        value: selectedRole,
+                        initialValue: selectedRole,
                         decoration: const InputDecoration(
                           prefixIcon: Icon(Icons.admin_panel_settings_outlined, size: 20),
                         ),
@@ -311,7 +311,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                         Text('Service Unit', style: Theme.of(context).textTheme.labelLarge),
                         const SizedBox(height: 8),
                         DropdownButtonFormField<String>(
-                          value: selectedUnit,
+                          initialValue: selectedUnit,
                           decoration: const InputDecoration(
                             prefixIcon: Icon(Icons.business_outlined, size: 20),
                           ),
@@ -607,9 +607,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                   _DetailRow(
                     icon: Icons.calendar_today_outlined,
                     label: 'Created',
-                    value: user.createdAt != null
-                        ? DateFormat('MMM d, y').format(user.createdAt!)
-                        : 'N/A',
+                    value: DateFormat('MMM d, y').format(user.createdAt),
                   ),
                   const SizedBox(height: 32),
 

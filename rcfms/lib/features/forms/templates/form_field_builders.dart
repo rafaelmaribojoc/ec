@@ -149,7 +149,7 @@ class FormFieldBuilders {
             bottom: screen.value(mobile: 12.0, tablet: 14.0, desktop: 16.0),
           ),
           child: DropdownButtonFormField<String>(
-            value: items.map((e) => e.toLowerCase()).contains(value.toLowerCase())
+            initialValue: items.map((e) => e.toLowerCase()).contains(value.toLowerCase())
                 ? items.firstWhere((e) => e.toLowerCase() == value.toLowerCase())
                 : items.first,
             decoration: InputDecoration(
