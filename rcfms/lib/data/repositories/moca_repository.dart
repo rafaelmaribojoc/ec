@@ -13,6 +13,14 @@ class MocaRepository {
   /// Save a completed MoCA assessment
   Future<MocaAssessmentModel> saveAssessment(
       MocaAssessmentModel assessment) async {
+    // Validate required fields
+    if (assessment.residentId == null || assessment.residentId!.isEmpty) {
+      throw Exception('Cannot save assessment: No resident selected. Please start the assessment from a resident profile.');
+    }
+    if (assessment.clinicianId == null || assessment.clinicianId!.isEmpty) {
+      throw Exception('Cannot save assessment: No clinician ID. Please ensure you are logged in.');
+    }
+
     // Calculate risk probabilities
     final probabilityResult = DementiaProbabilityCalculator.calculate(
       assessment.adjustedScore,
@@ -22,7 +30,7 @@ class MocaRepository {
       'id': assessment.id,
       'resident_id': assessment.residentId,
       'clinician_id': assessment.clinicianId,
-      'resident_name': assessment.residentName,
+      'resident_name': assessment.residentName ?? 'Unknown',
       'resident_sex': assessment.residentSex,
       'resident_birthday': assessment.residentBirthday?.toIso8601String(),
       'education_years': assessment.educationYears,

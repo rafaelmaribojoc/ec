@@ -206,14 +206,23 @@ class MocaHomeScreen extends StatelessWidget {
           height: 52,
           child: FloatingActionButton.extended(
             onPressed: () {
-              final clinicianId = user?.id;
-              context.read<MocaAssessmentBloc>().add(
-                    MocaStartAssessment(
-                      residentId: residentId,
-                      clinicianId: clinicianId,
-                      educationAdjustment: false,
-                    ),
-                  );
+              // Only start a new assessment if one doesn't already exist with resident data
+              // This preserves the assessment created from resident detail screen
+              if (assessment == null || assessment.residentId == null) {
+                final clinicianId = user?.id;
+                // Use resident parameter if available for resident details
+                context.read<MocaAssessmentBloc>().add(
+                      MocaStartAssessment(
+                        residentId: residentId ?? resident?.id,
+                        clinicianId: clinicianId,
+                        residentName: resident?.fullName,
+                        residentSex: resident?.gender,
+                        residentBirthday: resident?.dateOfBirth,
+                        educationYears: 0,
+                        educationAdjustment: false,
+                      ),
+                    );
+              }
               context.push('/moca/visuospatial');
             },
             backgroundColor: AppColors.primary,
