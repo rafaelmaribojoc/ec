@@ -11,7 +11,8 @@ class MocaRepository {
       : _client = client ?? Supabase.instance.client;
 
   /// Save a completed MoCA assessment
-  Future<MocaAssessmentModel> saveAssessment(MocaAssessmentModel assessment) async {
+  Future<MocaAssessmentModel> saveAssessment(
+      MocaAssessmentModel assessment) async {
     // Calculate risk probabilities
     final probabilityResult = DementiaProbabilityCalculator.calculate(
       assessment.adjustedScore,
@@ -26,7 +27,8 @@ class MocaRepository {
       'resident_birthday': assessment.residentBirthday?.toIso8601String(),
       'education_years': assessment.educationYears,
       'started_at': assessment.startedAt.toIso8601String(),
-      'completed_at': assessment.completedAt?.toIso8601String() ?? DateTime.now().toIso8601String(),
+      'completed_at': assessment.completedAt?.toIso8601String() ??
+          DateTime.now().toIso8601String(),
       'total_score': assessment.totalScore,
       'max_score': assessment.maxScore,
       'education_adjustment': assessment.educationAdjustment,
@@ -37,17 +39,15 @@ class MocaRepository {
       'section_results': _sectionResultsToJson(assessment.sectionResults),
     };
 
-    final response = await _client
-        .from('moca_assessments')
-        .upsert(data)
-        .select()
-        .single();
+    final response =
+        await _client.from('moca_assessments').upsert(data).select().single();
 
     return MocaAssessmentModel.fromJson(_convertDbResponse(response));
   }
 
   /// Get all assessments for a resident
-  Future<List<MocaAssessmentModel>> getAssessmentsByResident(String residentId) async {
+  Future<List<MocaAssessmentModel>> getAssessmentsByResident(
+      String residentId) async {
     final response = await _client
         .from('moca_assessments')
         .select()
@@ -102,9 +102,8 @@ class MocaRepository {
       query = query.eq('risk_level', riskLevel);
     }
 
-    final response = await query
-        .order('completed_at', ascending: false)
-        .limit(limit);
+    final response =
+        await query.order('completed_at', ascending: false).limit(limit);
 
     return (response as List)
         .map((json) => MocaAssessmentModel.fromJson(_convertDbResponse(json)))
@@ -112,7 +111,8 @@ class MocaRepository {
   }
 
   /// Convert section results map to JSON-compatible format
-  Map<String, dynamic> _sectionResultsToJson(Map<String, SectionResult> results) {
+  Map<String, dynamic> _sectionResultsToJson(
+      Map<String, SectionResult> results) {
     final json = <String, dynamic>{};
     results.forEach((key, value) {
       json[key] = value.toJson();

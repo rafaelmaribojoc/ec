@@ -13,7 +13,8 @@ class AssessmentCompleteScreen extends StatefulWidget {
   const AssessmentCompleteScreen({super.key});
 
   @override
-  State<AssessmentCompleteScreen> createState() => _AssessmentCompleteScreenState();
+  State<AssessmentCompleteScreen> createState() =>
+      _AssessmentCompleteScreenState();
 }
 
 class _AssessmentCompleteScreenState extends State<AssessmentCompleteScreen> {
@@ -116,9 +117,8 @@ class _AssessmentCompleteScreenState extends State<AssessmentCompleteScreen> {
                       child: Icon(
                         isNormal ? Icons.check_circle : Icons.info,
                         size: 60,
-                        color: isNormal
-                            ? MocaColors.success
-                            : MocaColors.warning,
+                        color:
+                            isNormal ? MocaColors.success : MocaColors.warning,
                       ),
                     ),
 
@@ -126,7 +126,9 @@ class _AssessmentCompleteScreenState extends State<AssessmentCompleteScreen> {
 
                     Text(
                       'Assessment Complete',
-                      style: Theme.of(context).textTheme.headlineMedium
+                      style: Theme.of(context)
+                          .textTheme
+                          .headlineMedium
                           ?.copyWith(fontWeight: FontWeight.bold),
                     ),
 
@@ -137,9 +139,8 @@ class _AssessmentCompleteScreenState extends State<AssessmentCompleteScreen> {
                           ? 'Score is within normal range'
                           : 'Score indicates possible impairment',
                       style: TextStyle(
-                        color: isNormal
-                            ? MocaColors.success
-                            : MocaColors.warning,
+                        color:
+                            isNormal ? MocaColors.success : MocaColors.warning,
                         fontSize: 16,
                       ),
                     ),
@@ -362,8 +363,7 @@ class _AssessmentCompleteScreenState extends State<AssessmentCompleteScreen> {
                             _buildSectionRow(
                               'Visuospatial/Executive',
                               assessment
-                                      .sectionResults['visuospatial']
-                                      ?.score ??
+                                      .sectionResults['visuospatial']?.score ??
                                   0,
                               5,
                               MocaColors.visuospatialColor,
@@ -397,8 +397,7 @@ class _AssessmentCompleteScreenState extends State<AssessmentCompleteScreen> {
                             _buildSectionRow(
                               'Delayed Recall',
                               assessment
-                                      .sectionResults['delayedRecall']
-                                      ?.score ??
+                                      .sectionResults['delayedRecall']?.score ??
                                   0,
                               5,
                               MocaColors.recallColor,
@@ -465,12 +464,14 @@ class _AssessmentCompleteScreenState extends State<AssessmentCompleteScreen> {
                       children: [
                         Expanded(
                           child: OutlinedButton.icon(
-                            onPressed: state.isSaving ? null : () {
-                              context.read<MocaAssessmentBloc>().add(
-                                MocaResetAssessment(),
-                              );
-                              context.go('/moca');
-                            },
+                            onPressed: state.isSaving
+                                ? null
+                                : () {
+                                    context.read<MocaAssessmentBloc>().add(
+                                          MocaResetAssessment(),
+                                        );
+                                    context.go('/moca');
+                                  },
                             icon: const Icon(Icons.refresh),
                             label: const Text('New Assessment'),
                             style: OutlinedButton.styleFrom(
@@ -483,12 +484,14 @@ class _AssessmentCompleteScreenState extends State<AssessmentCompleteScreen> {
                         const SizedBox(width: 12),
                         Expanded(
                           child: ElevatedButton.icon(
-                            onPressed: state.isSaving ? null : () {
-                              context.read<MocaAssessmentBloc>().add(
-                                MocaResetAssessment(),
-                              );
-                              context.go('/dashboard');
-                            },
+                            onPressed: state.isSaving
+                                ? null
+                                : () {
+                                    context.read<MocaAssessmentBloc>().add(
+                                          MocaResetAssessment(),
+                                        );
+                                    context.go('/dashboard');
+                                  },
                             icon: const Icon(Icons.home),
                             label: const Text('Go Home'),
                             style: ElevatedButton.styleFrom(

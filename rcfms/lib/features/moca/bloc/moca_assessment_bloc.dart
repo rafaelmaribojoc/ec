@@ -289,7 +289,8 @@ class MocaAssessmentBloc
           : state.assessment!.copyWith(completedAt: DateTime.now());
 
       // Save to database
-      final savedAssessment = await _repository.saveAssessment(assessmentToSave);
+      final savedAssessment =
+          await _repository.saveAssessment(assessmentToSave);
 
       emit(state.copyWith(
         isSaving: false,
