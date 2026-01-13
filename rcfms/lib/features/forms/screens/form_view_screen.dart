@@ -135,9 +135,11 @@ class _FormViewScreenState extends State<FormViewScreen> {
                 isReadOnly: true,
                 residentName: form.residentName,
                 existingSubmission: form,
-                // Hide signatures when approver is viewing pending form
-                // Only show signatures after form is approved/reviewed
-                showSignatures: !_canAct && form.isApproved,
+                // Show signatures section when:
+                // 1. Form requires signatures (template.requiresSignature checked inside widget)
+                // 2. Either form is already approved, OR user is viewing (not approving)
+                // This allows seeing "Prepared By" even while pending, but "Noted By" only shows after approval
+                showSignatures: true,
               )
             else ...[
               // Fallback to original layout if template not found
@@ -157,11 +159,8 @@ class _FormViewScreenState extends State<FormViewScreen> {
               ),
               const SizedBox(height: 16),
 
-              // Signatures - only show after form is approved (not for pending approver view)
-              // and only if the form type requires signatures
-              if (!_canAct &&
-                  form.isApproved &&
-                  _formHasSignatureData(form) &&
+              // Signatures - show if form type requires signatures and has signature data
+              if (_formHasSignatureData(form) &&
                   _formTypeRequiresSignatures(form.templateType))
                 _buildSignaturesSection(form),
             ],

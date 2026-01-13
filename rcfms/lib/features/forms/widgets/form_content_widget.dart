@@ -519,7 +519,8 @@ class FormContentWidget extends StatelessWidget {
     return Row(
       children: [
         if (icon != null) ...[
-          Icon(icon, size: 20, color: iconColor ?? AppColors.textSecondaryLight),
+          Icon(icon,
+              size: 20, color: iconColor ?? AppColors.textSecondaryLight),
           const SizedBox(width: 8),
         ],
         Expanded(
