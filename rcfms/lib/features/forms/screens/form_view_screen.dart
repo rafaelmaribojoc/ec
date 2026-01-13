@@ -155,8 +155,9 @@ class _FormViewScreenState extends State<FormViewScreen> {
               ),
               const SizedBox(height: 16),
 
-              // Signatures
-              _buildSignaturesSection(form),
+              // Signatures - only show if form has signature data
+              // (fallback when template not found - check if signatures exist)
+              if (_formHasSignatureData(form)) _buildSignaturesSection(form),
             ],
 
             const SizedBox(height: 16),
@@ -604,6 +605,17 @@ class _FormViewScreenState extends State<FormViewScreen> {
         ],
       ),
     );
+  }
+
+  /// Check if form has signature-related data (Prepared By, Noted By, etc.)
+  bool _formHasSignatureData(FormSubmissionModel form) {
+    final data = form.formData;
+    // Check for signature field names in form data
+    return data.containsKey('prepared_by') ||
+        data.containsKey('noted_by') ||
+        data.containsKey('approved_by') ||
+        form.submitterSignatureUrl != null ||
+        form.reviewerSignatureUrl != null;
   }
 
   Widget _buildSignaturesSection(FormSubmissionModel form) {
