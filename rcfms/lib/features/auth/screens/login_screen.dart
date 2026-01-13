@@ -258,6 +258,18 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
           const SizedBox(height: 12),
           _buildQuickLogin(
+            'Center Head',
+            'c@gmail.com',
+            'Welcome123!',
+          ),
+          const SizedBox(height: 8),
+          _buildQuickLogin(
+            'Staff (Raf)',
+            'raf@gmail.com',
+            'Welcome123!',
+          ),
+          const SizedBox(height: 8),
+          _buildQuickLogin(
             'Super Admin',
             'superadmin@rcfms.local',
             'Test@123456',

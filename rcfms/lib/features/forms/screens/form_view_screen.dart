@@ -355,6 +355,9 @@ class _FormViewScreenState extends State<FormViewScreen> {
             backgroundColor: AppColors.success,
           ),
         );
+
+        // Navigate back to previous screen after successful action
+        Navigator.of(context).pop(true);
       }
     } catch (e) {
       if (mounted) {
