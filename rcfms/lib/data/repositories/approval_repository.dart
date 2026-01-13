@@ -679,15 +679,15 @@ class ApprovalRepository {
       'field_name': fieldName,
       'field_label': fieldLabel,
       'signature_url': signatureUrl,
-      'signed_at': DateTime.now().toIso8601String(),
+      'signed_at': now.toIso8601String(),
       'is_auto_applied': true,
     }, onConflict: 'form_submission_id, field_name');
 
-    // Notify sender
+    // Notify sender - use 'form_approved' since 'form_noted' is not in allowed types
     final senderId = approval['sender_id'] as String;
     await createNotification(
       userId: senderId,
-      type: 'form_noted',
+      type: 'form_approved',
       title: 'Form Noted',
       message: '$userName has noted your form submission.',
       formSubmissionId: formId,
