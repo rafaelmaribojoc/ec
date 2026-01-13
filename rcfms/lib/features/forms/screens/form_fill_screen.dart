@@ -522,7 +522,8 @@ class _FormFillScreenState extends State<FormFillScreen> {
   }
 
   /// Helper to convert empty strings to null for UUID fields
-  String? _nullIfEmpty(String? value) => (value?.isEmpty ?? true) ? null : value;
+  String? _nullIfEmpty(String? value) =>
+      (value?.isEmpty ?? true) ? null : value;
 
   Future<void> _doSubmit(String? recipientId, String? recipientName) async {
     setState(() => _isSaving = true);
@@ -565,7 +566,8 @@ class _FormFillScreenState extends State<FormFillScreen> {
         submissionData['prepared_by_id'] = _nullIfEmpty(currentUser.id);
         submissionData['prepared_by_name'] = _nullIfEmpty(currentUser.fullName);
         submissionData['prepared_by_title'] = _nullIfEmpty(currentUser.title);
-        submissionData['prepared_by_employee_id'] = _nullIfEmpty(currentUser.employeeId);
+        submissionData['prepared_by_employee_id'] =
+            _nullIfEmpty(currentUser.employeeId);
       }
 
       // Submit the form for review
@@ -575,7 +577,9 @@ class _FormFillScreenState extends State<FormFillScreen> {
       );
 
       // Create an approval request if recipient is specified
-      if (safeRecipientId != null && safeRecipientName != null && currentUser != null) {
+      if (safeRecipientId != null &&
+          safeRecipientName != null &&
+          currentUser != null) {
         try {
           await approvalRepository.createApprovalRequest(
             formId: _submissionId!,

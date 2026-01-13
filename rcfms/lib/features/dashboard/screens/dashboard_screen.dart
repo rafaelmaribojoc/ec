@@ -747,7 +747,11 @@ class _NotificationsPanelState extends State<_NotificationsPanel> {
                                   _markAsRead(notification.id);
                                 }
                                 Navigator.pop(context);
-                                // TODO: Navigate to relevant screen based on notification type
+                                // Navigate to form view if notification has form_submission_id
+                                if (notification.formSubmissionId != null) {
+                                  context.push(
+                                      '/forms/view/${notification.formSubmissionId}');
+                                }
                               },
                             );
                           },

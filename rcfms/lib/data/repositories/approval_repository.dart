@@ -75,7 +75,7 @@ class ApprovalRepository {
     // Validate required UUID fields - convert empty strings to null and check
     final safeFormId = _nullIfEmpty(formId);
     final safeRecipientId = _nullIfEmpty(recipientId);
-    
+
     if (safeFormId == null) {
       throw Exception('Invalid form ID: cannot be empty');
     }
@@ -337,15 +337,17 @@ class ApprovalRepository {
     Map<String, dynamic>? metadata,
   }) async {
     // Convert empty strings to null for UUID fields
-    final safeFormSubmissionId = (formSubmissionId?.isEmpty ?? true) ? null : formSubmissionId;
-    final safeFormApprovalId = (formApprovalId?.isEmpty ?? true) ? null : formApprovalId;
+    final safeFormSubmissionId =
+        (formSubmissionId?.isEmpty ?? true) ? null : formSubmissionId;
+    final safeFormApprovalId =
+        (formApprovalId?.isEmpty ?? true) ? null : formApprovalId;
     final safeUserId = userId.isEmpty ? null : userId;
-    
+
     if (safeUserId == null) {
       debugPrint('Cannot create notification: userId is empty');
       return;
     }
-    
+
     await _supabase.from('notifications').insert({
       'user_id': safeUserId,
       'type': type,
@@ -441,5 +443,309 @@ class ApprovalRepository {
         .order('signed_at');
 
     return List<Map<String, dynamic>>.from(response);
+  }
+
+  /// Get pending approval for a specific form and recipient
+  Future<FormApprovalModel?> getPendingApprovalForForm(String formId) async {
+    final userId = _supabase.auth.currentUser?.id;
+    if (userId == null) return null;
+
+    try {
+      final response = await _supabase
+          .from('form_approvals')
+          .select()
+          .eq('form_submission_id', formId)
+          .eq('recipient_id', userId)
+          .eq('status', 'pending')
+          .maybeSingle();
+
+      if (response == null) return null;
+      return FormApprovalModel.fromJson(response);
+    } catch (e) {
+      debugPrint('Error getting pending approval: $e');
+      return null;
+    }
+  }
+
+  /// Check if user can take action on a form
+  Future<Map<String, dynamic>> getFormActionInfo(String formId) async {
+    final userId = _supabase.auth.currentUser?.id;
+    if (userId == null) {
+      return {'canAct': false, 'actionType': null, 'approval': null};
+    }
+
+    // Check if there's a pending approval for this user
+    final approval = await getPendingApprovalForForm(formId);
+    if (approval == null) {
+      return {'canAct': false, 'actionType': null, 'approval': null};
+    }
+
+    // Determine action type based on signature field
+    final actionType = approval.signatureFieldName != null
+        ? 'approve' // Requires signature
+        : 'acknowledge'; // Just acknowledge
+
+    return {
+      'canAct': true,
+      'actionType': actionType,
+      'approval': approval,
+      'signatureFieldName': approval.signatureFieldName,
+    };
+  }
+
+  /// Approve form with auto-signature
+  Future<void> approveFormWithAutoSignature({
+    required String approvalId,
+    String? comment,
+  }) async {
+    final userId = _supabase.auth.currentUser?.id;
+    if (userId == null) throw Exception('User not authenticated');
+
+    // Get user's signature URL from profile
+    final profile = await _supabase
+        .from('profiles')
+        .select('full_name, signature_url, title, employee_id')
+        .eq('id', userId)
+        .single();
+
+    final signatureUrl = profile['signature_url'] as String?;
+    final userName = profile['full_name'] as String;
+    final userTitle = profile['title'] as String?;
+    final employeeId = profile['employee_id'] as String?;
+
+    if (signatureUrl == null || signatureUrl.isEmpty) {
+      throw Exception(
+          'You must set up your digital signature before approving forms. Please go to Settings > Profile to add your signature.');
+    }
+
+    // Get approval details
+    final approval = await _supabase
+        .from('form_approvals')
+        .select()
+        .eq('id', approvalId)
+        .single();
+
+    final formId = approval['form_submission_id'] as String;
+    final signatureFieldName = approval['signature_field_name'] as String?;
+
+    // Update approval
+    await _supabase.from('form_approvals').update({
+      'status': 'approved',
+      'action_at': DateTime.now().toIso8601String(),
+      'signature_url': signatureUrl,
+      'signature_applied': true,
+      'comment': comment,
+      'updated_at': DateTime.now().toIso8601String(),
+    }).eq('id', approvalId);
+
+    // Update form submission with reviewer info
+    await _supabase.from('form_submissions').update({
+      'status': 'approved',
+      'reviewed_by': userId,
+      'reviewer_name': userName,
+      'reviewer_signature_url': signatureUrl,
+      'reviewed_at': DateTime.now().toIso8601String(),
+      'review_comment': comment,
+      'updated_at': DateTime.now().toIso8601String(),
+    }).eq('id', formId);
+
+    // Add to form_signatures table
+    final fieldName = signatureFieldName ?? 'approved_by';
+    final fieldLabel = signatureFieldName != null
+        ? signatureFieldName
+            .replaceAll('_', ' ')
+            .split(' ')
+            .map((w) =>
+                w.isNotEmpty ? '${w[0].toUpperCase()}${w.substring(1)}' : '')
+            .join(' ')
+        : 'Approved By';
+
+    await _supabase.from('form_signatures').upsert({
+      'form_submission_id': formId,
+      'signer_id': userId,
+      'signer_name': userName,
+      'signer_title': userTitle,
+      'signer_employee_id': employeeId,
+      'field_name': fieldName,
+      'field_label': fieldLabel,
+      'signature_url': signatureUrl,
+      'signed_at': DateTime.now().toIso8601String(),
+      'is_auto_applied': true,
+    }, onConflict: 'form_submission_id, field_name');
+
+    // Notify sender
+    final senderId = approval['sender_id'] as String;
+    await createNotification(
+      userId: senderId,
+      type: 'form_approved',
+      title: 'Form Approved',
+      message: '$userName has approved your form submission.',
+      formSubmissionId: formId,
+      formApprovalId: approvalId,
+    );
+  }
+
+  /// Note/Acknowledge form with auto-signature (for forms that need "Noted By")
+  Future<void> noteFormWithAutoSignature({
+    required String approvalId,
+    String? comment,
+  }) async {
+    final userId = _supabase.auth.currentUser?.id;
+    if (userId == null) throw Exception('User not authenticated');
+
+    // Get user's signature URL from profile
+    final profile = await _supabase
+        .from('profiles')
+        .select('full_name, signature_url, title, employee_id')
+        .eq('id', userId)
+        .single();
+
+    final signatureUrl = profile['signature_url'] as String?;
+    final userName = profile['full_name'] as String;
+    final userTitle = profile['title'] as String?;
+    final employeeId = profile['employee_id'] as String?;
+
+    if (signatureUrl == null || signatureUrl.isEmpty) {
+      throw Exception(
+          'You must set up your digital signature before noting forms. Please go to Settings > Profile to add your signature.');
+    }
+
+    // Get approval details
+    final approval = await _supabase
+        .from('form_approvals')
+        .select()
+        .eq('id', approvalId)
+        .single();
+
+    final formId = approval['form_submission_id'] as String;
+    final signatureFieldName = approval['signature_field_name'] as String?;
+
+    // Update approval
+    await _supabase.from('form_approvals').update({
+      'status': 'noted',
+      'action_at': DateTime.now().toIso8601String(),
+      'signature_url': signatureUrl,
+      'signature_applied': true,
+      'comment': comment,
+      'updated_at': DateTime.now().toIso8601String(),
+    }).eq('id', approvalId);
+
+    // Update form submission
+    await _supabase.from('form_submissions').update({
+      'status': 'approved', // Noted is considered approved
+      'reviewed_by': userId,
+      'reviewer_name': userName,
+      'reviewer_signature_url': signatureUrl,
+      'reviewed_at': DateTime.now().toIso8601String(),
+      'review_comment': comment,
+      'updated_at': DateTime.now().toIso8601String(),
+    }).eq('id', formId);
+
+    // Add to form_signatures table
+    final fieldName = signatureFieldName ?? 'noted_by';
+    final fieldLabel = signatureFieldName != null
+        ? signatureFieldName
+            .replaceAll('_', ' ')
+            .split(' ')
+            .map((w) =>
+                w.isNotEmpty ? '${w[0].toUpperCase()}${w.substring(1)}' : '')
+            .join(' ')
+        : 'Noted By';
+
+    await _supabase.from('form_signatures').upsert({
+      'form_submission_id': formId,
+      'signer_id': userId,
+      'signer_name': userName,
+      'signer_title': userTitle,
+      'signer_employee_id': employeeId,
+      'field_name': fieldName,
+      'field_label': fieldLabel,
+      'signature_url': signatureUrl,
+      'signed_at': DateTime.now().toIso8601String(),
+      'is_auto_applied': true,
+    }, onConflict: 'form_submission_id, field_name');
+
+    // Notify sender
+    final senderId = approval['sender_id'] as String;
+    await createNotification(
+      userId: senderId,
+      type: 'form_noted',
+      title: 'Form Noted',
+      message: '$userName has noted your form submission.',
+      formSubmissionId: formId,
+      formApprovalId: approvalId,
+    );
+  }
+
+  /// Acknowledge form without signature
+  Future<void> acknowledgeFormSimple({
+    required String approvalId,
+    String? comment,
+  }) async {
+    final userId = _supabase.auth.currentUser?.id;
+    if (userId == null) throw Exception('User not authenticated');
+
+    // Get user's name from profile
+    final profile = await _supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('id', userId)
+        .single();
+
+    final userName = profile['full_name'] as String;
+
+    // Get approval details
+    final approval = await _supabase
+        .from('form_approvals')
+        .select()
+        .eq('id', approvalId)
+        .single();
+
+    final formId = approval['form_submission_id'] as String;
+
+    // Update approval
+    await _supabase.from('form_approvals').update({
+      'status': 'acknowledged',
+      'action_at': DateTime.now().toIso8601String(),
+      'comment': comment,
+      'updated_at': DateTime.now().toIso8601String(),
+    }).eq('id', approvalId);
+
+    // Update form status
+    await _supabase.from('form_submissions').update({
+      'status': 'approved',
+      'reviewed_by': userId,
+      'reviewer_name': userName,
+      'reviewed_at': DateTime.now().toIso8601String(),
+      'review_comment': comment,
+      'updated_at': DateTime.now().toIso8601String(),
+    }).eq('id', formId);
+
+    // Notify sender
+    final senderId = approval['sender_id'] as String;
+    await createNotification(
+      userId: senderId,
+      type: 'form_acknowledged',
+      title: 'Form Acknowledged',
+      message: '$userName has acknowledged your form submission.',
+      formSubmissionId: formId,
+      formApprovalId: approvalId,
+    );
+  }
+
+  /// Get current user's profile with signature
+  Future<UserModel?> getCurrentUserProfile() async {
+    final userId = _supabase.auth.currentUser?.id;
+    if (userId == null) return null;
+
+    try {
+      final response =
+          await _supabase.from('profiles').select().eq('id', userId).single();
+
+      return UserModel.fromJson(response);
+    } catch (e) {
+      debugPrint('Error getting user profile: $e');
+      return null;
+    }
   }
 }

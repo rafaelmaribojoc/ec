@@ -6,7 +6,9 @@ import 'package:cached_network_image/cached_network_image.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../data/models/form_submission_model.dart';
+import '../../../data/models/form_approval_model.dart';
 import '../../../data/repositories/form_repository.dart';
+import '../../../data/repositories/approval_repository.dart';
 
 class FormViewScreen extends StatefulWidget {
   final String formId;
@@ -20,6 +22,15 @@ class FormViewScreen extends StatefulWidget {
 class _FormViewScreenState extends State<FormViewScreen> {
   FormSubmissionModel? _form;
   bool _isLoading = true;
+  bool _isActioning = false;
+
+  // Action info
+  bool _canAct = false;
+  String? _actionType;
+  FormApprovalModel? _pendingApproval;
+  String? _signatureFieldName;
+
+  final ApprovalRepository _approvalRepository = ApprovalRepository();
 
   @override
   void initState() {
@@ -28,14 +39,25 @@ class _FormViewScreenState extends State<FormViewScreen> {
   }
 
   Future<void> _loadForm() async {
+    setState(() => _isLoading = true);
     try {
       final formRepo = context.read<FormRepository>();
       final form = await formRepo.getFormById(widget.formId);
+
+      // Check if current user can take action on this form
+      final actionInfo =
+          await _approvalRepository.getFormActionInfo(widget.formId);
+
       setState(() {
         _form = form;
+        _canAct = actionInfo['canAct'] as bool;
+        _actionType = actionInfo['actionType'] as String?;
+        _pendingApproval = actionInfo['approval'] as FormApprovalModel?;
+        _signatureFieldName = actionInfo['signatureFieldName'] as String?;
         _isLoading = false;
       });
     } catch (e) {
+      debugPrint('Error loading form: $e');
       setState(() {
         _isLoading = false;
       });
@@ -116,10 +138,263 @@ class _FormViewScreenState extends State<FormViewScreen> {
             // Review comment (if returned)
             if (form.isReturned && form.reviewComment != null)
               _buildReturnedSection(form),
+
+            // Add bottom padding for action buttons
+            if (_canAct) const SizedBox(height: 80),
+          ],
+        ),
+      ),
+      // Dynamic action buttons
+      bottomNavigationBar: _canAct ? _buildActionButtons(form) : null,
+    );
+  }
+
+  /// Build dynamic action buttons based on user role and form type
+  Widget _buildActionButtons(FormSubmissionModel form) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).scaffoldBackgroundColor,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, -2),
+          ),
+        ],
+      ),
+      child: SafeArea(
+        child: Row(
+          children: [
+            // Return button
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: _isActioning ? null : () => _showReturnDialog(),
+                icon: const Icon(Icons.replay),
+                label: const Text('Return'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.error,
+                  side: const BorderSide(color: AppColors.error),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            // Approve/Acknowledge button
+            Expanded(
+              flex: 2,
+              child: ElevatedButton.icon(
+                onPressed: _isActioning ? null : () => _handleAction(),
+                icon: _isActioning
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : Icon(_getActionIcon()),
+                label: Text(_getActionButtonLabel()),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.success,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                ),
+              ),
+            ),
           ],
         ),
       ),
     );
+  }
+
+  /// Get the appropriate action button label based on action type
+  String _getActionButtonLabel() {
+    if (_signatureFieldName != null) {
+      // Has a specific signature field - determine label from field name
+      final fieldLower = _signatureFieldName!.toLowerCase();
+      if (fieldLower.contains('noted') || fieldLower.contains('note')) {
+        return 'Note';
+      } else if (fieldLower.contains('approved') ||
+          fieldLower.contains('approve')) {
+        return 'Approve';
+      } else if (fieldLower.contains('received') ||
+          fieldLower.contains('receive')) {
+        return 'Receive';
+      }
+      return 'Sign';
+    }
+
+    // Based on action type
+    switch (_actionType) {
+      case 'approve':
+        return 'Approve';
+      case 'acknowledge':
+        return 'Acknowledge';
+      default:
+        return 'Confirm';
+    }
+  }
+
+  /// Get the appropriate action icon
+  IconData _getActionIcon() {
+    if (_signatureFieldName != null) {
+      return Icons.draw; // Signature required
+    }
+    switch (_actionType) {
+      case 'approve':
+        return Icons.check_circle;
+      case 'acknowledge':
+        return Icons.thumb_up;
+      default:
+        return Icons.check;
+    }
+  }
+
+  /// Handle the action button press
+  Future<void> _handleAction() async {
+    if (_pendingApproval == null) return;
+
+    setState(() => _isActioning = true);
+
+    try {
+      if (_signatureFieldName != null) {
+        // Requires signature - determine action type from field name
+        final fieldLower = _signatureFieldName!.toLowerCase();
+        if (fieldLower.contains('noted') || fieldLower.contains('note')) {
+          await _approvalRepository.noteFormWithAutoSignature(
+            approvalId: _pendingApproval!.id,
+          );
+        } else {
+          await _approvalRepository.approveFormWithAutoSignature(
+            approvalId: _pendingApproval!.id,
+          );
+        }
+      } else if (_actionType == 'approve') {
+        await _approvalRepository.approveFormWithAutoSignature(
+          approvalId: _pendingApproval!.id,
+        );
+      } else {
+        // Simple acknowledge without signature
+        await _approvalRepository.acknowledgeFormSimple(
+          approvalId: _pendingApproval!.id,
+        );
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+                'Form ${_getActionButtonLabel().toLowerCase()}d successfully!'),
+            backgroundColor: AppColors.success,
+          ),
+        );
+        // Reload form to show updated signatures
+        await _loadForm();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString().replaceFirst('Exception: ', '')),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isActioning = false);
+      }
+    }
+  }
+
+  /// Show return dialog for entering comment
+  Future<void> _showReturnDialog() async {
+    if (_pendingApproval == null) return;
+
+    final commentController = TextEditingController();
+
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Return Form'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Please provide a reason for returning this form:',
+              style: TextStyle(color: AppColors.textSecondary),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: commentController,
+              maxLines: 3,
+              decoration: const InputDecoration(
+                hintText: 'Enter your comments...',
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              if (commentController.text.trim().isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Please enter a comment')),
+                );
+                return;
+              }
+              Navigator.pop(context, true);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.error,
+            ),
+            child: const Text('Return'),
+          ),
+        ],
+      ),
+    );
+
+    if (result == true && mounted) {
+      setState(() => _isActioning = true);
+      try {
+        await _approvalRepository.returnForm(
+          approvalId: _pendingApproval!.id,
+          comment: commentController.text.trim(),
+        );
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Form returned successfully'),
+              backgroundColor: AppColors.warning,
+            ),
+          );
+          await _loadForm();
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error: ${e.toString()}'),
+              backgroundColor: AppColors.error,
+            ),
+          );
+        }
+      } finally {
+        if (mounted) {
+          setState(() => _isActioning = false);
+        }
+      }
+    }
+    commentController.dispose();
   }
 
   Widget _buildStatusCard(FormSubmissionModel form) {
@@ -218,16 +493,16 @@ class _FormViewScreenState extends State<FormViewScreen> {
     final fields = <Widget>[];
     formData.forEach((key, value) {
       if (value == null || key.startsWith('_')) return;
-      
+
       // Format the key to be more readable
       final label = key
           .replaceAll('_', ' ')
           .split(' ')
-          .map((word) => word.isNotEmpty 
-              ? '${word[0].toUpperCase()}${word.substring(1)}' 
+          .map((word) => word.isNotEmpty
+              ? '${word[0].toUpperCase()}${word.substring(1)}'
               : '')
           .join(' ');
-      
+
       // Format the value based on type
       String displayValue;
       if (value is List) {
@@ -239,13 +514,11 @@ class _FormViewScreenState extends State<FormViewScreen> {
       } else {
         displayValue = value?.toString() ?? '-';
       }
-      
+
       fields.add(_buildInfoRow(label, displayValue));
     });
-    
-    return fields.isEmpty 
-        ? [const Text('No data available')]
-        : fields;
+
+    return fields.isEmpty ? [const Text('No data available')] : fields;
   }
 
   Widget _buildInfoRow(String label, String value) {
