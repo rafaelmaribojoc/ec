@@ -357,7 +357,7 @@ class _OrientationScreenState extends State<OrientationScreen> {
                             context.read<MocaAssessmentBloc>().add(
                               MocaCompleteAssessment(),
                             );
-                            context.push('/moca/complete');
+                            context.go('/moca/complete');
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: MocaColors.orientationColor,
@@ -422,7 +422,7 @@ class _OrientationScreenState extends State<OrientationScreen> {
                       context.read<MocaAssessmentBloc>().add(
                         MocaCompleteAssessment(),
                       );
-                      context.push('/moca/complete');
+                      context.go('/moca/complete');
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: MocaColors.orientationColor,

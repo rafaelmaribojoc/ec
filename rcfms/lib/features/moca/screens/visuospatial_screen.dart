@@ -493,7 +493,7 @@ class _VisuospatialScreenState extends State<VisuospatialScreen>
       ),
     );
     context.read<MocaAssessmentBloc>().add(MocaNextSection());
-    context.push('/moca/naming');
+    context.go('/moca/naming');
   }
 }
 

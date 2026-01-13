@@ -587,6 +587,6 @@ class _AttentionScreenState extends State<AttentionScreen>
           ),
         );
     context.read<MocaAssessmentBloc>().add(MocaNextSection());
-    context.push('/moca/language');
+    context.go('/moca/language');
   }
 }

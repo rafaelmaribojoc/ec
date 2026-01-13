@@ -27,7 +27,6 @@ import '../../data/repositories/resident_repository.dart';
 import '../../data/repositories/form_repository.dart';
 
 // MoCA-P Assessment imports
-import '../../features/moca/screens/moca_home_screen.dart';
 import '../../features/moca/screens/visuospatial_screen.dart';
 import '../../features/moca/screens/naming_screen.dart';
 import '../../features/moca/screens/memory_screen.dart';
@@ -303,66 +302,57 @@ class RouterService {
         ],
       ),
 
-      // MoCA-P Assessment routes (outside ShellRoute for full-screen experience)
-      // The /moca route redirects to dashboard - assessments must start from a resident
+      // MoCA-P Assessment routes (flat structure to avoid navigator key conflicts)
+      // /moca redirects to dashboard - assessments must start from a resident
       GoRoute(
         path: '/moca',
         name: 'moca',
-        redirect: (context, state) {
-          // If accessing /moca directly (not a sub-route), redirect to dashboard
-          if (state.matchedLocation == '/moca') {
-            return '/dashboard';
-          }
-          return null;
-        },
-        builder: (context, state) => const MocaHomeScreen(),
-        routes: [
-          GoRoute(
-            path: 'visuospatial',
-            name: 'moca-visuospatial',
-            builder: (context, state) => const VisuospatialScreen(),
-          ),
-          GoRoute(
-            path: 'naming',
-            name: 'moca-naming',
-            builder: (context, state) => const NamingScreen(),
-          ),
-          GoRoute(
-            path: 'memory',
-            name: 'moca-memory',
-            builder: (context, state) => const MemoryScreen(),
-          ),
-          GoRoute(
-            path: 'attention',
-            name: 'moca-attention',
-            builder: (context, state) => const AttentionScreen(),
-          ),
-          GoRoute(
-            path: 'language',
-            name: 'moca-language',
-            builder: (context, state) => const LanguageScreen(),
-          ),
-          GoRoute(
-            path: 'abstraction',
-            name: 'moca-abstraction',
-            builder: (context, state) => const AbstractionScreen(),
-          ),
-          GoRoute(
-            path: 'delayed-recall',
-            name: 'moca-delayed-recall',
-            builder: (context, state) => const DelayedRecallScreen(),
-          ),
-          GoRoute(
-            path: 'orientation',
-            name: 'moca-orientation',
-            builder: (context, state) => const OrientationScreen(),
-          ),
-          GoRoute(
-            path: 'complete',
-            name: 'moca-complete',
-            builder: (context, state) => const AssessmentCompleteScreen(),
-          ),
-        ],
+        redirect: (context, state) => '/dashboard',
+      ),
+      GoRoute(
+        path: '/moca/visuospatial',
+        name: 'moca-visuospatial',
+        builder: (context, state) => const VisuospatialScreen(),
+      ),
+      GoRoute(
+        path: '/moca/naming',
+        name: 'moca-naming',
+        builder: (context, state) => const NamingScreen(),
+      ),
+      GoRoute(
+        path: '/moca/memory',
+        name: 'moca-memory',
+        builder: (context, state) => const MemoryScreen(),
+      ),
+      GoRoute(
+        path: '/moca/attention',
+        name: 'moca-attention',
+        builder: (context, state) => const AttentionScreen(),
+      ),
+      GoRoute(
+        path: '/moca/language',
+        name: 'moca-language',
+        builder: (context, state) => const LanguageScreen(),
+      ),
+      GoRoute(
+        path: '/moca/abstraction',
+        name: 'moca-abstraction',
+        builder: (context, state) => const AbstractionScreen(),
+      ),
+      GoRoute(
+        path: '/moca/delayed-recall',
+        name: 'moca-delayed-recall',
+        builder: (context, state) => const DelayedRecallScreen(),
+      ),
+      GoRoute(
+        path: '/moca/orientation',
+        name: 'moca-orientation',
+        builder: (context, state) => const OrientationScreen(),
+      ),
+      GoRoute(
+        path: '/moca/complete',
+        name: 'moca-complete',
+        builder: (context, state) => const AssessmentCompleteScreen(),
       ),
     ],
     errorBuilder: (context, state) => Scaffold(

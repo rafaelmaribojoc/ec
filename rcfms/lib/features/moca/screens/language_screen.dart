@@ -488,7 +488,7 @@ class _LanguageScreenState extends State<LanguageScreen>
                             context.read<MocaAssessmentBloc>().add(
                               MocaNextSection(),
                             );
-                            context.push('/moca/abstraction');
+                            context.go('/moca/abstraction');
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: MocaColors.languageColor,
@@ -548,7 +548,7 @@ class _LanguageScreenState extends State<LanguageScreen>
                         ),
                       );
                       context.read<MocaAssessmentBloc>().add(MocaNextSection());
-                      context.push('/moca/abstraction');
+                      context.go('/moca/abstraction');
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: MocaColors.languageColor,

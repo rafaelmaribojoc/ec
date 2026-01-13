@@ -339,7 +339,7 @@ class _AbstractionScreenState extends State<AbstractionScreen> {
                             context.read<MocaAssessmentBloc>().add(
                               MocaNextSection(),
                             );
-                            context.push('/moca/delayed-recall');
+                            context.go('/moca/delayed-recall');
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: MocaColors.abstractionColor,
@@ -394,7 +394,7 @@ class _AbstractionScreenState extends State<AbstractionScreen> {
                         ),
                       );
                       context.read<MocaAssessmentBloc>().add(MocaNextSection());
-                      context.push('/moca/delayed-recall');
+                      context.go('/moca/delayed-recall');
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: MocaColors.abstractionColor,

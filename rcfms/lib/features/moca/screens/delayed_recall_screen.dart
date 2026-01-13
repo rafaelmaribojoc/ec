@@ -482,7 +482,7 @@ class _DelayedRecallScreenState extends State<DelayedRecallScreen> {
                             context.read<MocaAssessmentBloc>().add(
                                   MocaNextSection(),
                                 );
-                            context.push('/moca/orientation');
+                            context.go('/moca/orientation');
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: MocaColors.recallColor,
@@ -542,7 +542,7 @@ class _DelayedRecallScreenState extends State<DelayedRecallScreen> {
                             ),
                           );
                       context.read<MocaAssessmentBloc>().add(MocaNextSection());
-                      context.push('/moca/orientation');
+                      context.go('/moca/orientation');
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: MocaColors.recallColor,

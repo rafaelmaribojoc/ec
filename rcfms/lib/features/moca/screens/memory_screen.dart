@@ -396,6 +396,6 @@ class _MemoryScreenState extends State<MemoryScreen> {
           ),
         );
     context.read<MocaAssessmentBloc>().add(MocaNextSection());
-    context.push('/moca/attention');
+    context.go('/moca/attention');
   }
 }

@@ -223,7 +223,7 @@ class _NamingScreenState extends State<NamingScreen> {
                       ),
                     );
                 context.read<MocaAssessmentBloc>().add(MocaNextSection());
-                context.push('/moca/memory');
+                context.go('/moca/memory');
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: MocaColors.namingColor,

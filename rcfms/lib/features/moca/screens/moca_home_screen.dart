@@ -223,7 +223,7 @@ class MocaHomeScreen extends StatelessWidget {
                       ),
                     );
               }
-              context.push('/moca/visuospatial');
+              context.go('/moca/visuospatial');
             },
             backgroundColor: AppColors.primary,
             foregroundColor: Colors.white,

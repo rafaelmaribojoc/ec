@@ -471,7 +471,7 @@ class _NFCScanScreenState extends State<NFCScanScreen>
 
     // Navigate directly to first assessment section
     // Skip MoCA home screen - assessments start immediately from resident selection
-    context.push('/moca/visuospatial');
+    context.go('/moca/visuospatial');
   }
 }
 

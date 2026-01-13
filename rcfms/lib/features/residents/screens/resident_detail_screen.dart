@@ -455,7 +455,7 @@ class _ResidentDetailScreenState extends State<ResidentDetailScreen> {
 
     // Navigate directly to first assessment section
     // Skip MoCA home screen - assessments start immediately from resident selection
-    context.push('/moca/visuospatial');
+    context.go('/moca/visuospatial');
   }
 
   void _showResidentForms(BuildContext context, ResidentModel resident) {
