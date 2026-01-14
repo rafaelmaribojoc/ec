@@ -14,19 +14,24 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../data/models/resident_model.dart';
 import '../../../data/models/form_submission_model.dart';
+import '../../../data/models/timeline_entry_model.dart';
 import '../../../data/repositories/resident_repository.dart';
 import '../../../data/repositories/form_repository.dart';
+import '../../../data/repositories/moca_repository.dart';
 import '../../auth/bloc/auth_bloc.dart';
 import '../../forms/templates/form_templates.dart';
 import '../../moca/bloc/moca_assessment_bloc.dart';
+import '../../moca/models/moca_assessment_model.dart';
 import '../../moca/constants/moca_colors.dart';
 
 class ResidentDetailScreen extends StatefulWidget {
   final String residentId;
+  final bool isViewMode; // true = read-only (from residents list), false = full actions (from NFC)
 
   const ResidentDetailScreen({
     super.key,
     required this.residentId,
+    this.isViewMode = false, // default to full mode for backward compatibility
   });
 
   @override
@@ -335,6 +340,49 @@ class _ResidentDetailScreenState extends State<ResidentDetailScreen> {
     // Check if user is from psych unit (can do MoCA assessments)
     final isPsychUnit = userUnit == 'psych';
 
+    // View Mode: Show only Forms History, Export, and Timeline (read-only)
+    if (widget.isViewMode) {
+      return Column(
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: _QuickActionButton(
+                  icon: Icons.folder_open,
+                  label: 'Forms History',
+                  color: AppColors.secondary,
+                  compact: screenWidth < 360,
+                  onTap: () => _showResidentForms(context, resident),
+                ),
+              ),
+              SizedBox(width: buttonSpacing),
+              Expanded(
+                child: _QuickActionButton(
+                  icon: Icons.picture_as_pdf,
+                  label: 'Export',
+                  color: AppColors.accent,
+                  compact: screenWidth < 360,
+                  onTap: () => _exportResidentProfile(context, resident),
+                ),
+              ),
+              SizedBox(width: buttonSpacing),
+              Expanded(
+                child: _QuickActionButton(
+                  icon: Icons.timeline,
+                  label: 'Timeline',
+                  color: AppColors.info,
+                  compact: screenWidth < 360,
+                  onTap: () =>
+                      context.push('/residents/${resident.id}/timeline'),
+                ),
+              ),
+            ],
+          ),
+        ],
+      );
+    }
+
+    // Action Mode: Show all buttons including New Form and New Assessment
     return Column(
       children: [
         Row(
@@ -472,29 +520,56 @@ class _ResidentDetailScreenState extends State<ResidentDetailScreen> {
       BuildContext context, ResidentModel resident) async {
     // Show loading
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Generating PDF export...')),
+      const SnackBar(content: Text('Preparing export data...')),
     );
 
     try {
-      // Import printing and pdf packages
+      // Fetch all data for export
       final formRepo = FormRepository();
+      final mocaRepo = MocaRepository();
+      
       final forms = await formRepo.getFormsByResident(resident.id);
+      final timeline = await formRepo.getTimeline(residentId: resident.id);
+      final mocaAssessments = await mocaRepo.getAssessmentsByResident(resident.id);
 
-      // For now, show a dialog with export options
+      // Show dialog with export options
       if (context.mounted) {
         showDialog(
           context: context,
           builder: (dialogContext) => AlertDialog(
-            title: const Text('Export Profile'),
+            title: Row(
+              children: [
+                Icon(Icons.picture_as_pdf, color: AppColors.accent),
+                const SizedBox(width: 8),
+                const Text('Export Profile'),
+              ],
+            ),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Export ${resident.fullName}\'s profile data?'),
-                const SizedBox(height: 16),
                 Text(
-                  '• Basic Information\n• Medical Information\n• ${forms.length} Form(s)',
-                  style: const TextStyle(color: AppColors.textSecondaryLight),
+                  'Export ${resident.fullName}\'s complete profile?',
+                  style: Theme.of(context).textTheme.bodyLarge,
+                ),
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceHover,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildExportItem(Icons.person, 'Basic Information'),
+                      _buildExportItem(Icons.medical_information, 'Medical Records'),
+                      _buildExportItem(Icons.emergency, 'Emergency Contact'),
+                      _buildExportItem(Icons.description, '${forms.length} Form(s)'),
+                      _buildExportItem(Icons.psychology, '${mocaAssessments.length} MoCA Assessment(s)'),
+                      _buildExportItem(Icons.timeline, '${timeline.length} Timeline Event(s)'),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -506,10 +581,13 @@ class _ResidentDetailScreenState extends State<ResidentDetailScreen> {
               ElevatedButton.icon(
                 onPressed: () async {
                   Navigator.pop(dialogContext);
-                  await _generateProfilePdf(resident, forms);
+                  await _generateProfilePdf(resident, forms, mocaAssessments, timeline);
                 },
                 icon: const Icon(Icons.picture_as_pdf),
                 label: const Text('Export PDF'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.accent,
+                ),
               ),
             ],
           ),
@@ -527,18 +605,40 @@ class _ResidentDetailScreenState extends State<ResidentDetailScreen> {
     }
   }
 
+  Widget _buildExportItem(IconData icon, String text) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          Icon(icon, size: 16, color: AppColors.textSecondaryLight),
+          const SizedBox(width: 8),
+          Text(text, style: const TextStyle(fontSize: 13)),
+        ],
+      ),
+    );
+  }
+
   Future<void> _generateProfilePdf(
     ResidentModel resident,
     List<FormSubmissionModel> forms,
+    List<MocaAssessmentModel> mocaAssessments,
+    List<TimelineEntryModel> timeline,
   ) async {
     try {
-      // Use the printing package to generate PDF
-      final pdf = await _buildProfilePdf(resident, forms);
+      // Show progress
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Generating PDF...')),
+        );
+      }
 
-      // Import printing functionality
+      // Use the printing package to generate PDF
+      final pdf = await _buildProfilePdf(resident, forms, mocaAssessments, timeline);
+
+      // Open print/share dialog
       await Printing.layoutPdf(
         onLayout: (format) async => pdf,
-        name: '${resident.fullName}_Profile',
+        name: '${resident.fullName}_Profile_${DateFormat('yyyyMMdd').format(DateTime.now())}',
       );
     } catch (e) {
       if (mounted) {
@@ -555,6 +655,8 @@ class _ResidentDetailScreenState extends State<ResidentDetailScreen> {
   Future<Uint8List> _buildProfilePdf(
     ResidentModel resident,
     List<FormSubmissionModel> forms,
+    List<MocaAssessmentModel> mocaAssessments,
+    List<TimelineEntryModel> timeline,
   ) async {
     final pdf = pw.Document();
 
@@ -562,82 +664,211 @@ class _ResidentDetailScreenState extends State<ResidentDetailScreen> {
       pw.MultiPage(
         pageFormat: PdfPageFormat.letter,
         margin: const pw.EdgeInsets.all(40),
+        header: (context) => pw.Container(
+          alignment: pw.Alignment.centerRight,
+          margin: const pw.EdgeInsets.only(bottom: 10),
+          child: pw.Text(
+            'Generated: ${DateFormat('MMMM d, yyyy h:mm a').format(DateTime.now())}',
+            style: pw.TextStyle(fontSize: 9, color: PdfColors.grey600),
+          ),
+        ),
+        footer: (context) => pw.Container(
+          alignment: pw.Alignment.centerRight,
+          margin: const pw.EdgeInsets.only(top: 10),
+          child: pw.Text(
+            'Page ${context.pageNumber} of ${context.pagesCount}',
+            style: pw.TextStyle(fontSize: 9, color: PdfColors.grey600),
+          ),
+        ),
         build: (context) => [
-          // Header
-          pw.Header(
-            level: 0,
-            child: pw.Text(
-              'RESIDENT PROFILE',
-              style: pw.TextStyle(
-                fontSize: 20,
-                fontWeight: pw.FontWeight.bold,
+          // Header with logo placeholder
+          pw.Container(
+            padding: const pw.EdgeInsets.all(16),
+            decoration: pw.BoxDecoration(
+              color: PdfColors.blue50,
+              borderRadius: pw.BorderRadius.circular(8),
+            ),
+            child: pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                pw.Text(
+                  'RESIDENT PROFILE REPORT',
+                  style: pw.TextStyle(
+                    fontSize: 22,
+                    fontWeight: pw.FontWeight.bold,
+                    color: PdfColors.blue900,
+                  ),
+                ),
+                pw.SizedBox(height: 8),
+                pw.Text(
+                  resident.fullName,
+                  style: pw.TextStyle(
+                    fontSize: 18,
+                    fontWeight: pw.FontWeight.bold,
+                  ),
+                ),
+                pw.Text(
+                  'Resident Code: ${resident.residentCode ?? "N/A"} | Location: ${resident.displayLocation}',
+                  style: const pw.TextStyle(fontSize: 11, color: PdfColors.grey700),
+                ),
+              ],
+            ),
+          ),
+          pw.SizedBox(height: 24),
+
+          // Basic Information Section
+          _pdfSectionHeader('Basic Information'),
+          pw.Container(
+            padding: const pw.EdgeInsets.all(12),
+            decoration: pw.BoxDecoration(
+              border: pw.Border.all(color: PdfColors.grey300),
+              borderRadius: pw.BorderRadius.circular(4),
+            ),
+            child: pw.Column(
+              children: [
+                _pdfInfoRow('Date of Birth', DateFormat('MMMM d, yyyy').format(resident.dateOfBirth)),
+                _pdfInfoRow('Age', '${resident.age} years'),
+                _pdfInfoRow('Gender', resident.gender.toUpperCase()),
+                _pdfInfoRow('Admission Date', DateFormat('MMMM d, yyyy').format(resident.admissionDate)),
+              ],
+            ),
+          ),
+          pw.SizedBox(height: 16),
+
+          // Emergency Contact Section
+          if (resident.emergencyContactName != null) ...[
+            _pdfSectionHeader('Emergency Contact'),
+            pw.Container(
+              padding: const pw.EdgeInsets.all(12),
+              decoration: pw.BoxDecoration(
+                border: pw.Border.all(color: PdfColors.grey300),
+                borderRadius: pw.BorderRadius.circular(4),
+              ),
+              child: pw.Column(
+                children: [
+                  _pdfInfoRow('Name', resident.emergencyContactName!),
+                  if (resident.emergencyContactPhone != null)
+                    _pdfInfoRow('Phone', resident.emergencyContactPhone!),
+                  if (resident.emergencyContactRelation != null)
+                    _pdfInfoRow('Relationship', resident.emergencyContactRelation!),
+                ],
               ),
             ),
-          ),
-          pw.SizedBox(height: 20),
-
-          // Resident Name
-          pw.Text(
-            resident.fullName,
-            style: pw.TextStyle(
-              fontSize: 18,
-              fontWeight: pw.FontWeight.bold,
-            ),
-          ),
-          pw.SizedBox(height: 20),
-
-          // Basic Information
-          pw.Header(level: 1, child: pw.Text('Basic Information')),
-          _pdfInfoRow('Date of Birth',
-              DateFormat('MMMM d, yyyy').format(resident.dateOfBirth)),
-          _pdfInfoRow('Age', '${resident.age} years'),
-          _pdfInfoRow('Gender', resident.gender),
-          _pdfInfoRow('Admission Date',
-              DateFormat('MMMM d, yyyy').format(resident.admissionDate)),
-          pw.SizedBox(height: 20),
-
-          // Emergency Contact
-          if (resident.emergencyContactName != null) ...[
-            pw.Header(level: 1, child: pw.Text('Emergency Contact')),
-            _pdfInfoRow('Name', resident.emergencyContactName!),
-            if (resident.emergencyContactPhone != null)
-              _pdfInfoRow('Phone', resident.emergencyContactPhone!),
-            if (resident.emergencyContactRelation != null)
-              _pdfInfoRow('Relationship', resident.emergencyContactRelation!),
-            pw.SizedBox(height: 20),
+            pw.SizedBox(height: 16),
           ],
 
-          // Medical Information
-          pw.Header(level: 1, child: pw.Text('Medical Information')),
-          if (resident.primaryDiagnosis != null)
-            _pdfInfoRow('Primary Diagnosis', resident.primaryDiagnosis!),
-          if (resident.allergies != null)
-            _pdfInfoRow('Allergies', resident.allergies!),
-          if (resident.medicalNotes != null)
-            _pdfInfoRow('Notes', resident.medicalNotes!),
-          pw.SizedBox(height: 20),
+          // Medical Information Section
+          _pdfSectionHeader('Medical Information'),
+          pw.Container(
+            padding: const pw.EdgeInsets.all(12),
+            decoration: pw.BoxDecoration(
+              border: pw.Border.all(color: PdfColors.grey300),
+              borderRadius: pw.BorderRadius.circular(4),
+            ),
+            child: pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                if (resident.primaryDiagnosis != null)
+                  _pdfInfoRow('Primary Diagnosis', resident.primaryDiagnosis!),
+                if (resident.allergies != null)
+                  _pdfInfoRow('Allergies', resident.allergies!),
+                if (resident.medicalNotes != null)
+                  _pdfInfoRow('Medical Notes', resident.medicalNotes!),
+                if (resident.primaryDiagnosis == null && 
+                    resident.allergies == null && 
+                    resident.medicalNotes == null)
+                  pw.Text('No medical information recorded', 
+                    style: pw.TextStyle(fontStyle: pw.FontStyle.italic, color: PdfColors.grey600)),
+              ],
+            ),
+          ),
+          pw.SizedBox(height: 16),
 
-          // Forms Summary
-          pw.Header(level: 1, child: pw.Text('Forms History')),
-          pw.Text('Total Forms: ${forms.length}'),
-          pw.SizedBox(height: 10),
-          if (forms.isNotEmpty) ...[
+          // MoCA Assessments Section
+          if (mocaAssessments.isNotEmpty) ...[
+            _pdfSectionHeader('MoCA-P Cognitive Assessments (${mocaAssessments.length})'),
             pw.Table.fromTextArray(
-              headers: ['Form Type', 'Date', 'Status'],
-              data: forms
-                  .map((f) => [
-                        _getFormDisplayName(f.templateType),
-                        DateFormat('MMM d, yyyy').format(f.createdAt),
-                        f.status.toUpperCase(),
-                      ])
-                  .toList(),
+              headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10),
+              cellStyle: const pw.TextStyle(fontSize: 9),
+              headerDecoration: const pw.BoxDecoration(color: PdfColors.grey200),
+              cellPadding: const pw.EdgeInsets.all(6),
+              headers: ['Date', 'Score', 'Risk Level', 'Normal %', 'MCI %', 'Dementia %'],
+              data: mocaAssessments.take(10).map((a) => [
+                DateFormat('MMM d, yyyy').format(a.completedAt ?? a.startedAt),
+                '${a.adjustedScore}/${a.maxScore}',
+                a.riskLevel ?? 'N/A',
+                '${((a.normalProbability ?? 0) * 100).toStringAsFixed(1)}%',
+                '${((a.mciProbability ?? 0) * 100).toStringAsFixed(1)}%',
+                '${((a.dementiaProbability ?? 0) * 100).toStringAsFixed(1)}%',
+              ]).toList(),
             ),
+            pw.SizedBox(height: 16),
           ],
+
+          // Forms History Section
+          _pdfSectionHeader('Forms History (${forms.length})'),
+          if (forms.isEmpty)
+            pw.Text('No forms on record', 
+              style: pw.TextStyle(fontStyle: pw.FontStyle.italic, color: PdfColors.grey600))
+          else
+            pw.Table.fromTextArray(
+              headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10),
+              cellStyle: const pw.TextStyle(fontSize: 9),
+              headerDecoration: const pw.BoxDecoration(color: PdfColors.grey200),
+              cellPadding: const pw.EdgeInsets.all(6),
+              headers: ['Form Type', 'Date', 'Status', 'Unit'],
+              data: forms.take(20).map((f) => [
+                _getFormDisplayName(f.templateType),
+                DateFormat('MMM d, yyyy').format(f.createdAt),
+                f.status.toUpperCase(),
+                f.unit?.toUpperCase() ?? 'N/A',
+              ]).toList(),
+            ),
+          pw.SizedBox(height: 16),
+
+          // Timeline Section (Recent Events)
+          _pdfSectionHeader('Recent Timeline Events (${timeline.length})'),
+          if (timeline.isEmpty)
+            pw.Text('No timeline events recorded', 
+              style: pw.TextStyle(fontStyle: pw.FontStyle.italic, color: PdfColors.grey600))
+          else
+            pw.Table.fromTextArray(
+              headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10),
+              cellStyle: const pw.TextStyle(fontSize: 9),
+              headerDecoration: const pw.BoxDecoration(color: PdfColors.grey200),
+              cellPadding: const pw.EdgeInsets.all(6),
+              headers: ['Date', 'Event', 'Unit', 'By'],
+              data: timeline.take(15).map((t) => [
+                DateFormat('MMM d, yyyy').format(t.createdAt),
+                t.title,
+                t.unitDisplayName,
+                t.creatorName ?? 'System',
+              ]).toList(),
+            ),
         ],
       ),
     );
 
     return pdf.save();
+  }
+
+  pw.Widget _pdfSectionHeader(String title) {
+    return pw.Container(
+      margin: const pw.EdgeInsets.only(bottom: 8),
+      padding: const pw.EdgeInsets.symmetric(vertical: 6, horizontal: 10),
+      decoration: const pw.BoxDecoration(
+        color: PdfColors.blue100,
+        borderRadius: pw.BorderRadius.all(pw.Radius.circular(4)),
+      ),
+      child: pw.Text(
+        title,
+        style: pw.TextStyle(
+          fontSize: 12,
+          fontWeight: pw.FontWeight.bold,
+          color: PdfColors.blue900,
+        ),
+      ),
+    );
   }
 
   pw.Widget _pdfInfoRow(String label, String value) {
@@ -650,10 +881,10 @@ class _ResidentDetailScreenState extends State<ResidentDetailScreen> {
             width: 150,
             child: pw.Text(
               '$label:',
-              style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+              style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10),
             ),
           ),
-          pw.Expanded(child: pw.Text(value)),
+          pw.Expanded(child: pw.Text(value, style: const pw.TextStyle(fontSize: 10))),
         ],
       ),
     );

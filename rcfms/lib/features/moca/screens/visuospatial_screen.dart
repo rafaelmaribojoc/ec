@@ -334,9 +334,8 @@ class _VisuospatialScreenState extends State<VisuospatialScreen>
                   child: Text(
                     label,
                     style: TextStyle(
-                      color: value
-                          ? MocaColors.success
-                          : MocaColors.textPrimary,
+                      color:
+                          value ? MocaColors.success : MocaColors.textPrimary,
                     ),
                   ),
                 ),
@@ -366,9 +365,8 @@ class _VisuospatialScreenState extends State<VisuospatialScreen>
       ),
       child: SafeArea(
         top: false,
-        child: isSmallScreen
-            ? _buildCompactBottomBar()
-            : _buildNormalBottomBar(),
+        child:
+            isSmallScreen ? _buildCompactBottomBar() : _buildNormalBottomBar(),
       ),
     );
   }
@@ -479,19 +477,19 @@ class _VisuospatialScreenState extends State<VisuospatialScreen>
 
   void _onContinue() {
     context.read<MocaAssessmentBloc>().add(
-      MocaSaveSectionResult(
-        section: 'visuospatial',
-        score: totalScore,
-        maxScore: 5,
-        details: {
-          'trail': _trailScore,
-          'cube': _cubeScore,
-          'clock_contour': _clockContourScore,
-          'clock_numbers': _clockNumbersScore,
-          'clock_hands': _clockHandsScore,
-        },
-      ),
-    );
+          MocaSaveSectionResult(
+            section: 'visuospatial',
+            score: totalScore,
+            maxScore: 5,
+            details: {
+              'trail': _trailScore,
+              'cube': _cubeScore,
+              'clock_contour': _clockContourScore,
+              'clock_numbers': _clockNumbersScore,
+              'clock_hands': _clockHandsScore,
+            },
+          ),
+        );
     context.read<MocaAssessmentBloc>().add(MocaNextSection());
     context.go('/moca/naming');
   }

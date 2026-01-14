@@ -98,8 +98,8 @@ class _OrientationScreenState extends State<OrientationScreen> {
                   Text(
                     'Time Orientation (4 points)',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+                          fontWeight: FontWeight.bold,
+                        ),
                   ),
                   const SizedBox(height: 16),
 
@@ -137,8 +137,8 @@ class _OrientationScreenState extends State<OrientationScreen> {
                   Text(
                     'Place Orientation (2 points)',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+                          fontWeight: FontWeight.bold,
+                        ),
                   ),
                   const SizedBox(height: 16),
 
@@ -267,9 +267,8 @@ class _OrientationScreenState extends State<OrientationScreen> {
                   child: Text(
                     label,
                     style: TextStyle(
-                      color: value
-                          ? MocaColors.success
-                          : MocaColors.textPrimary,
+                      color:
+                          value ? MocaColors.success : MocaColors.textPrimary,
                     ),
                   ),
                 ),
@@ -340,23 +339,23 @@ class _OrientationScreenState extends State<OrientationScreen> {
                         child: ElevatedButton(
                           onPressed: () {
                             context.read<MocaAssessmentBloc>().add(
-                              MocaSaveSectionResult(
-                                section: 'orientation',
-                                score: totalScore,
-                                maxScore: 6,
-                                details: {
-                                  'date': _dateCorrect,
-                                  'month': _monthCorrect,
-                                  'year': _yearCorrect,
-                                  'day': _dayCorrect,
-                                  'place': _placeCorrect,
-                                  'city': _cityCorrect,
-                                },
-                              ),
-                            );
+                                  MocaSaveSectionResult(
+                                    section: 'orientation',
+                                    score: totalScore,
+                                    maxScore: 6,
+                                    details: {
+                                      'date': _dateCorrect,
+                                      'month': _monthCorrect,
+                                      'year': _yearCorrect,
+                                      'day': _dayCorrect,
+                                      'place': _placeCorrect,
+                                      'city': _cityCorrect,
+                                    },
+                                  ),
+                                );
                             context.read<MocaAssessmentBloc>().add(
-                              MocaCompleteAssessment(),
-                            );
+                                  MocaCompleteAssessment(),
+                                );
                             context.go('/moca/complete');
                           },
                           style: ElevatedButton.styleFrom(
@@ -405,23 +404,23 @@ class _OrientationScreenState extends State<OrientationScreen> {
                   ElevatedButton(
                     onPressed: () {
                       context.read<MocaAssessmentBloc>().add(
-                        MocaSaveSectionResult(
-                          section: 'orientation',
-                          score: totalScore,
-                          maxScore: 6,
-                          details: {
-                            'date': _dateCorrect,
-                            'month': _monthCorrect,
-                            'year': _yearCorrect,
-                            'day': _dayCorrect,
-                            'place': _placeCorrect,
-                            'city': _cityCorrect,
-                          },
-                        ),
-                      );
+                            MocaSaveSectionResult(
+                              section: 'orientation',
+                              score: totalScore,
+                              maxScore: 6,
+                              details: {
+                                'date': _dateCorrect,
+                                'month': _monthCorrect,
+                                'year': _yearCorrect,
+                                'day': _dayCorrect,
+                                'place': _placeCorrect,
+                                'city': _cityCorrect,
+                              },
+                            ),
+                          );
                       context.read<MocaAssessmentBloc>().add(
-                        MocaCompleteAssessment(),
-                      );
+                            MocaCompleteAssessment(),
+                          );
                       context.go('/moca/complete');
                     },
                     style: ElevatedButton.styleFrom(

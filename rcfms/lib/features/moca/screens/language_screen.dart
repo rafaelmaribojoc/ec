@@ -212,9 +212,9 @@ class _LanguageScreenState extends State<LanguageScreen>
           Text(
             'Verbal Fluency (1 point)',
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-              fontFamily: MocaColors.fontFamily,
-            ),
+                  fontWeight: FontWeight.bold,
+                  fontFamily: MocaColors.fontFamily,
+                ),
           ),
           const SizedBox(height: 8),
           Text(
@@ -293,8 +293,8 @@ class _LanguageScreenState extends State<LanguageScreen>
             child: Text(
               'Word Count:',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontFamily: MocaColors.fontFamily,
-              ),
+                    fontFamily: MocaColors.fontFamily,
+                  ),
             ),
           ),
           const SizedBox(height: 8),
@@ -401,9 +401,8 @@ class _LanguageScreenState extends State<LanguageScreen>
                   child: Text(
                     label,
                     style: TextStyle(
-                      color: value
-                          ? MocaColors.success
-                          : MocaColors.textPrimary,
+                      color:
+                          value ? MocaColors.success : MocaColors.textPrimary,
                     ),
                   ),
                 ),
@@ -474,20 +473,20 @@ class _LanguageScreenState extends State<LanguageScreen>
                         child: ElevatedButton(
                           onPressed: () {
                             context.read<MocaAssessmentBloc>().add(
-                              MocaSaveSectionResult(
-                                section: 'language',
-                                score: totalScore,
-                                maxScore: 3,
-                                details: {
-                                  'sentence1': _sentence1Correct,
-                                  'sentence2': _sentence2Correct,
-                                  'fluency_count': _wordCount,
-                                },
-                              ),
-                            );
+                                  MocaSaveSectionResult(
+                                    section: 'language',
+                                    score: totalScore,
+                                    maxScore: 3,
+                                    details: {
+                                      'sentence1': _sentence1Correct,
+                                      'sentence2': _sentence2Correct,
+                                      'fluency_count': _wordCount,
+                                    },
+                                  ),
+                                );
                             context.read<MocaAssessmentBloc>().add(
-                              MocaNextSection(),
-                            );
+                                  MocaNextSection(),
+                                );
                             context.go('/moca/abstraction');
                           },
                           style: ElevatedButton.styleFrom(
@@ -536,17 +535,17 @@ class _LanguageScreenState extends State<LanguageScreen>
                   ElevatedButton(
                     onPressed: () {
                       context.read<MocaAssessmentBloc>().add(
-                        MocaSaveSectionResult(
-                          section: 'language',
-                          score: totalScore,
-                          maxScore: 3,
-                          details: {
-                            'sentence1': _sentence1Correct,
-                            'sentence2': _sentence2Correct,
-                            'fluency_count': _wordCount,
-                          },
-                        ),
-                      );
+                            MocaSaveSectionResult(
+                              section: 'language',
+                              score: totalScore,
+                              maxScore: 3,
+                              details: {
+                                'sentence1': _sentence1Correct,
+                                'sentence2': _sentence2Correct,
+                                'fluency_count': _wordCount,
+                              },
+                            ),
+                          );
                       context.read<MocaAssessmentBloc>().add(MocaNextSection());
                       context.go('/moca/abstraction');
                     },

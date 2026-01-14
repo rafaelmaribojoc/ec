@@ -257,9 +257,8 @@ class _AbstractionScreenState extends State<AbstractionScreen> {
                   child: Text(
                     label,
                     style: TextStyle(
-                      color: value
-                          ? MocaColors.success
-                          : MocaColors.textPrimary,
+                      color:
+                          value ? MocaColors.success : MocaColors.textPrimary,
                     ),
                   ),
                 ),
@@ -330,15 +329,15 @@ class _AbstractionScreenState extends State<AbstractionScreen> {
                         child: ElevatedButton(
                           onPressed: () {
                             context.read<MocaAssessmentBloc>().add(
-                              MocaSaveSectionResult(
-                                section: 'abstraction',
-                                score: totalScore,
-                                maxScore: 2,
-                              ),
-                            );
+                                  MocaSaveSectionResult(
+                                    section: 'abstraction',
+                                    score: totalScore,
+                                    maxScore: 2,
+                                  ),
+                                );
                             context.read<MocaAssessmentBloc>().add(
-                              MocaNextSection(),
-                            );
+                                  MocaNextSection(),
+                                );
                             context.go('/moca/delayed-recall');
                           },
                           style: ElevatedButton.styleFrom(
@@ -387,12 +386,12 @@ class _AbstractionScreenState extends State<AbstractionScreen> {
                   ElevatedButton(
                     onPressed: () {
                       context.read<MocaAssessmentBloc>().add(
-                        MocaSaveSectionResult(
-                          section: 'abstraction',
-                          score: totalScore,
-                          maxScore: 2,
-                        ),
-                      );
+                            MocaSaveSectionResult(
+                              section: 'abstraction',
+                              score: totalScore,
+                              maxScore: 2,
+                            ),
+                          );
                       context.read<MocaAssessmentBloc>().add(MocaNextSection());
                       context.go('/moca/delayed-recall');
                     },

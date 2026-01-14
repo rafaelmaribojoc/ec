@@ -228,7 +228,8 @@ class _ResidentsListScreenState extends State<ResidentsListScreen> {
           final resident = _filteredResidents[index];
           return _ResidentCard(
             resident: resident,
-            onTap: () => context.push('/residents/${resident.id}'),
+            // Navigate with view mode - read-only from residents list
+            onTap: () => context.push('/residents/${resident.id}?mode=view'),
           );
         },
       ),

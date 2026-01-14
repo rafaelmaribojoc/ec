@@ -144,9 +144,13 @@ class RouterService {
                 path: ':id',
                 name: 'resident-detail',
                 parentNavigatorKey: _rootNavigatorKey,
-                builder: (context, state) => ResidentDetailScreen(
-                  residentId: state.pathParameters['id']!,
-                ),
+                builder: (context, state) {
+                  final viewMode = state.uri.queryParameters['mode'] == 'view';
+                  return ResidentDetailScreen(
+                    residentId: state.pathParameters['id']!,
+                    isViewMode: viewMode,
+                  );
+                },
                 routes: [
                   GoRoute(
                     path: 'timeline',

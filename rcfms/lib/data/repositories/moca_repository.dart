@@ -15,10 +15,12 @@ class MocaRepository {
       MocaAssessmentModel assessment) async {
     // Validate required fields
     if (assessment.residentId == null || assessment.residentId!.isEmpty) {
-      throw Exception('Cannot save assessment: No resident selected. Please start the assessment from a resident profile.');
+      throw Exception(
+          'Cannot save assessment: No resident selected. Please start the assessment from a resident profile.');
     }
     if (assessment.clinicianId == null || assessment.clinicianId!.isEmpty) {
-      throw Exception('Cannot save assessment: No clinician ID. Please ensure you are logged in.');
+      throw Exception(
+          'Cannot save assessment: No clinician ID. Please ensure you are logged in.');
     }
 
     // Calculate risk probabilities
