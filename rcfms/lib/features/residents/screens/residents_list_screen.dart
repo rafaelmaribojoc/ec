@@ -226,10 +226,14 @@ class _ResidentsListScreenState extends State<ResidentsListScreen> {
         separatorBuilder: (_, __) => const SizedBox(height: 12),
         itemBuilder: (context, index) {
           final resident = _filteredResidents[index];
+          // Check if we came from NFC/action mode or from bottom nav (view mode)
+          final currentUri = GoRouterState.of(context).uri;
+          final isActionMode = currentUri.queryParameters['mode'] == 'action';
+          final mode = isActionMode ? '' : '?mode=view';
           return _ResidentCard(
             resident: resident,
-            // Navigate with view mode - read-only from residents list
-            onTap: () => context.push('/residents/${resident.id}?mode=view'),
+            // Navigate with appropriate mode based on entry point
+            onTap: () => context.push('/residents/${resident.id}$mode'),
           );
         },
       ),

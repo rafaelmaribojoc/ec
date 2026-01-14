@@ -247,7 +247,7 @@ class _NFCScanScreenState extends State<NFCScanScreen>
             ),
             const SizedBox(height: 32),
             ElevatedButton(
-              onPressed: () => context.go('/residents'),
+              onPressed: () => context.go('/residents?mode=action'),
               child: const Text('Browse Residents Instead'),
             ),
           ],
@@ -328,7 +328,7 @@ class _NFCScanScreenState extends State<NFCScanScreen>
             ],
             const SizedBox(height: 32),
             OutlinedButton.icon(
-              onPressed: () => context.go('/residents'),
+              onPressed: () => context.go('/residents?mode=action'),
               icon: const Icon(Icons.search),
               label: const Text('Browse Residents'),
             ),
