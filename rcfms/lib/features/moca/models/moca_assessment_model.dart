@@ -29,6 +29,12 @@ class MocaAssessmentModel {
   final DateTime? residentBirthday;
   final int educationYears; // Years of formal education
 
+  // Risk assessment results (populated from database)
+  final String? riskLevel;
+  final double? normalProbability;
+  final double? mciProbability;
+  final double? dementiaProbability;
+
   const MocaAssessmentModel({
     required this.id,
     this.clinicianId,
@@ -44,6 +50,10 @@ class MocaAssessmentModel {
     this.residentSex,
     this.residentBirthday,
     this.educationYears = 0,
+    this.riskLevel,
+    this.normalProbability,
+    this.mciProbability,
+    this.dementiaProbability,
   });
 
   /// Create empty assessment
@@ -103,6 +113,10 @@ class MocaAssessmentModel {
           ? DateTime.parse(json['resident_birthday'])
           : null,
       educationYears: json['education_years'] as int? ?? 0,
+      riskLevel: json['risk_level'] as String?,
+      normalProbability: (json['normal_probability'] as num?)?.toDouble(),
+      mciProbability: (json['mci_probability'] as num?)?.toDouble(),
+      dementiaProbability: (json['dementia_probability'] as num?)?.toDouble(),
     );
   }
 
@@ -128,6 +142,10 @@ class MocaAssessmentModel {
       'resident_sex': residentSex,
       'resident_birthday': residentBirthday?.toIso8601String(),
       'education_years': educationYears,
+      'risk_level': riskLevel,
+      'normal_probability': normalProbability,
+      'mci_probability': mciProbability,
+      'dementia_probability': dementiaProbability,
     };
   }
 
@@ -147,6 +165,10 @@ class MocaAssessmentModel {
     String? residentSex,
     DateTime? residentBirthday,
     int? educationYears,
+    String? riskLevel,
+    double? normalProbability,
+    double? mciProbability,
+    double? dementiaProbability,
   }) {
     return MocaAssessmentModel(
       id: id ?? this.id,
@@ -163,6 +185,10 @@ class MocaAssessmentModel {
       residentSex: residentSex ?? this.residentSex,
       residentBirthday: residentBirthday ?? this.residentBirthday,
       educationYears: educationYears ?? this.educationYears,
+      riskLevel: riskLevel ?? this.riskLevel,
+      normalProbability: normalProbability ?? this.normalProbability,
+      mciProbability: mciProbability ?? this.mciProbability,
+      dementiaProbability: dementiaProbability ?? this.dementiaProbability,
     );
   }
 
